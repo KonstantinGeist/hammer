@@ -13,8 +13,6 @@
 
 #include "allocator.h"
 
-#include <stdio.h>
-
 // Necessary for better alignment on typical CPU's for faster memory access.
 #define HM_ALLOC_SIZE_ALIGNMENT 16
 
@@ -25,9 +23,6 @@ void* hmAlloc(hmAllocator* allocator, hm_nint sz)
 
 void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new_size)
 {
-    if (!mem) {
-        return hmAlloc(allocator, new_size);
-    }
     if (new_size <= old_size) {
         return mem;
     }

@@ -15,6 +15,6 @@
 
 int main()
 {
-    test_allocator();
+    test_allocators();
     return 0;
 }
