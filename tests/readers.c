@@ -15,13 +15,13 @@
 #include "../src/reader.h"
 
 #define READ_BUF_SIZE 5
+#define MEMORY_BUF_STRING "Hello, World"
 
 static void create_memory_reader(hmAllocator* allocator, hmReader* reader)
 {
-    const char* str = "Hello, World";
     hmError err = hmCreateSystemAllocator(allocator);
     HM_TEST_ASSERT_OK(err);
-    err = hmCreateMemoryReader(str, 13, allocator, reader);
+    err = hmCreateMemoryReader(MEMORY_BUF_STRING, 12, allocator, reader);
     HM_TEST_ASSERT_OK(err);
 }
 
@@ -59,7 +59,35 @@ static void test_memory_can_create_seek_read_close()
     err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
-    HM_TEST_ASSERT(memcmp(read_buf, "lo, w", READ_BUF_SIZE) == 0);
+    HM_TEST_ASSERT(memcmp(read_buf, "lo, W", READ_BUF_SIZE) == 0);
+    dispose_memory_reader_and_allocator(&allocator, &reader);
+}
+
+static void test_memory_reader_cant_seek_past_buffer()
+{
+    char read_buf[READ_BUF_SIZE] = {0};
+    hm_nint bytes_read;
+    hmAllocator allocator;
+    hmReader reader;
+    create_memory_reader(&allocator, &reader);
+    hmError err = hmReaderSeek(&reader, 15);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
+    dispose_memory_reader_and_allocator(&allocator, &reader);
+}
+
+static void test_memory_reader_truncates_buffer_if_read_past_buffer()
+{
+    char read_buf[READ_BUF_SIZE] = {0};
+    hm_nint bytes_read;
+    hmAllocator allocator;
+    hmReader reader;
+    create_memory_reader(&allocator, &reader);
+    hmError err = hmReaderSeek(&reader, 8);
+    HM_TEST_ASSERT_OK(err);
+    err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE-1);
+    HM_TEST_ASSERT(memcmp(read_buf, "orld", READ_BUF_SIZE-1) == 0);
     dispose_memory_reader_and_allocator(&allocator, &reader);
 }
 
@@ -67,4 +95,6 @@ void test_readers()
 {
     test_memory_reader_can_create_read_close();
     test_memory_can_create_seek_read_close();
+    test_memory_reader_cant_seek_past_buffer();
+    test_memory_reader_truncates_buffer_if_read_past_buffer();
 }
