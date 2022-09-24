@@ -46,6 +46,7 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
         return HM_ERROR_INVALID_ARGUMENT;
     }
     if (!sz) {
+        *out_bytes_read = 0;
         return HM_OK; // do nothing because we were told to read 0 bytes
     }
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
