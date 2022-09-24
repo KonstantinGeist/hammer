@@ -14,13 +14,6 @@
 #include "common.h"
 #include "../src/reader.h"
 
-/**
-hmError hmCreateMemoryReader(char* mem, hm_nint mem_size, hmAllocator* allocator, hmReader* in_reader);
-hmError hmReaderRead(hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read);
-hmError hmReaderSeek(hmReader* reader, hm_nint offset);
-hmError hmReaderClose(hmReader *reader);
-*/
-
 #define READ_BUF_SIZE 5
 
 static void create_memory_reader(hmAllocator* allocator, hmReader* reader)
@@ -40,7 +33,7 @@ static void dispose_memory_reader_and_allocator(hmAllocator* allocator, hmReader
     HM_TEST_ASSERT_OK(err);
 }
 
-static void test_memory_reader_can_create_write_read_close()
+static void test_memory_reader_can_create_read_close()
 {
     char read_buf[READ_BUF_SIZE] = {0};
     hm_nint bytes_read;
@@ -54,7 +47,24 @@ static void test_memory_reader_can_create_write_read_close()
     dispose_memory_reader_and_allocator(&allocator, &reader);
 }
 
+static void test_memory_can_create_seek_read_close()
+{
+    char read_buf[READ_BUF_SIZE] = {0};
+    hm_nint bytes_read;
+    hmAllocator allocator;
+    hmReader reader;
+    create_memory_reader(&allocator, &reader);
+    hmError err = hmReaderSeek(&reader, 3);
+    HM_TEST_ASSERT_OK(err);
+    err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
+    HM_TEST_ASSERT(memcmp(read_buf, "lo, w", READ_BUF_SIZE) == 0);
+    dispose_memory_reader_and_allocator(&allocator, &reader);
+}
+
 void test_readers()
 {
-    test_memory_reader_can_create_write_read_close();
+    test_memory_reader_can_create_read_close();
+    test_memory_can_create_seek_read_close();
 }
