@@ -28,6 +28,12 @@ static void create_bump_pointer_allocator(hmAllocator* system_allocator, hmAlloc
     HM_TEST_ASSERT_OK(err);
 }
 
+static void dispose_allocator(hmAllocator* allocator)
+{
+    hmError err = hmAllocatorDispose(allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 static void test_can_alloc_realloc_and_free_from_allocator(hmAllocator* allocator)
 {
     #define MEM_BLOCK_SENTINEL 13
@@ -53,7 +59,7 @@ static void test_can_alloc_realloc_and_free_from_system_allocator()
     hmAllocator allocator;
     create_system_allocator(&allocator);
     test_can_alloc_realloc_and_free_from_allocator(&allocator);
-    hmAllocatorDispose(&allocator);
+    dispose_allocator(&allocator);
 }
 
 static void test_can_alloc_realloc_and_free_from_bump_pointer_allocator()
@@ -62,8 +68,8 @@ static void test_can_alloc_realloc_and_free_from_bump_pointer_allocator()
     hmAllocator bump_pointer_allocator;
     create_bump_pointer_allocator(&system_allocator, &bump_pointer_allocator);
     test_can_alloc_realloc_and_free_from_allocator(&bump_pointer_allocator);
-    hmAllocatorDispose(&bump_pointer_allocator);
-    hmAllocatorDispose(&system_allocator);
+    dispose_allocator(&bump_pointer_allocator);
+    dispose_allocator(&system_allocator);
 }
 
 static void test_realloc_accepts_smaller_size()
@@ -74,7 +80,7 @@ static void test_realloc_accepts_smaller_size()
     HM_TEST_ASSERT(mem != HM_NULL);
     mem = hmRealloc(&allocator, mem, 100, 50);
     hmFree(&allocator, mem);
-    hmAllocatorDispose(&allocator);
+    dispose_allocator(&allocator);
 }
 
 static void test_bump_pointer_allocator_works_with_large_objects()
@@ -94,8 +100,8 @@ static void test_bump_pointer_allocator_works_with_large_objects()
     {
         hmFree(&bump_pointer_allocator, mems[i]);
     }
-    hmAllocatorDispose(&bump_pointer_allocator);
-    hmAllocatorDispose(&system_allocator);
+    dispose_allocator(&bump_pointer_allocator);
+    dispose_allocator(&system_allocator);
 }
 
 void test_allocators()

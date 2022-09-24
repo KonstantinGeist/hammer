@@ -34,7 +34,7 @@ hmError hmReaderClose(hmReader* reader)
 /* ******************* */
 
 typedef struct {
-    char*        base;      /* The original pointer to the beginning of the memory block. */
+    const char*  base;      /* The original pointer to the beginning of the memory block. */
     hmAllocator* allocator; /* The allocator which governs this structure's lifetime. */
     hm_nint      offset;    /* The current pointer/offset. */
     hm_nint      size;      /* The size of the memory block. */
@@ -76,7 +76,7 @@ static hmError hmMemoryReader_close(hmReader* reader)
     return HM_OK;
 }
 
-hmError hmCreateMemoryReader(char* mem, hm_nint mem_size, hmAllocator* allocator, hmReader* in_reader)
+hmError hmCreateMemoryReader(const char* mem, hm_nint mem_size, hmAllocator* allocator, hmReader* in_reader)
 {
     if (!mem || !mem_size || !allocator || !in_reader) {
         return HM_ERROR_INVALID_ARGUMENT;

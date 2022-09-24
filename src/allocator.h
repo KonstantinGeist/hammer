@@ -28,11 +28,11 @@ typedef struct _hmAllocator {
     void  (*free)(struct _hmAllocator* allocator, void* mem);   /* Frees a given block of memory. Behavior is undefined if memory
                                                                    not belonging to this allocator is passed to it. Generally should
                                                                    ignore errors (preferably by logging errors). Safe to pass HM_NULL to it. */
-    void  (*dispose)(struct _hmAllocator* allocator);  /* Function to delete the allocator itself, including all of its
-                                                          bookkeeping data. Behavior is undefined if there are still pointers
-                                                          to objects allocated through this allocator. */
-    void* data;                                        /* Pointer to data specific to the implementation (initialized in
-                                                          an allocator's constructor, deleted by dispose(). */
+    hmError (*dispose)(struct _hmAllocator* allocator);  /* Function to delete the allocator itself, including all of its
+                                                            bookkeeping data. Behavior is undefined if there are still pointers
+                                                            to objects allocated through this allocator. */
+    void* data;                                          /* Pointer to data specific to the implementation (initialized in
+                                                            an allocator's constructor, deleted by dispose(). */
 } hmAllocator;
 
 /* Allocates memory given the allocator and the memory size. Returns HM_NULL if out of memory. */
@@ -45,7 +45,7 @@ void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new
 void hmFree(hmAllocator* allocator, void* mem);
 /* Deletes the allocator, including all of its bookkeeping data. Behavior is undefined if there are still pointers
    to objects allocated through this allocator. */
-void hmAllocatorDispose(hmAllocator* allocator);
+hmError hmAllocatorDispose(hmAllocator* allocator);
 
 /* Creates a system allocator - it merely redirects to the OS or the standard library which implement alloc/free.
    Memory alignment is OS-specific. */

@@ -16,5 +16,6 @@
 int main()
 {
     test_allocators();
+    test_readers();
     return 0;
 }

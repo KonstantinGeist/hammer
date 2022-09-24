@@ -40,9 +40,9 @@ void hmFree(hmAllocator* allocator, void* mem)
     allocator->free(allocator, mem);
 }
 
-void hmAllocatorDispose(hmAllocator* allocator)
+hmError hmAllocatorDispose(hmAllocator* allocator)
 {
-    allocator->dispose(allocator);
+    return allocator->dispose(allocator);
 }
 
 static hm_nint hmAlignSize(hm_nint sz)
@@ -67,9 +67,10 @@ static void hmSystemAllocator_free(hmAllocator* allocator, void* mem)
     free(mem);
 }
 
-static void hmSystemAllocator_dispose(hmAllocator* allocator)
+static hmError hmSystemAllocator_dispose(hmAllocator* allocator)
 {
     // Do nothing (everything's managed by the OS).
+    return HM_OK;
 }
 
 hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
@@ -150,7 +151,7 @@ static void hmBumpPointerAllocator_free(hmAllocator* allocator, void* mem)
     // Do nothing.
 }
 
-static void hmBumpPointerAllocator_dispose(hmAllocator* allocator)
+static hmError hmBumpPointerAllocator_dispose(hmAllocator* allocator)
 {
     hmBumpPointerAllocatorData* data = (hmBumpPointerAllocatorData*)allocator->data;
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
@@ -164,6 +165,7 @@ static void hmBumpPointerAllocator_dispose(hmAllocator* allocator)
     }
     hmFree(data->base_allocator, data->large_objects);
     hmFree(data->base_allocator, data);
+    return HM_OK;
 }
 
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator)
