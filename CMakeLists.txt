@@ -7,4 +7,4 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 add_executable(hammer_tests tests_main.c)
-target_link_libraries(hammer_tests libhammertests libhammer)
+target_link_libraries(hammer_tests hammertests hammerrt)

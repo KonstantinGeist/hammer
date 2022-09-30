@@ -39,5 +39,10 @@ typedef hm_uint8 hmError;
                                                   each function in the runtime should carefully check all its argument to avoid
                                                   crashing the whole process (at the expense of some slowdown). */
 #define HM_ERROR_INVALID_STATE    ((hmError)3) /* A function is called on an object which is not in the required state. */
+#define HM_ERROR_OUT_OF_RANGE     ((hmError)4) /* An attempt was made to retrieve an item out of its container's range. */
+
+/* A generic function which is able to dispose of an object. Used in containers to automatically delete items
+   on container destruction. */
+typedef hmError (*hmDisposeFunc)(void* object);
 
 #endif /* HM_COMMON_H */

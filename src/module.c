@@ -11,6 +11,19 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
+#include "module.h"
+#include "allocator.h"
+
+hmError hmCreateModuleRegistry(hmAllocator* metadata_allocator, hmModuleRegistry* in_registry)
+{
+    in_registry->modules = HM_NULL;
+    in_registry->metadata_allocator = metadata_allocator;
+    in_registry->module_count = 0;
+    return HM_OK;
+}
+
+hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
+{
+    hmFree(registry->metadata_allocator, registry->modules);
+    return HM_OK;
+}
