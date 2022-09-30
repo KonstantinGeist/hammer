@@ -24,9 +24,9 @@ hmError hmCreateModuleRegistry(hmAllocator* metadata_allocator, hmModuleRegistry
     return HM_OK;
 }
 
-hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* module)
+hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* in_module)
 {
-    return hmArrayAdd(&registry->modules, module);
+    return hmArrayAdd(&registry->modules, in_module);
 }
 
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)

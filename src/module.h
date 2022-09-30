@@ -43,7 +43,7 @@ hmError hmCreateModuleRegistry(
 );
 
 /* Registers a new module. */
-hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* module);
+hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* in_module);
 
 /* Delete the module registry and all its data, including modules and internal bookkeeping data. */
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
