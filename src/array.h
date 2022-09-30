@@ -16,6 +16,8 @@
 
 #include "common.h"
 
+#define HM_DEFAULT_ARRAY_CAPACITY 16
+
 struct _hmAllocator;
 
 /* A general purpose array. */
@@ -31,7 +33,7 @@ typedef struct {
 } hmArray;
 
 /* Creates a new array. When calling hmArrayAdd in a loop, make sure initial_capacity is set to a correct value
-   so that we don't have reallocate too often. */
+   so that we don't have to reallocate too often. */
 hmError hmCreateArray(
     struct _hmAllocator* allocator,
     hm_nint item_size,

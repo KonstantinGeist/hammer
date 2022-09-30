@@ -16,14 +16,20 @@
 
 hmError hmCreateModuleRegistry(hmAllocator* metadata_allocator, hmModuleRegistry* in_registry)
 {
-    in_registry->modules = HM_NULL;
+    hmError err = hmCreateArray(metadata_allocator, sizeof(hmModule), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_registry->modules);
+    if (err != HM_OK) {
+        return err;
+    }
     in_registry->metadata_allocator = metadata_allocator;
-    in_registry->module_count = 0;
     return HM_OK;
+}
+
+hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* module)
+{
+    return hmArrayAdd(&registry->modules, module);
 }
 
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 {
-    hmFree(registry->metadata_allocator, registry->modules);
-    return HM_OK;
+    return hmArrayDispose(&registry->modules);
 }
