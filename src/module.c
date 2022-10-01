@@ -15,9 +15,20 @@
 #include "allocator.h"
 #include "sqlite3.h"
 
+static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db);
+static hmError hmCreateModule(hmAllocator* allocator, const char* name, hmModule* in_module);
+static hmError hmModuleDispose(hmModule* module);
+static hmError hmModuleDisposeFunc(void* object);
+
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
-    hmError err = hmCreateArray(allocator, sizeof(hmModule), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_registry->modules);
+    hmError err = hmCreateArray(
+        allocator,
+        sizeof(hmModule),
+        HM_DEFAULT_ARRAY_CAPACITY,
+        &hmModuleDisposeFunc,
+        &in_registry->modules
+    );
     if (err != HM_OK) {
         return err;
     }
@@ -30,19 +41,8 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
     return hmArrayDispose(&registry->modules);
 }
 
-// TODO
-#include <stdio.h>
-
-static int module_load_callback(void* user_data, int row_count, char** columns, char** names)
-{
-    hmModuleRegistry* registry = (hmModuleRegistry*)user_data;
-    for (hm_nint i = 0; i < row_count; i++) {
-        printf("%s: %s\n", columns[i], names[i]);
-    }
-    return 0;
-}
-
-hmError hmModuleRegistryRegisterFromImage(hmModuleRegistry* registry, const char* image_path)
+// TODO validation step after loading
+hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path)
 {
     hmError err = HM_OK;
     sqlite3* db;
@@ -50,15 +50,97 @@ hmError hmModuleRegistryRegisterFromImage(hmModuleRegistry* registry, const char
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }
-    sqlite_err = sqlite3_exec(db, "SELECT name FROM module", &module_load_callback, registry, HM_NULL);
-    if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_INVALID_IMAGE;
+    err = hmModuleRegistryLoadModules(registry, db);
+    if (err != HM_OK) {
         goto exit;
     }
 exit:
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
-        return HM_ERROR_PLATFORM_DEPENDENT;
+        err = HM_ERROR_PLATFORM_DEPENDENT;
     }
     return err;
+}
+
+static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db)
+{
+    hmError err = HM_OK;
+    sqlite3_stmt* stmt;
+    int sqlite_err = sqlite3_prepare_v2(
+        db,
+        "SELECT name FROM module",
+        -1,
+        &stmt,
+        HM_NULL
+    );
+    if (sqlite_err != SQLITE_OK) {
+        err = HM_ERROR_INVALID_IMAGE;
+        goto exit;
+    }
+    for (;;) {
+        sqlite_err = sqlite3_step(stmt);
+        switch (sqlite_err) {
+            case SQLITE_ROW:
+                {
+                    const char* name = sqlite3_column_text(stmt, 0);
+                    hmModule module;
+                    err = hmCreateModule(registry->allocator, name, &module);
+                    if (err != HM_OK) {
+                        goto exit;
+                    }
+                    err = hmArrayAdd(&registry->modules, &module);
+                    if (err != HM_OK) {
+                        hmError err2 = hmModuleDispose(&module);
+                        if (err2 != HM_OK) {
+                            err = err2;
+                        }
+                        goto exit;
+                    }
+                }
+                break;
+            case SQLITE_DONE:
+                goto exit;
+            case SQLITE_ERROR:
+                err = HM_ERROR_INVALID_IMAGE;
+                goto exit;
+        }
+    }
+exit:
+    sqlite_err = sqlite3_finalize(stmt);
+    if (sqlite_err != SQLITE_OK) {
+        err = HM_ERROR_PLATFORM_DEPENDENT;
+    }
+    return err;
+}
+
+static hmError hmCreateModule(hmAllocator* allocator, const char* name, hmModule* in_module)
+{
+    hmError err = hmCreateStringFromCString(allocator, name, &in_module->name);
+    if (err != HM_OK) {
+        return err;
+    }
+    err = hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_module->classes);
+    if (err != HM_OK) {
+        hmError err2 = hmStringDispose(&in_module->name);
+        if (err2 != HM_OK) {
+            err = err2;
+        }
+        return err;
+    }
+    return HM_OK;
+}
+
+static hmError hmModuleDispose(hmModule* module)
+{
+    hmError err = hmStringDispose(&module->name);
+    if (err != HM_OK) {
+        return err;
+    }
+    return hmArrayDispose(&module->classes);
+}
+
+static hmError hmModuleDisposeFunc(void* object)
+{
+    hmModule* module = (hmModule*)object;
+    return hmModuleDispose(module);
 }

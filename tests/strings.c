@@ -13,25 +13,26 @@
 
 #include "common.h"
 #include "../src/allocator.h"
-#include "../src/module.h"
+#include "../src/string.h"
 
-static void test_can_load_modules()
+static void test_can_create_string()
 {
+    #define STRING_CONTENT "Hello, World!"
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
-    hmModuleRegistry module_registry;
-    err = hmCreateModuleRegistry(&allocator, &module_registry);
+    hmString string;
+    err = hmCreateStringFromCString(&allocator, STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
-    err = hmModuleRegistryLoadFromImage(&module_registry, "../tests/data/modules.hma");
-    HM_TEST_ASSERT_OK(err);
-    err = hmModuleRegistryDispose(&module_registry);
+    HM_TEST_ASSERT(hmStringLength(&string) == strlen(STRING_CONTENT));
+    HM_TEST_ASSERT(strcmp(hmStringContent(&string), STRING_CONTENT) == 0);
+    err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&allocator);
     HM_TEST_ASSERT_OK(err);
 }
 
-void test_modules()
+void test_strings()
 {
-    test_can_load_modules();
+    test_can_create_string();
 }

@@ -22,7 +22,7 @@ static void create_memory_reader_and_allocator(hmReader* reader, hmAllocator* al
 {
     hmError err = hmCreateSystemAllocator(allocator);
     HM_TEST_ASSERT_OK(err);
-    err = hmCreateMemoryReader(MEMORY_BUF_STRING, strlen(MEMORY_BUF_STRING), allocator, reader);
+    err = hmCreateMemoryReader(allocator, MEMORY_BUF_STRING, strlen(MEMORY_BUF_STRING), reader);
     HM_TEST_ASSERT_OK(err);
 }
 

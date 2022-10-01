@@ -22,9 +22,9 @@ struct _hmAllocator;
 
 /* A general purpose array. */
 typedef struct {
+    struct _hmAllocator* allocator;
     char*                items;             /* The list of entries in the array, a contiguous memory block of inlined values.
                                                Typed to void* because that's how we achieve genericity. */
-    struct _hmAllocator* allocator;         /* The allocator which controls the object's lifetime. */
     hmDisposeFunc        item_dispose_func; /* Dispose function: called on every item on container destruction. Can be HM_NULL. */
     hm_nint              item_size;         /* Size of a single item (this is how we achieve genericity). */
     hm_nint              capacity;          /* The capacity of the array: determines how many elements can be added
@@ -39,9 +39,11 @@ hmError hmCreateArray(
     hm_nint item_size,
     hm_nint initial_capacity,
     hmDisposeFunc item_dispose_func,
-    hmArray* in_array);
-/* Deletes an array. */
+    hmArray* in_array
+);
+
 hmError hmArrayDispose(hmArray* array);
+
 /* Adds a new value to the array. in_value must be a reference to the actual value. An object is stored in an array
    by having a shallow copy. in_value is a reference to the value (not the value itself). The value is copied
    to the array's internal backing array by using the item size supplied in the constructor. */
@@ -51,7 +53,6 @@ hmError hmArrayAdd(hmArray* array, void* in_value);
 hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);
 /* Gets access to the raw data of the array. Useful for fast iterations as it doesn't do range checks. */
 #define hmArrayRaw(array, type) (type*)((array)->items)
-/* Gets the number of elements in the array. */
 #define hmArrayCount(array) (array)->count
 
 #endif /* HM_ARRAY_H */

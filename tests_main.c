@@ -19,5 +19,6 @@ int main()
     test_readers();
     test_arrays();
     test_modules();
+    test_strings();
     return 0;
 }

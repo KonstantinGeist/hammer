@@ -77,7 +77,7 @@ static hmError hmMemoryReader_close(hmReader* reader)
     return HM_OK;
 }
 
-hmError hmCreateMemoryReader(const char* mem, hm_nint mem_size, hmAllocator* allocator, hmReader* in_reader)
+hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader)
 {
     if (!mem || !mem_size || !allocator || !in_reader) {
         return HM_ERROR_INVALID_ARGUMENT;
