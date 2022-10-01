@@ -31,6 +31,9 @@ typedef size_t hm_nint;
 /* 8-bit integer. */
 typedef uint8_t hm_uint8;
 
+/* Boolean. */
+typedef uint8_t hm_bool;
+
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
    Return function-specific data as the last function argument passed by reference. */
 typedef hm_uint8 hmError;

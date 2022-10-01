@@ -19,6 +19,10 @@
 #include "string.h"
 #include "type.h"
 
+// TODO add a function to freeze a registry -- to allow for reading from multiple threads without locking
+//      or all modules can be listed in the registry's constructor, making it immutable from the start
+//      new modules can be added by chaining registries -- leaving original ones intact
+
 struct _hmAllocator;
 
 typedef struct {
@@ -52,5 +56,11 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
 /* Loads a module from a Hammer image denoted by the path on disk. After registering, all classes in the module
    are immediately usable. */
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path);
+
+/* Returns a pointer to a module by its name in out_module. Returns HM_NULL if no module was found.
+   Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */
+hmError hmModuleRegistryGetModuleByName(hmModuleRegistry* registry, const char* name, hmModule** out_module);
+
+#define hmModuleName(module) (module)->name
 
 #endif /* HM_MODULE_H */

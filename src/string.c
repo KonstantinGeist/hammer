@@ -16,6 +16,9 @@
 
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string)
 {
+    if (!content) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hm_nint length = strlen(content);
     char* content_copy = hmAlloc(allocator, length+1); // including null terminator
     if (!content_copy) {
@@ -32,4 +35,12 @@ hmError hmStringDispose(hmString* string)
 {
     hmFree(string->allocator, string->content);
     return HM_OK;
+}
+
+hm_bool hmStringEqualsToCString(hmString* string, const char* content)
+{
+    if (!content) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    return strcmp(string->content, content) == 0;
 }

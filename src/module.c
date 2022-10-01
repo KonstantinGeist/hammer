@@ -44,6 +44,9 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 // TODO validation step after loading
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path)
 {
+    if (!image_path) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmError err = HM_OK;
     sqlite3* db;
     int sqlite_err = sqlite3_open_v2(image_path, &db, SQLITE_OPEN_READONLY, HM_NULL);
@@ -111,6 +114,24 @@ exit:
         err = HM_ERROR_PLATFORM_DEPENDENT;
     }
     return err;
+}
+
+// TODO use a hashmap to avoid a linear scan
+hmError hmModuleRegistryGetModuleByName(hmModuleRegistry* registry, const char* name, hmModule** out_module)
+{
+    if (!name) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hmModule* module = hmArrayRaw(&registry->modules, hmModule);
+    for (hm_nint i = 0; i < hmArrayCount(&registry->modules); i++) {
+        if (hmStringEqualsToCString(&module->name, name)) {
+            *out_module = module;
+            return HM_OK;
+        }
+        module++;
+    }
+    *out_module = HM_NULL;
+    return HM_OK;
 }
 
 static hmError hmCreateModule(hmAllocator* allocator, const char* name, hmModule* in_module)

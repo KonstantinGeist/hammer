@@ -26,6 +26,7 @@ typedef struct {
 
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
 hmError hmStringDispose(hmString* string);
+hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 #define hmStringLength(string) (string)->length
 #define hmStringContent(string) (string)->content
 
