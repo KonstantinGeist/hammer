@@ -13,23 +13,52 @@
 
 #include "module.h"
 #include "allocator.h"
+#include "sqlite3.h"
 
-hmError hmCreateModuleRegistry(hmAllocator* metadata_allocator, hmModuleRegistry* in_registry)
+hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
-    hmError err = hmCreateArray(metadata_allocator, sizeof(hmModule), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_registry->modules);
+    hmError err = hmCreateArray(allocator, sizeof(hmModule), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_registry->modules);
     if (err != HM_OK) {
         return err;
     }
-    in_registry->metadata_allocator = metadata_allocator;
+    in_registry->allocator = allocator;
     return HM_OK;
-}
-
-hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmModule* in_module)
-{
-    return hmArrayAdd(&registry->modules, in_module);
 }
 
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 {
     return hmArrayDispose(&registry->modules);
+}
+
+// TODO
+#include <stdio.h>
+
+static int module_load_callback(void* user_data, int row_count, char** columns, char** names)
+{
+    hmModuleRegistry* registry = (hmModuleRegistry*)user_data;
+    for (hm_nint i = 0; i < row_count; i++) {
+        printf("%s: %s\n", columns[i], names[i]);
+    }
+    return 0;
+}
+
+hmError hmModuleRegistryRegisterFromImage(hmModuleRegistry* registry, const char* image_path)
+{
+    hmError err = HM_OK;
+    sqlite3* db;
+    int sqlite_err = sqlite3_open_v2(image_path, &db, SQLITE_OPEN_READONLY, HM_NULL);
+    if (sqlite_err != SQLITE_OK) {
+        return HM_ERROR_NOT_FOUND;
+    }
+    sqlite_err = sqlite3_exec(db, "SELECT name FROM module", &module_load_callback, registry, HM_NULL);
+    if (sqlite_err != SQLITE_OK) {
+        err = HM_ERROR_INVALID_IMAGE;
+        goto exit;
+    }
+exit:
+    sqlite_err = sqlite3_close(db);
+    if (sqlite_err != SQLITE_OK) {
+        return HM_ERROR_PLATFORM_DEPENDENT;
+    }
+    return err;
 }

@@ -5,7 +5,6 @@ There are several conventions to follow:
 * Always sort struct fields from larger to smaller values: for example, first pointers (32 or 64 bit), then
   integers, then booleans etc. This can help a compiler to better pack values in memory without "holes" due to
   misalignment.
-* Generally, arrays should be a pair of "pointer to first element" and "array size" which are passed around.
 * Never assume an allocating strategy and instead allow a user select an appropriate allocator at runtime when
   instantiating an object.
 * Where implementations may differ, use interfaces: a structure which lists function pointers for methods (where
@@ -16,7 +15,7 @@ There are several conventions to follow:
 * Cover everything with tests.
 * Never use global state: it should be possible to create as many runtimes per process as one wishes.
 * Always place a copyright header at the top of every file.
-* For interfaces, implement ease-to-use wrappers (which deal with selecting the function pointer and passing "this" to it).
+* For interfaces, implement easy-to-use wrappers (which deal with selecting the function pointer and passing "this" to it).
   Always validate arguments in the implementations themselves, not the wrappers. Such pointers should be in the same
   translation unit for possible inlining.
 

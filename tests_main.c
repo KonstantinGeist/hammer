@@ -18,5 +18,6 @@ int main()
     test_allocators();
     test_readers();
     test_arrays();
+    test_modules();
     return 0;
 }

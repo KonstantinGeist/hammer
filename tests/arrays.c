@@ -100,9 +100,34 @@ static void test_returns_error_if_out_of_range()
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_iterate_over_raw_array()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    for (hm_nint i = 0; i < TEST_ARRAY_CAPACITY; i++) {
+        testItem test_item;
+        test_item.x = i*10;
+        test_item.y = i*20;
+        hmError err = hmArrayAdd(&array, &test_item);
+        HM_TEST_ASSERT_OK(err);
+    }
+    testItem* raw_items = hmArrayRaw(&array, testItem);
+    for (hm_nint i = 0; i < hmArrayCount(&array); i++) {
+        testItem control_item;
+        control_item.x = i*10;
+        control_item.y = i*20;
+        testItem retrieved_item = raw_items[i];
+        HM_TEST_ASSERT(control_item.x == retrieved_item.x);
+        HM_TEST_ASSERT(control_item.y == retrieved_item.y);
+    }
+    dispose_array_and_allocator(&array, &allocator);
+}
+
 void test_arrays()
 {
     test_array_can_create_add_get_dispose_without_item_dispose_func();
     test_array_can_create_add_get_dispose_with_item_dispose_func();
     test_returns_error_if_out_of_range();
+    test_can_iterate_over_raw_array();
 }

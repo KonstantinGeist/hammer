@@ -49,5 +49,9 @@ hmError hmArrayAdd(hmArray* array, void* in_value);
 /* Gets an item by its index. Returns HM_ERROR_OUT_OF_RANGE if the index is out of range. The retrieved value
    is copied to a memory block pointed to by in_value, depending on item_size. */
 hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);
+/* Gets access to the raw data of the array. Useful for fast iterations as it doesn't do range checks. */
+#define hmArrayRaw(array, type) (type*)((array)->items)
+/* Gets the number of elements in the array. */
+#define hmArrayCount(array) (array)->count
 
 #endif /* HM_ARRAY_H */
