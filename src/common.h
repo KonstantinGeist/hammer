@@ -14,14 +14,18 @@
 #ifndef HM_COMMON_H
 #define HM_COMMON_H
 
+/* This header file is included by every source file as it contains all the necessary bits to write C code in the
+   idiom we prefer. */
+
+#ifndef NDEBUG
+    #define HM_DEBUG
+#endif
+
 #define _GNU_SOURCE /* without this define, sqlite3 breaks with stdint for some reason */
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* This header file is included by every source file as it contains all the necessary bits to write C code in the
-   idiom we prefer. */
 
 /* A readable constant for null pointers. */
 #define HM_NULL ((void*)0)
@@ -31,8 +35,8 @@ typedef size_t hm_nint;
 /* 8-bit integer. */
 typedef uint8_t hm_uint8;
 
-/* Boolean. */
 typedef uint8_t hm_bool;
+typedef double hm_float;
 
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
    Return function-specific data as the last function argument passed by reference. */

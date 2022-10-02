@@ -32,6 +32,9 @@ typedef struct {
     hm_nint              count;             /* The count of objects in this array. */
 } hmArray;
 
+/* Array expansion function. User_data is passed from hmArrayExpand(..) (see). */
+typedef hmError (*hmArrayExpandFunc)(hmArray* array, hm_nint index, void* in_item, void* user_data);
+
 /* Creates a new array. When calling hmArrayAdd in a loop, make sure initial_capacity is set to a correct value
    so that we don't have to reallocate too often. */
 hmError hmCreateArray(
@@ -43,7 +46,6 @@ hmError hmCreateArray(
 );
 
 hmError hmArrayDispose(hmArray* array);
-
 /* Adds a new value to the array. in_value must be a reference to the actual value. An object is stored in an array
    by having a shallow copy. in_value is a reference to the value (not the value itself). The value is copied
    to the array's internal backing array by using the item size supplied in the constructor. */
@@ -54,5 +56,9 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);
 /* Gets access to the raw data of the array. Useful for fast iterations as it doesn't do range checks. */
 #define hmArrayRaw(array, type) (type*)((array)->items)
 #define hmArrayCount(array) (array)->count
+/* Expands the array by initializing elements of the array with the given callback. If no callback is provided,
+   initializes the elements with all zeros (useful only if the array contains only zeroable types: integers, floats, pointers).
+   The user_data parameter is passed to the expand function as is (meaningful only if array_expand_func is provided). */
+hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func, void* user_data);
 
 #endif /* HM_ARRAY_H */

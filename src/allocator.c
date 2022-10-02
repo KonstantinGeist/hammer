@@ -53,9 +53,9 @@ static hm_nint hmAlignSize(hm_nint sz)
     return sz + HM_ALLOC_SIZE_ALIGNMENT - sz % HM_ALLOC_SIZE_ALIGNMENT;
 }
 
-/* ******************* */
-/*    MemoryReader.    */
-/* ******************* */
+/* ********************** */
+/*    SystemAllocator.    */
+/* ********************** */
 
 static void* hmSystemAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
