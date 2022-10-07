@@ -37,6 +37,8 @@ typedef struct _hmAllocator {
 
 /* Allocates memory given the allocator and the memory size. Returns HM_NULL if out of memory. */
 void* hmAlloc(hmAllocator* allocator, hm_nint sz);
+/* Same as hmAlloc, except also zero-initializes the returned array. */
+void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz);
 /* Reallocates the given memory block: allocates a new array, copies old data to it, and frees the old memory block.
    The memory block can be HM_NULL, in that case it's equivalent to hmAlloc. */
 void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new_size);

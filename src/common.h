@@ -36,6 +36,9 @@ typedef size_t hm_nint;
 typedef uint8_t hm_uint8;
 
 typedef uint8_t hm_bool;
+#define HM_TRUE ((hm_bool)1)
+#define HM_FALSE ((hm_bool)0)
+
 typedef double hm_float;
 
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
@@ -48,7 +51,7 @@ typedef hm_uint8 hmError;
                                                   crashing the whole process (at the expense of some slowdown). */
 #define HM_ERROR_INVALID_STATE      ((hmError)3) /* A function is called on an object which is not in the required state. */
 #define HM_ERROR_OUT_OF_RANGE       ((hmError)4) /* An attempt was made to retrieve an item out of its container's range. */
-#define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file) was not found. */
+#define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file, or an element in a hashmap) was not found. */
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
 #define HM_ERROR_INVALID_IMAGE      ((hmError)7) /* Invalid binary data found. */
 

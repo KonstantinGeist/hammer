@@ -11,15 +11,11 @@
 //
 // *****************************************************************************
 
-#include "tests/tests.h"
+#ifndef HM_UTILS_H
+#define HM_UTILS_H
 
-int main()
-{
-    test_allocators();
-    test_readers();
-    test_arrays();
-    test_modules();
-    test_strings();
-    test_utils();
-    return 0;
-}
+#include "common.h"
+
+hm_nint hmAlignSize(hm_nint sz);
+
+#endif /* HM_UTILS_H */

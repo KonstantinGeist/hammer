@@ -86,7 +86,7 @@ static void test_array_can_create_add_get_dispose_with_item_dispose_func()
     HM_TEST_ASSERT(item_dispose_sum == item_dispose_sum_control);
 }
 
-static void test_returns_error_if_out_of_range()
+static void test_returns_error_if_get_out_of_range()
 {
     hmAllocator allocator;
     hmArray array;
@@ -97,6 +97,19 @@ static void test_returns_error_if_out_of_range()
     hmError err = hmArrayAdd(&array, &test_item);
     HM_TEST_ASSERT_OK(err);
     err = hmArrayGet(&array, 2, &test_item);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_RANGE);
+    dispose_array_and_allocator(&array, &allocator);
+}
+
+static void test_returns_error_if_set_out_of_range()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    testItem test_item;
+    test_item.x = 10;
+    test_item.y = 20;
+    hmError err = hmArraySet(&array, 17, &test_item);
     HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_RANGE);
     dispose_array_and_allocator(&array, &allocator);
 }
@@ -183,12 +196,34 @@ static void test_can_expand_array_with_expand_func()
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_set_array_item()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    hmError err = hmArrayExpand(&array, 4, HM_NULL, HM_NULL);
+    HM_TEST_ASSERT_OK(err);
+    testItem test_item;
+    test_item.x = 13;
+    test_item.y = 666;
+    err = hmArraySet(&array, 2, &test_item);
+    HM_TEST_ASSERT_OK(err);
+    testItem retrieved_item;
+    err = hmArrayGet(&array, 2, &retrieved_item);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(test_item.x == retrieved_item.x);
+    HM_TEST_ASSERT(test_item.y == retrieved_item.y);
+    dispose_array_and_allocator(&array, &allocator);
+}
+
 void test_arrays()
 {
     test_array_can_create_add_get_dispose_without_item_dispose_func();
     test_array_can_create_add_get_dispose_with_item_dispose_func();
-    test_returns_error_if_out_of_range();
+    test_returns_error_if_get_out_of_range();
+    test_returns_error_if_set_out_of_range();
     test_can_iterate_over_raw_array();
     test_can_expand_array_without_expand_func();
     test_can_expand_array_with_expand_func();
+    test_can_set_array_item();
 }

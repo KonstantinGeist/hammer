@@ -11,15 +11,19 @@
 //
 // *****************************************************************************
 
-#include "tests/tests.h"
+#include "common.h"
+#include "../src/utils.h"
 
-int main()
+static void test_can_align_size()
 {
-    test_allocators();
-    test_readers();
-    test_arrays();
-    test_modules();
-    test_strings();
-    test_utils();
-    return 0;
+    HM_TEST_ASSERT(hmAlignSize(13) == 16);
+    HM_TEST_ASSERT(hmAlignSize(4) == 16);
+    HM_TEST_ASSERT(hmAlignSize(16) == 16);
+    HM_TEST_ASSERT(hmAlignSize(17) == 32);
+    HM_TEST_ASSERT(hmAlignSize(0) == 0);
+}
+
+void test_utils()
+{
+    test_can_align_size();
 }

@@ -81,6 +81,15 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value)
     return HM_OK;
 }
 
+hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
+{
+    if (index >= array->count) {
+        return HM_ERROR_OUT_OF_RANGE;
+    }
+    memcpy(array->items + index*array->item_size, in_value, array->item_size);
+    return HM_OK;
+}
+
 hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func, void* user_data)
 {
     if (!count) {

@@ -11,15 +11,15 @@
 //
 // *****************************************************************************
 
-#include "tests/tests.h"
+#include "utils.h"
 
-int main()
+// Necessary for better alignment on typical CPU's for faster memory access.
+#define HM_ALLOC_SIZE_ALIGNMENT 16
+
+hm_nint hmAlignSize(hm_nint sz)
 {
-    test_allocators();
-    test_readers();
-    test_arrays();
-    test_modules();
-    test_strings();
-    test_utils();
-    return 0;
+    if (sz % HM_ALLOC_SIZE_ALIGNMENT == 0) {
+        return sz;
+    }
+    return sz + HM_ALLOC_SIZE_ALIGNMENT - sz % HM_ALLOC_SIZE_ALIGNMENT;
 }

@@ -16,3 +16,4 @@ void test_readers();
 void test_arrays();
 void test_modules();
 void test_strings();
+void test_utils();
