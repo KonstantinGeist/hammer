@@ -184,7 +184,7 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
                 prev_entry->next = entry->next;
             }
             hmFree(hash_map->allocator, entry);
-            hash_map->count++;
+            hash_map->count--;
             if (out_removed) {
                 *out_removed = HM_TRUE;
             }

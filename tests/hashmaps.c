@@ -99,9 +99,64 @@ static void test_can_remove_integers_from_hash_map()
     dispose_memory_reader_and_allocator(&hash_map, &allocator);
 }
 
+static void test_hash_map_returns_error_on_non_existing_key()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_int_hash_map_and_allocator(&hash_map, &allocator);
+    hm_nint value = 7;
+    hmError err = hmHashMapPut(&hash_map, &value, &value);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint non_existing_key = 8;
+    hm_nint retrieved_value;
+    err = hmHashMapGet(&hash_map, &non_existing_key, &retrieved_value);
+    HM_TEST_ASSERT(err = HM_ERROR_NOT_FOUND);
+    dispose_memory_reader_and_allocator(&hash_map, &allocator);
+}
+
+static void test_hash_map_reports_nothing_was_removed()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_int_hash_map_and_allocator(&hash_map, &allocator);
+    hm_nint key = 10;
+    hm_bool removed = HM_TRUE;
+    hmError err = hmHashMapRemove(&hash_map, &key, &removed);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(!removed);
+    dispose_memory_reader_and_allocator(&hash_map, &allocator);
+}
+
+static void test_hash_map_reports_correct_count()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_int_hash_map_and_allocator(&hash_map, &allocator);
+    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == 0);
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
+        hm_nint value = i*2;
+        hmError err = hmHashMapPut(&hash_map, &i, &value);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == ITERATION_COUNT);
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // removes all non-odd elements
+        if (i % 2 == 0) {
+            hm_bool removed;
+            hmError err = hmHashMapRemove(&hash_map, &i, &removed);
+            HM_TEST_ASSERT_OK(err);
+            HM_TEST_ASSERT(removed);
+        }
+    }
+    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == ITERATION_COUNT/2);
+    dispose_memory_reader_and_allocator(&hash_map, &allocator);
+}
+
 void test_hashmaps()
 {
     test_can_create_and_dispose_hash_map();
     test_can_put_and_get_integers_from_hash_map();
     test_can_remove_integers_from_hash_map();
+    test_hash_map_returns_error_on_non_existing_key();
+    test_hash_map_reports_nothing_was_removed();
+    test_hash_map_reports_correct_count();
 }
