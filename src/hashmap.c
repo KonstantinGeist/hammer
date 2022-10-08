@@ -13,7 +13,6 @@
 
 #include "hashmap.h"
 #include "allocator.h"
-#include "utils.h"
 
 typedef struct _hmHashMapEntry {
     struct _hmHashMapEntry* next;
@@ -29,17 +28,23 @@ static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
     return abs(hash % hash_map->bucket_count);
 }
 
-static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key)
+static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key)
 {
-    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
     hmHashMapEntry* entry = hash_map->buckets[bucket_index];
     while (entry) {
-        if (hash_map->equals_func(key, hmHashMapEntryGetKey(hash_map, entry))) {
+        void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
+        if (hash_map->equals_func(key, key_candidate)) {
             return entry;
         }
         entry = entry->next;
     }
     return HM_NULL;
+}
+
+static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key)
+{
+    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
+    return hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
 }
 
 hmError hmCreateHashMap(
@@ -57,8 +62,6 @@ hmError hmCreateHashMap(
     if (!hash_func || !equals_func || !initial_capacity || load_factor <= 0.5 || load_factor > 1.0) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    key_size = hmAlignSize(key_size);
-    value_size = hmAlignSize(value_size);
     in_hashmap->buckets = hmAllocZeroInitialized(allocator, sizeof(hmHashMapEntry*)*initial_capacity);
     if (!in_hashmap->buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -80,30 +83,31 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;
     hm_nint old_bucket_count = hash_map->bucket_count;
-    hm_nint new_capacity = old_bucket_count*2+1;
-    hash_map->threshold = (int)(new_capacity * hash_map->load_factor);
-    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*)*new_capacity);
+    hm_nint new_bucket_count = old_bucket_count*2+1;
+    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*)*new_bucket_count);
     if (!new_buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
     hash_map->buckets = new_buckets;
+    hash_map->bucket_count = new_bucket_count;
+    hash_map->threshold = (int)(new_bucket_count * hash_map->load_factor);
     for (hm_nint i = 0; i < old_bucket_count; i++) {
-        hmHashMapEntry* entry = old_buckets[i];
-        while (entry) {
-            void* key = hmHashMapEntryGetKey(hash_map, entry);
-            hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, entry);
-            hmHashMapEntry* entry_dest = hash_map->buckets[bucket_index];
-            if (entry_dest) {
-                while (entry_dest->next) {
-                    entry_dest = entry_dest->next;
+        hmHashMapEntry* old_entry = old_buckets[i];
+        while (old_entry) {
+            void* key = hmHashMapEntryGetKey(hash_map, old_entry);
+            hm_nint new_bucket_index = hmHashMapGetBucketIndex(hash_map, key);
+            hmHashMapEntry* new_entry = new_buckets[new_bucket_index];
+            if (new_entry) {
+                while (new_entry->next) {
+                    new_entry = new_entry->next;
                 }
-                entry_dest->next = entry;
+                new_entry->next = old_entry;
             } else {
-                hash_map->buckets[bucket_index] = entry;
+                new_buckets[new_bucket_index] = old_entry;
             }
-            hmHashMapEntry* next = entry->next;
-            entry->next = HM_NULL;
-            entry = next;
+            hmHashMapEntry* next_old_entry = old_entry->next;
+            old_entry->next = HM_NULL;
+            old_entry = next_old_entry;
         }
     }
     hmFree(hash_map->allocator, old_buckets);
@@ -112,8 +116,14 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
 {
+    if (hash_map->count > hash_map->threshold) {
+        hmError err = hmHashMapRehash(hash_map);
+        if (err != HM_OK) {
+            return err;
+        }
+    }
     hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
-    hmHashMapEntry* entry = hmHashMapEntryFindByKey(hash_map, key);
+    hmHashMapEntry* entry = hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
     if (entry) {
         void* value_dest = hmHashMapEntryGetValue(hash_map, entry);
         if (hash_map->dispose_func) {
@@ -124,12 +134,6 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
         }
         memcpy(value_dest, value, hash_map->value_size);
         return HM_OK;
-    }
-    if (hash_map->count > hash_map->threshold) {
-        hmError err = hmHashMapRehash(hash_map);
-        if (err != HM_OK) {
-            return err;
-        }
     }
     hmHashMapEntry* new_entry = hmAlloc(
         hash_map->allocator,
@@ -150,14 +154,13 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
 
 hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value)
 {
-    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
     hmHashMapEntry* entry = hmHashMapEntryFindByKey(hash_map, key);
-    if (entry) {
-        void* value_src = &entry->payload[0]+hash_map->key_size;
-        memcpy(in_value, value_src, hash_map->value_size);
-        return HM_OK;
+    if (!entry) {
+        return HM_ERROR_NOT_FOUND;
     }
-    return HM_ERROR_NOT_FOUND;
+    void* value_src = hmHashMapEntryGetValue(hash_map, entry);
+    memcpy(in_value, value_src, hash_map->value_size);
+    return HM_OK;
 }
 
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
@@ -202,6 +205,13 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         hmHashMapEntry* entry = hash_map->buckets[i];
         hmHashMapEntry* next_entry = HM_NULL;
         while (entry) {
+            if (hash_map->dispose_func) {
+                void* value = hmHashMapEntryGetValue(hash_map, entry);
+                hmError err = hash_map->dispose_func(value);
+                if (err != HM_OK) {
+                    return err;
+                }
+            }
             next_entry = entry->next;
             hmFree(hash_map->allocator, entry);
             entry = next_entry;

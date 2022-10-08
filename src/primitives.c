@@ -11,10 +11,20 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_utils();
-void test_hashmaps();
+#include "primitives.h"
+
+int hmNintHashFunc(void* key)
+{
+    int x = (int)(*((hm_nint*)key));
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = (x >> 16) ^ x;
+    return x;
+}
+
+hm_bool hmNintEqualsFunc(void* value1, void* value2)
+{
+    hm_nint a = *((hm_nint*)(value1));
+    hm_nint b = *((hm_nint*)(value2));
+    return a == b;
+}

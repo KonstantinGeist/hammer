@@ -11,10 +11,12 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_utils();
-void test_hashmaps();
+#ifndef HM_PRIMITIVES_H
+#define HM_PRIMITIVES_H
+
+#include "common.h"
+
+int hmNintHashFunc(void* key);
+hm_bool hmNintEqualsFunc(void* value1, void* value2);
+
+#endif /* HM_PRIMITIVES_H */
