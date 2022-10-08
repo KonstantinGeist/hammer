@@ -50,8 +50,6 @@ static void test_can_create_and_dispose_hash_map()
     dispose_memory_reader_and_allocator(&hash_map, &allocator);
 }
 
-#include <stdio.h>
-
 static void test_can_put_and_get_integers_from_hash_map()
 {
     hmAllocator allocator;
