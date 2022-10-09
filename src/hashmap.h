@@ -31,6 +31,7 @@ typedef struct {
     struct _hmHashMapEntry**   buckets;  /* A list of buckets which contain linked lists of entries of size key_size+value_size. */
     hmHashMapHashFunc          hash_func;
     hmHashMapEqualsFunc        equals_func;
+    hmDisposeFunc              key_dispose_func;   // can be HM_NULL
     hmDisposeFunc              value_dispose_func; // can be HM_NULL
     hm_nint                    key_size;
     hm_nint                    value_size;
@@ -47,6 +48,7 @@ hmError hmCreateHashMap(
     struct _hmAllocator* allocator,
     hmHashMapHashFunc    hash_func,
     hmHashMapEqualsFunc  equals_func,
+    hmDisposeFunc        key_dispose_func,
     hmDisposeFunc        value_dispose_func,
     hm_nint              key_size,
     hm_nint              value_size,

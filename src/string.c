@@ -75,3 +75,9 @@ hm_bool hmStringEqualsFunc(void* value1, void* value2)
     hmString* str2 = (hmString*)value2;
     return hmStringEquals(str1, str2);
 }
+
+hmError hmStringDisposeFunc(void* obj)
+{
+    hmString* str = (hmString*)obj;
+    return hmStringDispose(str);
+}

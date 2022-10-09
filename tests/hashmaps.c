@@ -36,7 +36,8 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
         allocator,
         &hmNintHashFunc,
         &hmNintEqualsFunc,
-        HM_NULL, // dispose_func
+        HM_NULL, // key_dispose_func
+        HM_NULL, // value_dispose_func
         sizeof(hm_nint),
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
@@ -46,19 +47,13 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
     HM_TEST_ASSERT_OK(err);
 }
 
-static hmError string_dispose_func(void* obj)
-{
-    hmString* str = (hmString*)obj;
-    return hmStringDispose(str);
-}
-
 static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* hash_map, hmAllocator* allocator)
 {
     hmError err = hmCreateSystemAllocator(allocator);
     HM_TEST_ASSERT_OK(err);
     err = hmCreateHashMapWithStringKeys(
         allocator,
-        &string_dispose_func, // value_dispose_func
+        &hmStringDisposeFunc, // value_dispose_func
         sizeof(hmString),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
