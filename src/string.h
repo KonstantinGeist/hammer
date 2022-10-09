@@ -31,7 +31,7 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2);
 #define hmStringLength(string) (string)->length
 #define hmStringContent(string) (string)->content
 
-int hmStringHashFunc(void* key);
+hm_uint32 hmStringHashFunc(void* key);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);
 hmError hmStringDisposeFunc(void* obj);
 

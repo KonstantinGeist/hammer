@@ -13,6 +13,7 @@
 
 #include "hashmap.h"
 #include "allocator.h"
+#include "hash.h"
 #include "string.h"
 
 typedef struct _hmHashMapEntry {
@@ -25,8 +26,21 @@ typedef struct _hmHashMapEntry {
 
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 {
-    int hash = hash_map->hash_func(key);
-    return abs(hash % hash_map->bucket_count);
+    hm_uint32 hash;
+    if (hash_map->hash_func) {
+        hash = hash_map->hash_func(key);
+    } else {
+        hash = hmHash(key, hash_map->key_size);
+    }
+    return hash % hash_map->bucket_count;
+}
+
+static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2)
+{
+    if (hash_map->equals_func) {
+        return hash_map->equals_func(value1, value2);
+    }
+    return memcmp(value1, value2, hash_map->key_size) == 0;
 }
 
 static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key)
@@ -34,7 +48,7 @@ static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map
     hmHashMapEntry* entry = hash_map->buckets[bucket_index];
     while (entry) {
         void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
-        if (hash_map->equals_func(key, key_candidate)) {
+        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
             return entry;
         }
         entry = entry->next;
@@ -61,7 +75,7 @@ hmError hmCreateHashMap(
     hmHashMap*           in_hashmap
 )
 {
-    if (!hash_func || !equals_func || !initial_capacity || load_factor <= 0.5 || load_factor > 1.0) {
+    if (!initial_capacity || load_factor <= 0.5 || load_factor > 1.0) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     in_hashmap->buckets = hmAllocZeroInitialized(allocator, sizeof(hmHashMapEntry*)*initial_capacity);
@@ -196,7 +210,7 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
     hmHashMapEntry* prev_entry = HM_NULL;
     while (entry) {
         void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
-        if (hash_map->equals_func(key, key_candidate)) {
+        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
             if (hash_map->key_dispose_func) {
                 hmError err = hash_map->key_dispose_func(key_candidate);
                 if (err != HM_OK) {

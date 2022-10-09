@@ -11,12 +11,11 @@
 //
 // *****************************************************************************
 
-#ifndef HM_PRIMITIVES_H
-#define HM_PRIMITIVES_H
+#ifndef HM_HASH_H
+#define HM_HASH_H
 
 #include "common.h"
 
-hm_uint32 hmNintHashFunc(void* key);
-hm_bool hmNintEqualsFunc(void* value1, void* value2);
+hm_uint32 hmHash(void* bytes, hm_nint size);
 
-#endif /* HM_PRIMITIVES_H */
+#endif /* HM_HASH_H */

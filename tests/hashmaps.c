@@ -20,6 +20,10 @@
 
 #define ITERATION_COUNT 1000
 
+typedef struct {
+    int x, y;
+} Point;
+
 static void create_string_from_nint(hmAllocator* allocator, hm_nint i, hmString* string)
 {
     char buf[64];
@@ -39,6 +43,25 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
         HM_NULL, // key_dispose_func
         HM_NULL, // value_dispose_func
         sizeof(hm_nint),
+        sizeof(hm_nint),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        hash_map
+    );
+    HM_TEST_ASSERT_OK(err);
+}
+
+static void create_point_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator* allocator)
+{
+    hmError err = hmCreateSystemAllocator(allocator);
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateHashMap(
+        allocator,
+        HM_NULL, // hash_func
+        HM_NULL, // equals_func
+        HM_NULL, // key_dispose_func
+        HM_NULL, // value_dispose_func
+        sizeof(Point),
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -217,6 +240,25 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
+static void test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_point_hash_map_and_allocator(&hash_map, &allocator);
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // also tests rehashing
+        Point value;
+        value.x = i*20;
+        value.y = i*30;
+        hmError err = hmHashMapPut(&hash_map, &value, &i);
+        HM_TEST_ASSERT_OK(err);
+        hm_nint retrieved_value;
+        err = hmHashMapGet(&hash_map, &value, &retrieved_value);
+        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT(i == retrieved_value);
+    }
+    dispose_hash_map_and_allocator(&hash_map, &allocator);
+}
+
 void test_hashmaps()
 {
     test_can_create_and_dispose_hash_map();
@@ -226,4 +268,5 @@ void test_hashmaps()
     test_hash_map_reports_nothing_was_removed();
     test_hash_map_reports_correct_count();
     test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func();
+    test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs();
 }

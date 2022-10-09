@@ -23,7 +23,7 @@
 struct _hmAllocator;
 struct _hmHashMapEntry;
 
-typedef int(*hmHashMapHashFunc)(void* key);
+typedef hm_uint32(*hmHashMapHashFunc)(void* key);
 typedef hm_bool(*hmHashMapEqualsFunc)(void* value1, void* value2);
 
 typedef struct {
@@ -43,7 +43,9 @@ typedef struct {
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
    Load factor should be between 0.5 and 1.0 (preferred value is HM_DEFAULT_HASHMAP_LOAD_FACTOR).
-   Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY. */
+   Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY.
+   key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
+   hash_func and equals_func can be null (in that case, bitwise comparisons are made). */
 hmError hmCreateHashMap(
     struct _hmAllocator* allocator,
     hmHashMapHashFunc    hash_func,

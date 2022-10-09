@@ -13,6 +13,7 @@
 
 #include "string.h"
 #include "allocator.h"
+#include "hash.h"
 
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string)
 {
@@ -53,20 +54,10 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2)
     return strcmp(string1->content, string2->content) == 0;
 }
 
-int hmStringHashFunc(void* key)
+hm_uint32 hmStringHashFunc(void* key)
 {
     hmString* str = (hmString*)key;
-    hm_uint32 hash, i;
-    for(hash = i = 0; i < str->length; ++i)
-    {
-        hash += str->content[i];
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-    }
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-    return hash;
+    return hmHash(str->content, str->length);
 }
 
 hm_bool hmStringEqualsFunc(void* value1, void* value2)

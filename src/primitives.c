@@ -13,9 +13,9 @@
 
 #include "primitives.h"
 
-int hmNintHashFunc(void* key)
+hm_uint32 hmNintHashFunc(void* key)
 {
-    int x = (int)(*((hm_nint*)key));
+    hm_uint32 x = (hm_uint32)(*((hm_nint*)key));
     x = ((x >> 16) ^ x) * 0x119de1f3;
     x = ((x >> 16) ^ x) * 0x119de1f3;
     x = (x >> 16) ^ x;
