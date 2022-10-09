@@ -27,7 +27,11 @@ typedef struct {
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
+hm_bool hmStringEquals(hmString* string1, hmString* string2);
 #define hmStringLength(string) (string)->length
 #define hmStringContent(string) (string)->content
+
+int hmStringHashFunc(void* key);
+hm_bool hmStringEqualsFunc(void* value1, void* value2);
 
 #endif /* HM_STRING_H */

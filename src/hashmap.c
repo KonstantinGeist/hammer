@@ -13,6 +13,7 @@
 
 #include "hashmap.h"
 #include "allocator.h"
+#include "string.h"
 
 typedef struct _hmHashMapEntry {
     struct _hmHashMapEntry* next;
@@ -51,7 +52,7 @@ hmError hmCreateHashMap(
     struct _hmAllocator* allocator,
     hmHashMapHashFunc    hash_func,
     hmHashMapEqualsFunc  equals_func,
-    hmDisposeFunc        dispose_func,
+    hmDisposeFunc        value_dispose_func,
     hm_nint              key_size,
     hm_nint              value_size,
     hm_nint              initial_capacity,
@@ -69,7 +70,7 @@ hmError hmCreateHashMap(
     in_hashmap->allocator = allocator;
     in_hashmap->hash_func = hash_func;
     in_hashmap->equals_func = equals_func;
-    in_hashmap->dispose_func = dispose_func;
+    in_hashmap->value_dispose_func = value_dispose_func;
     in_hashmap->key_size = key_size;
     in_hashmap->value_size = value_size;
     in_hashmap->count = 0;
@@ -77,6 +78,28 @@ hmError hmCreateHashMap(
     in_hashmap->threshold = (hm_nint)(initial_capacity * load_factor);
     in_hashmap->load_factor = load_factor;
     return HM_OK;
+}
+
+hmError hmCreateHashMapWithStringKeys(
+    struct _hmAllocator* allocator,
+    hmDisposeFunc        value_dispose_func,
+    hm_nint              value_size,
+    hm_nint              initial_capacity,
+    hm_float             load_factor,
+    hmHashMap*           in_hashmap
+)
+{
+    return hmCreateHashMap(
+        allocator,
+        &hmStringHashFunc,
+        &hmStringEqualsFunc,
+        value_dispose_func,
+        sizeof(hmString),
+        value_size,
+        initial_capacity,
+        load_factor,
+        in_hashmap
+    );
 }
 
 static hmError hmHashMapRehash(hmHashMap* hash_map)
@@ -126,8 +149,8 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     hmHashMapEntry* entry = hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
     if (entry) {
         void* value_dest = hmHashMapEntryGetValue(hash_map, entry);
-        if (hash_map->dispose_func) {
-            hmError err = hash_map->dispose_func(value_dest);
+        if (hash_map->value_dispose_func) {
+            hmError err = hash_map->value_dispose_func(value_dest);
             if (err != HM_OK) {
                 return err;
             }
@@ -171,9 +194,9 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
     while (entry) {
         void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
         if (hash_map->equals_func(key, key_candidate)) {
-            if (hash_map->dispose_func) {
+            if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                hmError err = hash_map->dispose_func(value);
+                hmError err = hash_map->value_dispose_func(value);
                 if (err != HM_OK) {
                     return err;
                 }
@@ -205,9 +228,9 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         hmHashMapEntry* entry = hash_map->buckets[i];
         hmHashMapEntry* next_entry = HM_NULL;
         while (entry) {
-            if (hash_map->dispose_func) {
+            if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                hmError err = hash_map->dispose_func(value);
+                hmError err = hash_map->value_dispose_func(value);
                 if (err != HM_OK) {
                     return err;
                 }

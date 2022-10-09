@@ -44,3 +44,34 @@ hm_bool hmStringEqualsToCString(hmString* string, const char* content)
     }
     return strcmp(string->content, content) == 0;
 }
+
+hm_bool hmStringEquals(hmString* string1, hmString* string2)
+{
+    if (string1->length != string2->length) {
+        return HM_FALSE;
+    }
+    return strcmp(string1->content, string2->content) == 0;
+}
+
+int hmStringHashFunc(void* key)
+{
+    hmString* str = (hmString*)key;
+    hm_uint32 hash, i;
+    for(hash = i = 0; i < str->length; ++i)
+    {
+        hash += str->content[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+    return hash;
+}
+
+hm_bool hmStringEqualsFunc(void* value1, void* value2)
+{
+    hmString* str1 = (hmString*)value1;
+    hmString* str2 = (hmString*)value2;
+    return hmStringEquals(str1, str2);
+}

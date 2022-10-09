@@ -32,8 +32,8 @@
 
 /* Platform-specific integer size. */
 typedef size_t hm_nint;
-/* 8-bit integer. */
 typedef uint8_t hm_uint8;
+typedef uint32_t hm_uint32;
 
 typedef uint8_t hm_bool;
 #define HM_TRUE ((hm_bool)1)
