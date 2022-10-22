@@ -58,8 +58,17 @@ hmError hmCreateHashMap(
     hm_float             load_factor,
     hmHashMap*           in_hashmap
 );
-/* A helper function over hmCreateHashMap to create a hashmap whose keys are strings (the most common case). */
+/* A helper function over hmCreateHashMap to create a hashmap whose keys are strings (one of the most common cases). */
 hmError hmCreateHashMapWithStringKeys(
+    struct _hmAllocator* allocator,
+    hmDisposeFunc        value_dispose_func,
+    hm_nint              value_size,
+    hm_nint              initial_capacity,
+    hm_float             load_factor,
+    hmHashMap*           in_hashmap
+);
+/* A helper function over hmCreateHashMap to create a hashmap whose keys are string references (one of the most common cases). */
+hmError hmCreateHashMapWithStringRefKeys(
     struct _hmAllocator* allocator,
     hmDisposeFunc        value_dispose_func,
     hm_nint              value_size,

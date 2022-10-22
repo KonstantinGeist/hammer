@@ -119,6 +119,29 @@ hmError hmCreateHashMapWithStringKeys(
     );
 }
 
+hmError hmCreateHashMapWithStringRefKeys(
+    struct _hmAllocator* allocator,
+    hmDisposeFunc        value_dispose_func,
+    hm_nint              value_size,
+    hm_nint              initial_capacity,
+    hm_float             load_factor,
+    hmHashMap*           in_hashmap
+)
+{
+    return hmCreateHashMap(
+        allocator,
+        &hmStringRefHashFunc,
+        &hmStringRefEqualsFunc,
+        HM_NULL,
+        value_dispose_func,
+        sizeof(hmString*),
+        value_size,
+        initial_capacity,
+        load_factor,
+        in_hashmap
+    );
+}
+
 static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;

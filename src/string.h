@@ -25,6 +25,7 @@ typedef struct {
 } hmString;
 
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
+hmError hmStringDuplicate(hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
@@ -34,5 +35,10 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2);
 hm_uint32 hmStringHashFunc(void* key);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);
 hmError hmStringDisposeFunc(void* obj);
+
+/* Sometimes containers may need references to strings someone else owns. These hash/equals functions
+   allow to operate on string references instead of strings themselves. */
+hm_uint32 hmStringRefHashFunc(void* key);
+hm_bool hmStringRefEqualsFunc(void* value1, void* value2);
 
 #endif /* HM_STRING_H */

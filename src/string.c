@@ -46,6 +46,11 @@ hm_bool hmStringEqualsToCString(hmString* string, const char* content)
     return strcmp(string->content, content) == 0;
 }
 
+hmError hmStringDuplicate(hmString* string, hmString* in_duplicate)
+{
+    return hmCreateStringFromCString(string->allocator, string->content, in_duplicate);
+}
+
 hm_bool hmStringEquals(hmString* string1, hmString* string2)
 {
     if (string1->length != string2->length) {
@@ -71,4 +76,17 @@ hmError hmStringDisposeFunc(void* obj)
 {
     hmString* str = (hmString*)obj;
     return hmStringDispose(str);
+}
+
+hm_uint32 hmStringRefHashFunc(void* key)
+{
+    hmString* str = *((hmString**)key);
+    return hmHash(str->content, str->length);
+}
+
+hm_bool hmStringRefEqualsFunc(void* value1, void* value2)
+{
+    hmString* str1 = *((hmString**)value1);
+    hmString* str2 = *((hmString**)value2);
+    return hmStringEquals(str1, str2);
 }
