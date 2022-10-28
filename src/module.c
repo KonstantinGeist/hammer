@@ -57,7 +57,7 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* im
     err = hmModuleRegistryLoadModules(registry, db);
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_PLATFORM_DEPENDENT;
+        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
     }
     return err;
 }
@@ -73,7 +73,6 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
     return HM_OK;
 }
 
-// TODO
 static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmString* name)
 {
     hmModule module;
@@ -81,17 +80,21 @@ static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmStri
     if (err != HM_OK) {
         return err;
     }
+    HM_TEMP_SHOULD_DEALLOC(module)
     hmString name_key;
     err = hmStringDuplicate(registry->allocator, name, &name_key);
     if (err != HM_OK) {
-        // TODO dispose of module
-        return err;
+        return hmCombineErrors(err, hmModuleDispose(&module));
     }
+    HM_TEMP_SHOULD_DEALLOC(name_key)
     err = hmHashMapPut(&registry->modules, &name_key, &module);
     if (err != HM_OK) {
-        // TODO dispose of module and name_key
+        err = hmCombineErrors(err, hmStringDispose(&name_key));
+        err = hmCombineErrors(err, hmModuleDispose(&module));
         return err;
     }
+    HM_MOVED(module, registry->modules)
+    HM_MOVED(name_key, registry->modules)
     return HM_OK;
 }
 
@@ -116,11 +119,12 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
             case SQLITE_ROW:
                 {
                     const char* name = sqlite3_column_text(stmt, 0);
-                    hmString name_view;
+                    hmString name_view; // temporary, view
                     err = hmCreateStringViewFromCString(name, &name_view);
                     if (err != HM_OK) {
                         goto exit;
                     }
+                    HM_TEMP_VIEW(name_view)
                     err = hmModuleRegistryRegisterModule(registry, &name_view);
                     if (err != HM_OK) {
                         goto exit;
@@ -137,7 +141,7 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
 exit:
     sqlite_err = sqlite3_finalize(stmt);
     if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_PLATFORM_DEPENDENT;
+        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
     }
     return err;
 }
@@ -148,6 +152,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* 
     if (err != HM_OK) {
         return err;
     }
+    HM_TEMP_SHOULD_DEALLOC(in_module->name)
     err = hmCreateHashMapWithStringKeys(
         allocator,
         &hmClassDisposeFunc, // value_dispose_func
@@ -157,22 +162,16 @@ static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* 
         &in_module->classes
     );
     if (err != HM_OK) {
-        hmError err2 = hmStringDispose(&in_module->name);
-        if (err2 != HM_OK) {
-            err = err2;
-        }
-        return err;
+        return hmCombineErrors(err, hmStringDispose(&in_module->name));
     }
+    HM_MOVED(in_module->name, in_module)
     return HM_OK;
 }
 
 static hmError hmModuleDispose(hmModule* module)
 {
     hmError err = hmStringDispose(&module->name);
-    if (err != HM_OK) {
-        return err;
-    }
-    return hmHashMapDispose(&module->classes);
+    return hmCombineErrors(err, hmHashMapDispose(&module->classes));
 }
 
 static hmError hmModuleDisposeFunc(void* object)

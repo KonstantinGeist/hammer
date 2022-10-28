@@ -55,8 +55,22 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
 #define HM_ERROR_INVALID_IMAGE      ((hmError)7) /* Invalid binary data found. */
 
+/* Allows to combine several errors into one. Usually useful when a new error occurs while processing another error. */
+hmError hmCombineErrors(hmError older, hmError newer);
+
 /* A generic function which is able to dispose of an object. Used in containers to automatically delete items
    on container destruction. */
 typedef hmError (*hmDisposeFunc)(void* object);
+
+/* Special attributes to extend C semantics with some human-readable metadata about how memory is managed. */
+
+/* The variable is temporary and should be deallocated, unless its ownership is moved somewhere else. */
+#define HM_TEMP_SHOULD_DEALLOC(var)
+/* The variable is temporary and it should not be deallocated, because it's a view; however, as a view,
+   its content may get invalidated when the original object is invalidated. */
+#define HM_TEMP_VIEW(var)
+/* The temporary variable was successfully moved because its content's ownership was transferred to another
+   entity; you don't need to deallocated it anymore if it was a temporary; may be problematic with views. */
+#define HM_MOVED(from, to)
 
 #endif /* HM_COMMON_H */
