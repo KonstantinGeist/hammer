@@ -18,6 +18,8 @@ There are several conventions to follow:
 * For interfaces, implement easy-to-use wrappers (which deal with selecting the function pointer and passing "this" to it).
   Always validate arguments in the implementations themselves, not the wrappers. Such pointers should be in the same
   translation unit for possible inlining.
+* By default, ownership belongs to whoever created an object. Never try to dispose of objects you do not own.
+  If you take a reference to an object you do not own, pay attention to its lifetime to avoid using disposed objects.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

@@ -24,8 +24,16 @@ typedef struct {
     hm_nint              length;     /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
 } hmString;
 
+/* Creates a Hammer string from a C string. Duplicates the given string and owns it: deallocates the internal buffer when the
+   object is disposed of. See also hmCreateStringViewFromCString. */
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
-hmError hmStringDuplicate(hmString* string, hmString* in_duplicate);
+/* Creates a Hammer string from a C string. Unlike hmCreateStringFromCString (see), does not duplicate the string
+   and does not own the internal buffer. The string view will be invalidated after the referenced string
+   is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived
+   views for reading, for example, as a key to a container (if the container promises to never retain the value).
+   String views should not be disposed, but it should be safe to try to dispose them. */
+hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
+hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);

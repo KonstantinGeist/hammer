@@ -15,7 +15,7 @@
 #include "allocator.h"
 #include "hash.h"
 
-hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string)
+hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
@@ -32,9 +32,22 @@ hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* co
     return HM_OK;
 }
 
+hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
+{
+    if (!content) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    in_string->content = (char*)content;
+    in_string->allocator = HM_NULL;
+    in_string->length = strlen(content);
+    return HM_OK;
+}
+
 hmError hmStringDispose(hmString* string)
 {
-    hmFree(string->allocator, string->content);
+    if (string->allocator) {
+        hmFree(string->allocator, string->content);
+    }
     return HM_OK;
 }
 
@@ -46,9 +59,9 @@ hm_bool hmStringEqualsToCString(hmString* string, const char* content)
     return strcmp(string->content, content) == 0;
 }
 
-hmError hmStringDuplicate(hmString* string, hmString* in_duplicate)
+hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate)
 {
-    return hmCreateStringFromCString(string->allocator, string->content, in_duplicate);
+    return hmCreateStringFromCString(allocator, string->content, in_duplicate);
 }
 
 hm_bool hmStringEquals(hmString* string1, hmString* string2)

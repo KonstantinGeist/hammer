@@ -79,8 +79,12 @@ hmError hmCreateHashMapWithStringRefKeys(
 /* Puts a value in the map by the given key. Note that if dispose_func is provided, it's always called on the old value,
    even if it's the same value -- which can lead to use-after-free if used without care. */
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value);
-/* Tries to retrieve an element from the map. Returns HM_ERROR_NOT_FOUND if no element by the given key is found. */
+/* Tries to retrieve an element from the map. Returns HM_ERROR_NOT_FOUND if no element by the given key is found.
+   Never retains the key value (safe to use with views). The returned value is copied by value; that is, it's not safe
+   to delete such an object if its ownership belongs to the hashmap. Use hmHashMapGetRef if you need a reference. */
 hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value);
+/* Same as hmHashMapGet, except returns a pointer to the value directly as stored in the hashmap, instead of copying it by value. */
+hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);

@@ -226,6 +226,16 @@ hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value)
     return HM_OK;
 }
 
+hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value)
+{
+    hmHashMapEntry* entry = hmHashMapEntryFindByKey(hash_map, key);
+    if (!entry) {
+        return HM_ERROR_NOT_FOUND;
+    }
+    *in_value = hmHashMapEntryGetValue(hash_map, entry);
+    return HM_OK;
+}
+
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
 {
     hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);

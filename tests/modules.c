@@ -36,25 +36,33 @@ static void dispose_module_registry_and_allocator(hmModuleRegistry* module_regis
 
 static void test_can_load_existing_module()
 {
+    #define CORE_MODULE_NAME "core"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry(&module_registry, &allocator);
-    hmModule* module;
-    hmError err = hmModuleRegistryGetModuleByName(&module_registry, "core", &module);
+    hmString code_module_name;
+    hmError err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &code_module_name);
+    HM_TEST_ASSERT_OK(err);
+    hmModule* module = HM_NULL;
+    err = hmModuleRegistryGetModuleRefByName(&module_registry, &code_module_name, &module);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(module != HM_NULL);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleName(module), "core"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleName(module), CORE_MODULE_NAME));
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
 static void test_cannot_load_nonexisting_module()
 {
+    #define NON_EXISTING_MODULE_NAME "non_existing"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry(&module_registry, &allocator);
-    hmModule* module;
-    hmError err = hmModuleRegistryGetModuleByName(&module_registry, "non_existing", &module);
+    hmString non_existing_module_name;
+    hmError err = hmCreateStringViewFromCString(NON_EXISTING_MODULE_NAME, &non_existing_module_name);
     HM_TEST_ASSERT_OK(err);
+    hmModule* module = HM_NULL;
+    err = hmModuleRegistryGetModuleRefByName(&module_registry, &non_existing_module_name, &module);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
     HM_TEST_ASSERT(module == HM_NULL);
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }

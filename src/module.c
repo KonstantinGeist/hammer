@@ -16,17 +16,19 @@
 #include "sqlite3.h"
 
 static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db);
-static hmError hmCreateModule(hmAllocator* allocator, const char* name, hmModule* in_module);
+static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* in_module);
 static hmError hmModuleDispose(hmModule* module);
 static hmError hmModuleDisposeFunc(void* object);
+static hmError hmClassDisposeFunc(void* object);
 
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
-    hmError err = hmCreateArray(
+    hmError err = hmCreateHashMapWithStringKeys(
         allocator,
+        &hmModuleDisposeFunc, // value_dispose_func
         sizeof(hmModule),
-        HM_DEFAULT_ARRAY_CAPACITY,
-        &hmModuleDisposeFunc,
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
         &in_registry->modules
     );
     if (err != HM_OK) {
@@ -38,10 +40,9 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
 
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 {
-    return hmArrayDispose(&registry->modules);
+    return hmHashMapDispose(&registry->modules);
 }
 
-// TODO validation step after loading
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path)
 {
     if (!image_path) {
@@ -54,15 +55,44 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* im
         return HM_ERROR_NOT_FOUND;
     }
     err = hmModuleRegistryLoadModules(registry, db);
-    if (err != HM_OK) {
-        goto exit;
-    }
-exit:
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
         err = HM_ERROR_PLATFORM_DEPENDENT;
     }
     return err;
+}
+
+hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module)
+{
+    void* module_ref;
+    hmError err = hmHashMapGetRef(&registry->modules, name, &module_ref);
+    if (err != HM_OK) {
+        return err;
+    }
+    *out_module = (hmModule*)module_ref;
+    return HM_OK;
+}
+
+// TODO
+static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmString* name)
+{
+    hmModule module;
+    hmError err = hmCreateModule(registry->allocator, name, &module);
+    if (err != HM_OK) {
+        return err;
+    }
+    hmString name_key;
+    err = hmStringDuplicate(registry->allocator, name, &name_key);
+    if (err != HM_OK) {
+        // TODO dispose of module
+        return err;
+    }
+    err = hmHashMapPut(&registry->modules, &name_key, &module);
+    if (err != HM_OK) {
+        // TODO dispose of module and name_key
+        return err;
+    }
+    return HM_OK;
 }
 
 static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db)
@@ -86,17 +116,13 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
             case SQLITE_ROW:
                 {
                     const char* name = sqlite3_column_text(stmt, 0);
-                    hmModule module;
-                    err = hmCreateModule(registry->allocator, name, &module);
+                    hmString name_view;
+                    err = hmCreateStringViewFromCString(name, &name_view);
                     if (err != HM_OK) {
                         goto exit;
                     }
-                    err = hmArrayAdd(&registry->modules, &module);
+                    err = hmModuleRegistryRegisterModule(registry, &name_view);
                     if (err != HM_OK) {
-                        hmError err2 = hmModuleDispose(&module);
-                        if (err2 != HM_OK) {
-                            err = err2;
-                        }
                         goto exit;
                     }
                 }
@@ -116,31 +142,20 @@ exit:
     return err;
 }
 
-// TODO use a hashmap to avoid a linear scan
-hmError hmModuleRegistryGetModuleByName(hmModuleRegistry* registry, const char* name, hmModule** out_module)
+static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* in_module)
 {
-    if (!name) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
-    hmModule* module = hmArrayRaw(&registry->modules, hmModule);
-    for (hm_nint i = 0; i < hmArrayCount(&registry->modules); i++) {
-        if (hmStringEqualsToCString(&module->name, name)) {
-            *out_module = module;
-            return HM_OK;
-        }
-        module++;
-    }
-    *out_module = HM_NULL;
-    return HM_OK;
-}
-
-static hmError hmCreateModule(hmAllocator* allocator, const char* name, hmModule* in_module)
-{
-    hmError err = hmCreateStringFromCString(allocator, name, &in_module->name);
+    hmError err = hmStringDuplicate(allocator, name, &in_module->name);
     if (err != HM_OK) {
         return err;
     }
-    err = hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_module->classes);
+    err = hmCreateHashMapWithStringKeys(
+        allocator,
+        &hmClassDisposeFunc, // value_dispose_func
+        sizeof(hmClass),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        &in_module->classes
+    );
     if (err != HM_OK) {
         hmError err2 = hmStringDispose(&in_module->name);
         if (err2 != HM_OK) {
@@ -157,11 +172,17 @@ static hmError hmModuleDispose(hmModule* module)
     if (err != HM_OK) {
         return err;
     }
-    return hmArrayDispose(&module->classes);
+    return hmHashMapDispose(&module->classes);
 }
 
 static hmError hmModuleDisposeFunc(void* object)
 {
     hmModule* module = (hmModule*)object;
     return hmModuleDispose(module);
+}
+
+static hmError hmClassDisposeFunc(void* object)
+{
+    // TODO
+    return HM_OK;
 }
