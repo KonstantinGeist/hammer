@@ -259,6 +259,28 @@ static void test_can_put_remove_and_get_strings_from_hash_map_without_hash_equal
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
+static void test_can_get_value_by_ref()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_integer_hash_map_and_allocator(&hash_map, &allocator);
+    hm_nint key = 10;
+    hm_nint value = 20;
+    hmError err = hmHashMapPut(&hash_map, &key, &value);
+    HM_TEST_ASSERT_OK(err);
+    void* retrieved_value_by_ref;
+    err = hmHashMapGetRef(&hash_map, &key, &retrieved_value_by_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(retrieved_value_by_ref != HM_NULL);
+    HM_TEST_ASSERT(*((hm_nint*)retrieved_value_by_ref) == value);
+    *((hm_nint*)retrieved_value_by_ref) = 13;
+    hm_nint retrieved_value;
+    err = hmHashMapGet(&hash_map, &key, &retrieved_value);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(retrieved_value == 13);
+    dispose_hash_map_and_allocator(&hash_map, &allocator);
+}
+
 void test_hashmaps()
 {
     test_can_create_and_dispose_hash_map();
@@ -269,4 +291,5 @@ void test_hashmaps()
     test_hash_map_reports_correct_count();
     test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func();
     test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs();
+    test_can_get_value_by_ref();
 }
