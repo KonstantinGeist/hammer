@@ -11,11 +11,27 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_utils();
-void test_hashmaps();
-void test_hashes();
+#include "common.h"
+#include "../src/hash.h"
+
+static void test_hashes_empty_array()
+{
+    char bytes[1];
+    hm_uint32 hash = hmHash(&bytes[0], 0);
+    HM_TEST_ASSERT(hash == 0);
+}
+
+#include <stdio.h>
+
+static void test_hashes_non_empty_array()
+{
+    char bytes[8] = {'0', '1', '2', '3', '4', '5', '6', '7', '8'};
+    hm_uint32 hash = hmHash(&bytes[0], sizeof(char)*8);
+    HM_TEST_ASSERT(hash == 1335117771); // precomputed
+}
+
+void test_hashes()
+{
+    test_hashes_empty_array();
+    test_hashes_non_empty_array();
+}

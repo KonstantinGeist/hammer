@@ -15,6 +15,9 @@
 
 hm_uint32 hmHash(void* bytes, hm_nint size)
 {
+    if (!size) {
+        return 0;
+    }
     hm_uint32 hash, i;
     for(hash = i = 0; i < size; ++i)
     {

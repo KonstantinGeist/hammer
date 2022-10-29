@@ -22,5 +22,6 @@ int main()
     test_strings();
     test_utils();
     test_hashmaps();
+    test_hashes();
     return 0;
 }
