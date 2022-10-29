@@ -42,10 +42,7 @@ hmError hmArrayDispose(hmArray* array)
     if (array->item_dispose_func) {
         char* item = array->items;
         for (hm_nint i = 0; i < array->count; i++) {
-            hmError err = array->item_dispose_func(item);
-            if (err != HM_OK) {
-                return HM_OK;
-            }
+            HM_TRY(array->item_dispose_func(item));
             item += array->item_size;
         }
     }
@@ -111,10 +108,8 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
     if (array_expand_func) {
         char* item = array->items+array->count*array->item_size;
         for (hm_nint i = 0; i < count; i++) {
-            hmError err = array_expand_func(array, array->count+i, item, user_data);
-            if (err != HM_OK) {
-                return err; // NOTE: no need to deallocate array->items on error
-            }
+            // NOTE: no need to deallocate array->items on error
+            HM_TRY(array_expand_func(array, array->count+i, item, user_data));
             item += array->item_size;
         }
     } else {

@@ -73,4 +73,7 @@ typedef hmError (*hmDisposeFunc)(void* object);
    entity; you don't need to deallocated it anymore if it was a temporary; may be problematic with views. */
 #define HM_MOVED(from, to)
 
+/* A handy macro which checks the error as returned by the given expression and immediately returns if it's not HM_OK. */
+#define HM_TRY(expr) hmError err ## __LINE__ = expr; if (err ## __LINE__ != HM_OK) return err ## __LINE__
+
 #endif /* HM_COMMON_H */

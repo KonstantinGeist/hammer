@@ -180,20 +180,14 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
 {
     if (hash_map->count > hash_map->threshold) {
-        hmError err = hmHashMapRehash(hash_map);
-        if (err != HM_OK) {
-            return err;
-        }
+        HM_TRY(hmHashMapRehash(hash_map));
     }
     hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
     hmHashMapEntry* entry = hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
     if (entry) {
         void* value_dest = hmHashMapEntryGetValue(hash_map, entry);
         if (hash_map->value_dispose_func) {
-            hmError err = hash_map->value_dispose_func(value_dest);
-            if (err != HM_OK) {
-                return err;
-            }
+            HM_TRY(hash_map->value_dispose_func(value_dest));
         }
         memcpy(value_dest, value, hash_map->value_size);
         return HM_OK;
@@ -245,17 +239,11 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
         void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
         if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
             if (hash_map->key_dispose_func) {
-                hmError err = hash_map->key_dispose_func(key_candidate);
-                if (err != HM_OK) {
-                    return err;
-                }
+                HM_TRY(hash_map->key_dispose_func(key_candidate));
             }
             if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                hmError err = hash_map->value_dispose_func(value);
-                if (err != HM_OK) {
-                    return err;
-                }
+                HM_TRY(hash_map->value_dispose_func(value));
             }
             if (prev_entry == HM_NULL) {
                 hash_map->buckets[bucket_index] = entry->next;
@@ -286,17 +274,11 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         while (entry) {
             if (hash_map->key_dispose_func) {
                 void* key = hmHashMapEntryGetKey(hash_map, entry);
-                hmError err = hash_map->key_dispose_func(key);
-                if (err != HM_OK) {
-                    return err;
-                }
+                HM_TRY(hash_map->key_dispose_func(key));
             }
             if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                hmError err = hash_map->value_dispose_func(value);
-                if (err != HM_OK) {
-                    return err;
-                }
+                HM_TRY(hash_map->value_dispose_func(value));
             }
             next_entry = entry->next;
             hmFree(hash_map->allocator, entry);

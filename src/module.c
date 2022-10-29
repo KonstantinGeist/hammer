@@ -23,17 +23,14 @@ static hmError hmClassDisposeFunc(void* object);
 
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
-    hmError err = hmCreateHashMapWithStringKeys(
+    HM_TRY(hmCreateHashMapWithStringKeys(
         allocator,
         &hmModuleDisposeFunc, // value_dispose_func
         sizeof(hmModule),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
         &in_registry->modules
-    );
-    if (err != HM_OK) {
-        return err;
-    }
+    ));
     in_registry->allocator = allocator;
     return HM_OK;
 }
@@ -65,10 +62,7 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* im
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module)
 {
     void* module_ref;
-    hmError err = hmHashMapGetRef(&registry->modules, name, &module_ref);
-    if (err != HM_OK) {
-        return err;
-    }
+    HM_TRY(hmHashMapGetRef(&registry->modules, name, &module_ref));
     *out_module = (hmModule*)module_ref;
     return HM_OK;
 }
@@ -76,13 +70,10 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
 static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmString* name)
 {
     hmModule module;
-    hmError err = hmCreateModule(registry->allocator, name, &module);
-    if (err != HM_OK) {
-        return err;
-    }
+    HM_TRY(hmCreateModule(registry->allocator, name, &module));
     HM_TEMP_SHOULD_DEALLOC(module)
     hmString name_key;
-    err = hmStringDuplicate(registry->allocator, name, &name_key);
+    hmError err = hmStringDuplicate(registry->allocator, name, &name_key);
     if (err != HM_OK) {
         return hmCombineErrors(err, hmModuleDispose(&module));
     }
@@ -148,12 +139,9 @@ exit:
 
 static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* in_module)
 {
-    hmError err = hmStringDuplicate(allocator, name, &in_module->name);
-    if (err != HM_OK) {
-        return err;
-    }
+    HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
     HM_TEMP_SHOULD_DEALLOC(in_module->name)
-    err = hmCreateHashMapWithStringKeys(
+    hmError err = hmCreateHashMapWithStringKeys(
         allocator,
         &hmClassDisposeFunc, // value_dispose_func
         sizeof(hmClass),
