@@ -259,7 +259,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_without_hash_equal
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
-static void test_can_get_value_by_ref()
+static void test_hashmap_can_get_value_by_ref()
 {
     hmAllocator allocator;
     hmHashMap hash_map;
@@ -291,5 +291,5 @@ void test_hashmaps()
     test_hash_map_reports_correct_count();
     test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func();
     test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs();
-    test_can_get_value_by_ref();
+    test_hashmap_can_get_value_by_ref();
 }

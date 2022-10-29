@@ -11,18 +11,21 @@
 //
 // *****************************************************************************
 
-#include "tests/tests.h"
+#include "common.h"
 
-int main()
+static void test_can_combine_errors()
 {
-    test_allocators();
-    test_readers();
-    test_arrays();
-    test_modules();
-    test_strings();
-    test_utils();
-    test_hashmaps();
-    test_hashes();
-    test_errors();
-    return 0;
+    hmError err = hmCombineErrors(HM_OK, HM_ERROR_OUT_OF_MEMORY);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
+    err = hmCombineErrors(HM_ERROR_OUT_OF_MEMORY, HM_OK);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
+    err = hmCombineErrors(HM_OK, HM_OK);
+    HM_TEST_ASSERT(err == HM_OK);
+    err = hmCombineErrors(HM_ERROR_OUT_OF_MEMORY, HM_ERROR_NOT_FOUND);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
+}
+
+void test_errors()
+{
+    test_can_combine_errors();
 }

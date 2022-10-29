@@ -19,3 +19,4 @@ void test_strings();
 void test_utils();
 void test_hashmaps();
 void test_hashes();
+void test_errors();
