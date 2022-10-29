@@ -101,7 +101,7 @@ static void test_can_hash_string()
     HM_TEST_ASSERT(hash == 847757641); // precomputed
 }
 
-static void test_can_empty_hash_string()
+static void test_can_hash_empty_string()
 {
     hmString string;
     hmError err = hmCreateStringViewFromCString("", &string);
@@ -118,5 +118,5 @@ void test_strings()
     test_can_compare_string_to_c_string();
     test_can_compare_strings();
     test_can_hash_string();
-    test_can_empty_hash_string();
+    test_can_hash_empty_string();
 }

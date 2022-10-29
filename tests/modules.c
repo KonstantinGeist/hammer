@@ -51,7 +51,7 @@ static void test_can_load_existing_module()
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
-static void test_cannot_load_nonexisting_module()
+static void test_cannot_load_non_existing_module()
 {
     #define NON_EXISTING_MODULE_NAME "non_existing"
     hmAllocator allocator;
@@ -70,5 +70,5 @@ static void test_cannot_load_nonexisting_module()
 void test_modules()
 {
     test_can_load_existing_module();
-    test_cannot_load_nonexisting_module();
+    test_cannot_load_non_existing_module();
 }
