@@ -34,6 +34,7 @@
 typedef size_t hm_nint;
 typedef uint8_t hm_uint8;
 typedef uint32_t hm_uint32;
+typedef int32_t hm_int32;
 
 typedef uint8_t hm_bool;
 #define HM_TRUE ((hm_bool)1)

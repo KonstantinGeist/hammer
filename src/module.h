@@ -32,12 +32,14 @@ typedef struct {
 
 typedef struct _hmClass {
     struct _hmAllocator*  allocator;
+    hm_int32             class_id;
     hmString             name;      /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
                                          should be unique in a given module. */
     hmHashMap            methods;   /* hmHashMap<hmString, hmMethod> */
 } hmClass;
 
 typedef struct {
+    hm_int32             module_id;
     hmString             name;      /* The name of the module. Should be unique in a given module registry. */
     hmHashMap            classes;   /* hmHashMap<hmString, hmClass> */
 } hmModule;
@@ -59,5 +61,6 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* im
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module);
 
 #define hmModuleName(module) (module)->name
+#define hmModuleID(module) (module)->module_id
 
 #endif /* HM_MODULE_H */

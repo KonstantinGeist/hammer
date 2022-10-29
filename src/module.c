@@ -16,7 +16,7 @@
 #include "sqlite3.h"
 
 static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db);
-static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* in_module);
+static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module);
 static hmError hmModuleDispose(hmModule* module);
 static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
@@ -67,10 +67,10 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
     return HM_OK;
 }
 
-static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hmString* name)
+static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name)
 {
     hmModule module;
-    HM_TRY(hmCreateModule(registry->allocator, name, &module));
+    HM_TRY(hmCreateModule(registry->allocator, module_id, name, &module));
     HM_TEMP_SHOULD_DEALLOC(module)
     hmString name_key;
     hmError err = hmStringDuplicate(registry->allocator, name, &name_key);
@@ -95,7 +95,7 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
     sqlite3_stmt* stmt;
     int sqlite_err = sqlite3_prepare_v2(
         db,
-        "SELECT name FROM module",
+        "SELECT module_id, name FROM module",
         -1,
         &stmt,
         HM_NULL
@@ -109,14 +109,15 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
         switch (sqlite_err) {
             case SQLITE_ROW:
                 {
-                    const char* name = sqlite3_column_text(stmt, 0);
+                    hm_int32 module_id = sqlite3_column_int(stmt, 0);
+                    const char* name = sqlite3_column_text(stmt, 1);
                     hmString name_view; // temporary, view
                     err = hmCreateStringViewFromCString(name, &name_view);
                     if (err != HM_OK) {
                         goto exit;
                     }
                     HM_TEMP_VIEW(name_view)
-                    err = hmModuleRegistryRegisterModule(registry, &name_view);
+                    err = hmModuleRegistryRegisterModule(registry, module_id, &name_view);
                     if (err != HM_OK) {
                         goto exit;
                     }
@@ -137,7 +138,7 @@ exit:
     return err;
 }
 
-static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* in_module)
+static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
     HM_TEMP_SHOULD_DEALLOC(in_module->name)
@@ -153,6 +154,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hmString* name, hmModule* 
         return hmCombineErrors(err, hmStringDispose(&in_module->name));
     }
     HM_MOVED(in_module->name, in_module)
+    in_module->module_id = module_id;
     return HM_OK;
 }
 

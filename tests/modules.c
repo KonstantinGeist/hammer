@@ -48,6 +48,7 @@ static void test_can_load_existing_module()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(module != HM_NULL);
     HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleName(module), CORE_MODULE_NAME));
+    HM_TEST_ASSERT(hmModuleID(module) == 1);
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
