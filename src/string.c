@@ -72,34 +72,39 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2)
     return strcmp(string1->content, string2->content) == 0;
 }
 
+hm_uint32 hmStringHash(hmString* string)
+{
+    return hmHash(string->content, string->length);
+}
+
 hm_uint32 hmStringHashFunc(void* key)
 {
-    hmString* str = (hmString*)key;
-    return hmHash(str->content, str->length);
+    hmString* string = (hmString*)key;
+    return hmStringHash(string);
 }
 
 hm_bool hmStringEqualsFunc(void* value1, void* value2)
 {
-    hmString* str1 = (hmString*)value1;
-    hmString* str2 = (hmString*)value2;
-    return hmStringEquals(str1, str2);
+    hmString* string1 = (hmString*)value1;
+    hmString* string2 = (hmString*)value2;
+    return hmStringEquals(string1, string2);
 }
 
 hmError hmStringDisposeFunc(void* obj)
 {
-    hmString* str = (hmString*)obj;
-    return hmStringDispose(str);
+    hmString* string = (hmString*)obj;
+    return hmStringDispose(string);
 }
 
 hm_uint32 hmStringRefHashFunc(void* key)
 {
-    hmString* str = *((hmString**)key);
-    return hmHash(str->content, str->length);
+    hmString* string = *((hmString**)key);
+    return hmStringHash(string);
 }
 
 hm_bool hmStringRefEqualsFunc(void* value1, void* value2)
 {
-    hmString* str1 = *((hmString**)value1);
-    hmString* str2 = *((hmString**)value2);
-    return hmStringEquals(str1, str2);
+    hmString* string1 = *((hmString**)value1);
+    hmString* string2 = *((hmString**)value2);
+    return hmStringEquals(string1, string2);
 }

@@ -37,6 +37,7 @@ hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmSt
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
+hm_uint32 hmStringHash(hmString* string);
 #define hmStringLength(string) (string)->length
 #define hmStringContent(string) (string)->content
 
