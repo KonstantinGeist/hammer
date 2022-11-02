@@ -22,7 +22,7 @@ There are several conventions to follow:
   If you take a reference to an object you do not own, pay attention to its lifetime to avoid using disposed objects.
 * Try disposing of objects in destructors to the maximum, combining various potential errors with hmCombineErrors.
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
-* Mark ownership with simple comments: HM_TEMP_SHOULD_DEALLOC, HM_TEMP_VIEW, HM_MOV (see)
+* Mark ownership with simple comments: HM_OWNED, HM_TEMP_VIEW, HM_MOV (see)
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

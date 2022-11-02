@@ -18,5 +18,7 @@
 
 hm_uint32 hmNintHashFunc(void* key);
 hm_bool hmNintEqualsFunc(void* value1, void* value2);
+hm_uint32 hmInt32HashFunc(void* key);
+hm_bool hmInt32EqualsFunc(void* value1, void* value2);
 
 #endif /* HM_PRIMITIVES_H */

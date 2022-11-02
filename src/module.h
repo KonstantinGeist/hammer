@@ -32,10 +32,10 @@ typedef struct {
 
 typedef struct _hmClass {
     struct _hmAllocator*  allocator;
-    hm_int32             class_id;
-    hmString             name;      /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
+    hm_int32              class_id;
+    hmString              name;      /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
                                          should be unique in a given module. */
-    hmHashMap            methods;   /* hmHashMap<hmString, hmMethod> */
+    hmHashMap             methods;   /* hmHashMap<hmString, hmMethod> */
 } hmClass;
 
 typedef struct {
@@ -46,7 +46,8 @@ typedef struct {
 
 typedef struct {
     struct _hmAllocator* allocator;
-    hmHashMap            modules;   /* hmHashMap<hmString, hmModule> */
+    hmHashMap            name_to_module_map;          /* hmHashMap<hmString, hmModule> */
+    hmHashMap            module_id_to_module_ref_map; /* hmHashMap<hm_int32, hmModule*> */
 } hmModuleRegistry;
 
 hmError hmCreateModuleRegistry(struct _hmAllocator* allocator, hmModuleRegistry *in_registry);

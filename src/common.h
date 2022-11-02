@@ -63,18 +63,24 @@ hmError hmCombineErrors(hmError older, hmError newer);
    on container destruction. */
 typedef hmError (*hmDisposeFunc)(void* object);
 
+/* A handy macro which checks the error as returned by the given expression and immediately returns if it's not HM_OK. */
+#define HM_TRY(expr) { hmError try_err = expr; if (try_err != HM_OK) return try_err; }
+#define HM_TRY_OR_FINALIZE(err, expr) err = hmCombineErrors(err, expr); if (err != HM_OK) goto finalize
+#define HM_ON_FINALIZE finalize:
+#define HM_FINALIZE goto finalize
+
 /* Special attributes to extend C semantics with some human-readable metadata about how memory is managed. */
 
 /* The variable is temporary and should be deallocated, unless its ownership is moved somewhere else. */
-#define HM_TEMP_SHOULD_DEALLOC(var)
+#define HM_OWNED(var)
 /* The variable is temporary and it should not be deallocated, because it's a view; however, as a view,
    its content may get invalidated when the original object is invalidated. */
 #define HM_TEMP_VIEW(var)
 /* The temporary variable was successfully moved because its content's ownership was transferred to another
    entity; you don't need to deallocated it anymore if it was a temporary; may be problematic with views. */
 #define HM_MOVED(from, to)
-
-/* A handy macro which checks the error as returned by the given expression and immediately returns if it's not HM_OK. */
-#define HM_TRY(expr) hmError err ## __LINE__ = expr; if (err ## __LINE__ != HM_OK) return err ## __LINE__
+/* Similar to HM_MOVED, except it's not moved anywhere explicitly. We just explicitly say we no longer own it.
+   When a dispose function is called on a value, it's implicitly assumed that it's unowned. */
+#define HM_UNOWNED(var)
 
 #endif /* HM_COMMON_H */

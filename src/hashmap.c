@@ -230,6 +230,12 @@ hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value)
     return HM_OK;
 }
 
+hm_bool hmHashMapContains(hmHashMap* hash_map, void* key)
+{
+    hmHashMapEntry* entry = hmHashMapEntryFindByKey(hash_map, key);
+    return entry != HM_NULL;
+}
+
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
 {
     hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);

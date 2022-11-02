@@ -83,8 +83,11 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value);
    Never retains the key value (safe to use with views). The returned value is copied by value; that is, it's not safe
    to delete such an object if its ownership belongs to the hashmap. Use hmHashMapGetRef if you need a reference. */
 hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value);
-/* Same as hmHashMapGet, except returns a pointer to the value directly as stored in the hashmap, instead of copying it by value. */
+/* Same as hmHashMapGet, except returns a pointer to the value directly as stored in the hashmap, instead of copying it by value.
+   The value is stable after rehashing. However, the reference will point to a different object if a different value is
+   put in the map with the same key. The reference is invalidated when it's removed from the map. */
 hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value);
+hm_bool hmHashMapContains(hmHashMap* hash_map, void* key);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);

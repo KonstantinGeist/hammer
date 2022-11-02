@@ -28,3 +28,19 @@ hm_bool hmNintEqualsFunc(void* value1, void* value2)
     hm_nint b = *((hm_nint*)(value2));
     return a == b;
 }
+
+hm_uint32 hmInt32HashFunc(void* key)
+{
+    hm_uint32 x = (hm_uint32)(*((hm_int32*)key));
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = ((x >> 16) ^ x) * 0x119de1f3;
+    x = (x >> 16) ^ x;
+    return x;
+}
+
+hm_bool hmInt32EqualsFunc(void* value1, void* value2)
+{
+    hm_int32 a = *((hm_int32*)(value1));
+    hm_int32 b = *((hm_int32*)(value2));
+    return a == b;
+}
