@@ -56,14 +56,16 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
     array->count++;
     if (array->count >= array->capacity) {
         hm_nint new_capacity = array->capacity*2;
-        array->items = hmRealloc(
+        char* new_items = hmRealloc(
             array->allocator,
             array->items,
             array->item_size*array->capacity,
-            array->item_size*new_capacity);
-        if (!array->items) {
+            array->item_size*new_capacity
+        );
+        if (!new_items) {
             return HM_ERROR_OUT_OF_MEMORY;
         }
+        array->items = new_items;
         array->capacity = new_capacity;
     }
     return HM_OK;
@@ -95,14 +97,16 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
     hm_nint new_count = array->count+count;
     if (new_count > array->capacity) {
         hm_nint new_capacity = array->capacity+count;
-        array->items = hmRealloc(
+        char* new_items = hmRealloc(
             array->allocator,
             array->items,
             array->item_size*array->capacity,
-            array->item_size*new_capacity);
-        if (!array->items) {
+            array->item_size*new_capacity
+        );
+        if (!new_items) {
             return HM_ERROR_OUT_OF_MEMORY;
         }
+        array->items = new_items;
         array->capacity = new_capacity;
     }
     if (array_expand_func) {
