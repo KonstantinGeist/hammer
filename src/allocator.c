@@ -88,7 +88,7 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
 /*    BumpPointerAllocator.    */
 /* *************************** */
 
-#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (1024*1024*4) // 4 MB
+#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (256*1024) // 256KB
 
 typedef struct _hmBumpPointerAllocatorSegment {
     struct _hmBumpPointerAllocatorSegment* next;
@@ -108,7 +108,7 @@ typedef struct {
 static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
     hmBumpPointerAllocatorData* data = (hmBumpPointerAllocatorData*)allocator->data;
-    if (sz > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE) { // too large to fit in a segment
+    if (sz > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE/2) { // too large to fit in a segment
         void* result = hmAlloc(data->base_allocator, sz);
         if (!result) {
             return HM_NULL;

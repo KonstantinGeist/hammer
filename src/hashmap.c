@@ -251,10 +251,10 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
                 HM_TRY(hash_map->value_dispose_func(value));
             }
-            if (prev_entry == HM_NULL) {
-                hash_map->buckets[bucket_index] = entry->next;
-            } else {
+            if (prev_entry) {
                 prev_entry->next = entry->next;
+            } else {
+                hash_map->buckets[bucket_index] = entry->next;
             }
             hmFree(hash_map->allocator, entry);
             hash_map->count--;
