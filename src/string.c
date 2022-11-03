@@ -15,6 +15,8 @@
 #include "allocator.h"
 #include "hash.h"
 
+#define HM_EMPTY_STRING_HASH HM_UINT32_MAX
+
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
     if (!content) {
@@ -29,6 +31,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     in_string->content = content_copy;
     in_string->allocator = allocator;
     in_string->length = length;
+    in_string->hash = HM_EMPTY_STRING_HASH;
     return HM_OK;
 }
 
@@ -40,6 +43,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
     in_string->content = (char*)content;
     in_string->allocator = HM_NULL;
     in_string->length = strlen(content);
+    in_string->hash = HM_EMPTY_STRING_HASH;
     return HM_OK;
 }
 
@@ -74,7 +78,16 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2)
 
 hm_uint32 hmStringHash(hmString* string)
 {
-    return hmHash(string->content, string->length);
+    if (string->hash != HM_EMPTY_STRING_HASH) {
+        return string->hash;
+    }
+    hm_uint32 hash = hmHash(string->content, string->length);
+    // hash should never be HM_EMPTY_STRING_HASH because it signifies "no hash computed"
+    if (hash == HM_EMPTY_STRING_HASH) {
+        hash++;
+    }
+    string->hash = hash;
+    return string->hash;
 }
 
 hm_uint32 hmStringHashFunc(void* key)

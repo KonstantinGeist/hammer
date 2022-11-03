@@ -21,7 +21,8 @@ struct _hmAllocator;
 typedef struct {
     char*                content;
     struct _hmAllocator* allocator;
-    hm_nint              length;     /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
+    hm_nint              length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
+    hm_uint32            hash;      /* Cached hash to speed up rehashing. */
 } hmString;
 
 /* Creates a Hammer string from a C string. Duplicates the given string and owns it: deallocates the internal buffer when the
