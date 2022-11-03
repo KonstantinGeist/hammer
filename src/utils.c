@@ -18,8 +18,5 @@
 
 hm_nint hmAlignSize(hm_nint sz)
 {
-    if (sz % HM_ALLOC_SIZE_ALIGNMENT == 0) {
-        return sz;
-    }
-    return sz + HM_ALLOC_SIZE_ALIGNMENT - sz % HM_ALLOC_SIZE_ALIGNMENT;
+    return (sz + HM_ALLOC_SIZE_ALIGNMENT - 1) & (-HM_ALLOC_SIZE_ALIGNMENT);
 }
