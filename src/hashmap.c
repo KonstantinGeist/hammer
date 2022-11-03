@@ -274,17 +274,18 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
 
 hmError hmHashMapDispose(hmHashMap* hash_map)
 {
+    hmError err = HM_OK;
     for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
         hmHashMapEntry* entry = hash_map->buckets[i];
         hmHashMapEntry* next_entry = HM_NULL;
         while (entry) {
             if (hash_map->key_dispose_func) {
                 void* key = hmHashMapEntryGetKey(hash_map, entry);
-                HM_TRY(hash_map->key_dispose_func(key));
+                err = hmCombineErrors(err, hash_map->key_dispose_func(key));
             }
             if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                HM_TRY(hash_map->value_dispose_func(value));
+                err = hmCombineErrors(err, hash_map->value_dispose_func(value));
             }
             next_entry = entry->next;
             hmFree(hash_map->allocator, entry);
@@ -292,5 +293,5 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         }
     }
     hmFree(hash_map->allocator, hash_map->buckets);
-    return HM_OK;
+    return err;
 }

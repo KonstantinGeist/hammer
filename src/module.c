@@ -33,7 +33,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
         &in_registry->name_to_module_map
     ));
-    HM_OWNED(in_registry->name_to_module_map)
+    HM_OWNED(in_registry->name_to_module_map);
     hmError err = hmCreateHashMap(
         allocator,
         &hmInt32HashFunc,
@@ -103,12 +103,12 @@ static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 
     hmError err = HM_OK;
     hm_bool name_and_module_owned = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&registry->name_to_module_map, name, module));
-    HM_MOVED(name, registry->name_to_module_map)
-    HM_MOVED(module, registry->name_to_module_map)
+    HM_MOVED(name, registry->name_to_module_map);
+    HM_MOVED(module, registry->name_to_module_map);
     name_and_module_owned = HM_FALSE;
     void* module_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&registry->name_to_module_map, name, &module_ref));
-    err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, (hmModule*)&module_ref);
+    err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, (hmModule*)module_ref);
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_module_owned) {
@@ -135,21 +135,20 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
     return HM_OK;
 }
 
-static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name)
+static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name_view)
 {
-    HM_TRY(hmModuleRegistryValidateModuleDoesNotExist(registry, module_id, name));
+    HM_TRY(hmModuleRegistryValidateModuleDoesNotExist(registry, module_id, name_view));
     hmModule module;
-    HM_TRY(hmCreateModule(registry->allocator, module_id, name, &module));
-    HM_OWNED(module)
+    HM_TRY(hmCreateModule(registry->allocator, module_id, name_view, &module));
+    HM_OWNED(module);
     hmString name_key;
-    hmError err = hmStringDuplicate(registry->allocator, name, &name_key);
+    hmError err = hmStringDuplicate(registry->allocator, name_view, &name_key);
     if (err != HM_OK) {
         return hmCombineErrors(err, hmModuleDispose(&module));
     }
-    HM_OWNED(name_key)
+    HM_MOVED(module, hmModuleRegistryStoreModule);
+    HM_MOVED(name_key, hmModuleRegistryStoreModule);
     HM_TRY(hmModuleRegistryStoreModule(registry, module_id, &name_key, &module));
-    HM_MOVED(module, hmModuleRegistryStoreModule)
-    HM_MOVED(name_key, hmModuleRegistryStoreModule)
     return HM_OK;
 }
 
@@ -177,7 +176,6 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
                     const char* name = sqlite3_column_text(stmt, 1);
                     hmString name_view;
                     HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TEMP_VIEW(name_view)
                     HM_TRY_OR_FINALIZE(err, hmModuleRegistryRegisterModule(registry, module_id, &name_view));
                 }
                 break;
@@ -196,10 +194,10 @@ HM_ON_FINALIZE
     return err;
 }
 
-static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module)
+static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name_view, hmModule* in_module)
 {
-    HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
-    HM_OWNED(in_module->name)
+    HM_TRY(hmStringDuplicate(allocator, name_view, &in_module->name));
+    HM_OWNED(in_module->name);
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
         &hmClassDisposeFunc, // value_dispose_func
@@ -211,31 +209,31 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     if (err != HM_OK) {
         return hmCombineErrors(err, hmStringDispose(&in_module->name));
     }
-    HM_MOVED(in_module->name, in_module)
+    HM_MOVED(in_module->name, in_module);
     in_module->module_id = module_id;
     return HM_OK;
 }
 
 // TODO check if class under same class_id, name already exists inside a given module; also check if module_id actually exists
-static hmError hmModuleRegistryRegisterClass(hmModuleRegistry* registry, hm_int32 class_id, hm_int32 module_id, hmString* name)
+static hmError hmModuleRegistryRegisterClass(hmModuleRegistry* registry, hm_int32 class_id, hm_int32 module_id, hmString* name_view)
 {
     /*hmClass klass;
     HM_TRY(hmCreateClass(registry->allocator, class_id, module_id, name, &klass));
-    HM_OWNED(klass)
+    HM_OWNED(klass);
     hmString name_key;
     hmError err = hmStringDuplicate(registry->allocator, name, &name_key);
     if (err != HM_OK) {
         return hmCombineErrors(err, hmModuleDispose(&klass));
     }
-    HM_OWNED(name_key)
+    HM_OWNED(name_key);
     err = hmHashMapPut(&registry->name_to_module_map, &name_key, &module);
     if (err != HM_OK) {
         err = hmCombineErrors(err, hmStringDispose(&name_key));
         err = hmCombineErrors(err, hmModuleDispose(&klass));
         return err;
     }
-    HM_MOVED(module, registry->name_to_module_map)
-    HM_MOVED(name_key, registry->name_to_module_map)*/
+    HM_MOVED(module, registry->name_to_module_map);
+    HM_MOVED(name_key, registry->name_to_module_map);*/
     return HM_OK;
 }
 
@@ -264,7 +262,6 @@ static hmError hmModuleRegistryLoadClasses(hmModuleRegistry* registry, sqlite3* 
                     const char* name = sqlite3_column_text(stmt, 2);
                     hmString name_view;
                     HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TEMP_VIEW(name_view)
                     HM_TRY_OR_FINALIZE(err, hmModuleRegistryRegisterClass(registry, class_id, module_id, &name_view));
                 }
                 break;

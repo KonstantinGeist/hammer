@@ -71,15 +71,13 @@ typedef hmError (*hmDisposeFunc)(void* object);
 
 /* Special attributes to extend C semantics with some human-readable metadata about how memory is managed. */
 
-/* The variable is temporary and should be deallocated, unless its ownership is moved somewhere else. */
-#define HM_OWNED(var)
-/* The variable is temporary and it should not be deallocated, because it's a view; however, as a view,
-   its content may get invalidated when the original object is invalidated. */
-#define HM_TEMP_VIEW(var)
-/* The temporary variable was successfully moved because its content's ownership was transferred to another
-   entity; you don't need to deallocated it anymore if it was a temporary; may be problematic with views. */
+/* The variable is owned by the current function and should be deallocated or its ownership transferred
+   somewhere else. */
+#define HM_OWNED(var);
+/* The owned variable was successfully moved because its content's ownership was transferred to another
+   entity; no need to deallocate it anymore. May be problematic with views. */
 #define HM_MOVED(from, to)
-/* Similar to HM_MOVED, except it's not moved anywhere explicitly. We just explicitly say we no longer own it.
+/* Similar to HM_MOVED, except it's not moved anywhere explicitly. We just say we no longer own it.
    When a dispose function is called on a value, it's implicitly assumed that it's unowned. */
 #define HM_UNOWNED(var)
 

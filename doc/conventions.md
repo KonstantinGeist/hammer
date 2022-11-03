@@ -3,7 +3,7 @@ There are several conventions to follow:
 * Always use Hammer C wrappers around native types: hm_nint instead of size_t, hm_uint8 instead of uint8_t etc.
   This allows to have a future-proof abstraction layer for platform-specific data types.
 * Always sort struct fields from larger to smaller values: for example, first pointers (32 or 64 bit), then
-  integers, then booleans etc. This can help a compiler to better pack values in memory without "holes" due to
+  integers, then booleans etc. This can help the compiler to better pack values in memory without "holes" due to
   misalignment.
 * Never assume an allocating strategy and instead allow a user select an appropriate allocator at runtime when
   instantiating an object.
@@ -22,7 +22,7 @@ There are several conventions to follow:
   If you take a reference to an object you do not own, pay attention to its lifetime to avoid using disposed objects.
 * Try disposing of objects in destructors to the maximum, combining various potential errors with hmCombineErrors.
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
-* Mark ownership with simple comments: HM_OWNED, HM_TEMP_VIEW, HM_MOV (see)
+* Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),
