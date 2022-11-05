@@ -1,14 +1,19 @@
 ## What's Hammer?
 
 Hammer is a programming language and runtime designed for building applications with modern architecture:
-* strong/static typing
 * built-in dependency injection/inversion of control
 * support for Domain-Driven Design (entities, value objects, bounded contexts)
+* support for layered architecture: layers, layer dependency tracking
 * support for units of work (transactions)
 * request/response-oriented pipeline
 * built-in concurrency
 * minimum dependencies, lightweight
+* high fault tolerance
 * batteries included for typical workloads
+* strong/static typing
+* built-in tooling: unit testing, fuzzing
+* automatic memory management
+and more.
 
 Work in progress.
 
