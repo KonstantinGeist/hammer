@@ -40,7 +40,7 @@ static void test_can_create_string_view()
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringLength(&string) == strlen(STRING_CONTENT));
-    HM_TEST_ASSERT(hmStringContent(&string) == STRING_CONTENT);
+    HM_TEST_ASSERT(strcmp(hmStringContent(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string); // not necessary for views; just checking it doesn't crash
     HM_TEST_ASSERT_OK(err);
 }

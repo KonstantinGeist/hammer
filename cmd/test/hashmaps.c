@@ -159,7 +159,7 @@ static void test_hash_map_returns_error_on_non_existing_key()
     hm_nint non_existing_key = 8;
     hm_nint retrieved_value;
     err = hmHashMapGet(&hash_map, &non_existing_key, &retrieved_value);
-    HM_TEST_ASSERT(err = HM_ERROR_NOT_FOUND);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 

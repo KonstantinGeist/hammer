@@ -109,4 +109,5 @@ void test_allocators()
     test_can_alloc_realloc_and_free_from_system_allocator();
     test_can_alloc_realloc_and_free_from_bump_pointer_allocator();
     test_realloc_accepts_smaller_size();
+    test_bump_pointer_allocator_works_with_large_objects();
 }

@@ -66,8 +66,6 @@ static void test_memory_can_create_seek_read_close()
 
 static void test_memory_reader_cant_seek_past_buffer()
 {
-    char read_buf[READ_BUF_SIZE] = {0};
-    hm_nint bytes_read;
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
