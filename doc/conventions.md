@@ -23,6 +23,7 @@ There are several conventions to follow:
 * Try disposing of objects in destructors to the maximum, combining various potential errors with hmCombineErrors.
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
 * Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
+* Static functions should come after public functions.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

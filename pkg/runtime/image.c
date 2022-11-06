@@ -14,13 +14,13 @@
 #include <runtime/image.h>
 #include <vendor/sqlite3/sqlite3.h>
 
-static hmError hmEnumerateModulesInImage(sqlite3* db, hmEnumerateModulesFunc enumerate_modules_func, void* user_data);
-static hmError hmEnumerateClassesInImage(sqlite3* db, hmEnumerateClassesFunc enumerate_classes_func, void* user_data);
+static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data);
+static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data);
 
-hmError hmEnumerateMetadataInImage(
+hmError hmEnumMetadataInImage(
     hmString* image_path,
-    hmEnumerateModulesFunc enumerate_modules_func,
-    hmEnumerateClassesFunc enumerate_classes_func,
+    hmEnumModuleMetadataInImageFunc enum_modules_func,
+    hmEnumClassMetadataInImageFunc enum_classes_func,
     void* user_data
 )
 {
@@ -33,8 +33,8 @@ hmError hmEnumerateMetadataInImage(
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }
-    err = hmEnumerateModulesInImage(db, enumerate_modules_func, user_data);
-    err = hmCombineErrors(err, hmEnumerateClassesInImage(db, enumerate_classes_func, user_data));
+    err = hmEnumModulesInImage(db, enum_modules_func, user_data);
+    err = hmCombineErrors(err, hmEnumClassesInImage(db, enum_classes_func, user_data));
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
         err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
@@ -42,7 +42,7 @@ hmError hmEnumerateMetadataInImage(
     return err;
 }
 
-static hmError hmEnumerateModulesInImage(sqlite3* db, hmEnumerateModulesFunc enumerate_modules_func, void* user_data)
+static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data)
 {
     hmError err = HM_OK;
     sqlite3_stmt* stmt;
@@ -62,11 +62,11 @@ static hmError hmEnumerateModulesInImage(sqlite3* db, hmEnumerateModulesFunc enu
         switch (sqlite_err) {
             case SQLITE_ROW:
                 {
-                    hm_int32 module_id = sqlite3_column_int(stmt, 0);
+                    hmModuleMetadata metadata;
+                    metadata.module_id = sqlite3_column_int(stmt, 0);
                     const char* name = (const char*)sqlite3_column_text(stmt, 1);
-                    hmString name_view;
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TRY_OR_FINALIZE(err, enumerate_modules_func(module_id, &name_view, user_data));
+                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+                    HM_TRY_OR_FINALIZE(err, enum_modules_func(&metadata, user_data));
                 }
                 break;
             case SQLITE_DONE:
@@ -84,7 +84,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-static hmError hmEnumerateClassesInImage(sqlite3* db, hmEnumerateClassesFunc enumerate_classes_func, void* user_data)
+static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data)
 {
     hmError err = HM_OK;
     sqlite3_stmt* stmt;
@@ -104,12 +104,12 @@ static hmError hmEnumerateClassesInImage(sqlite3* db, hmEnumerateClassesFunc enu
         switch (sqlite_err) {
             case SQLITE_ROW:
                 {
-                    hm_int32 class_id = sqlite3_column_int(stmt, 0);
-                    hm_int32 module_id = sqlite3_column_int(stmt, 1);
+                    hmClassMetadata metadata;
+                    metadata.class_id = sqlite3_column_int(stmt, 0);
+                    metadata.module_id = sqlite3_column_int(stmt, 1);
                     const char* name = (const char*)sqlite3_column_text(stmt, 2);
-                    hmString name_view;
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TRY_OR_FINALIZE(err, enumerate_classes_func(class_id, module_id, &name_view, user_data));
+                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+                    HM_TRY_OR_FINALIZE(err, enum_classes_func(&metadata, user_data));
                 }
                 break;
             case SQLITE_DONE:
