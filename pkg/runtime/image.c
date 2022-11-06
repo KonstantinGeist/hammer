@@ -42,87 +42,62 @@ hmError hmEnumMetadataInImage(
     return err;
 }
 
+#define HM_BEGIN_SQLITE3_QUERY(query) \
+    hmError err = HM_OK; \
+    sqlite3_stmt* stmt; \
+    int sqlite_err = sqlite3_prepare_v2( \
+        db, \
+        query, \
+        -1, \
+        &stmt, \
+        HM_NULL \
+    ); \
+    if (sqlite_err != SQLITE_OK) { \
+        err = HM_ERROR_INVALID_IMAGE; \
+        HM_FINALIZE; \
+    } \
+    for (;;) { \
+        sqlite_err = sqlite3_step(stmt); \
+        switch (sqlite_err) { \
+            case SQLITE_ROW: \
+                {
+
+#define HM_END_SQLITE3_QUERY() \
+                } \
+                break; \
+            case SQLITE_DONE: \
+                HM_FINALIZE; \
+            case SQLITE_ERROR: \
+                err = HM_ERROR_INVALID_IMAGE; \
+                HM_FINALIZE; \
+        } \
+    } \
+HM_ON_FINALIZE \
+    sqlite_err = sqlite3_finalize(stmt); \
+    if (sqlite_err != SQLITE_OK) { \
+        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT); \
+    } \
+    return err;
+
 static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data)
 {
-    hmError err = HM_OK;
-    sqlite3_stmt* stmt;
-    int sqlite_err = sqlite3_prepare_v2(
-        db,
-        "SELECT module_id, name FROM module",
-        -1,
-        &stmt,
-        HM_NULL
-    );
-    if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_INVALID_IMAGE;
-        HM_FINALIZE;
-    }
-    for (;;) {
-        sqlite_err = sqlite3_step(stmt);
-        switch (sqlite_err) {
-            case SQLITE_ROW:
-                {
-                    hmModuleMetadata metadata;
-                    metadata.module_id = sqlite3_column_int(stmt, 0);
-                    const char* name = (const char*)sqlite3_column_text(stmt, 1);
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
-                    HM_TRY_OR_FINALIZE(err, enum_modules_func(&metadata, user_data));
-                }
-                break;
-            case SQLITE_DONE:
-                HM_FINALIZE;
-            case SQLITE_ERROR:
-                err = HM_ERROR_INVALID_IMAGE;
-                HM_FINALIZE;
-        }
-    }
-HM_ON_FINALIZE
-    sqlite_err = sqlite3_finalize(stmt);
-    if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
-    }
-    return err;
+    HM_BEGIN_SQLITE3_QUERY("SELECT module_id, name FROM module")
+        hmModuleMetadata metadata;
+        metadata.module_id = sqlite3_column_int(stmt, 0);
+        const char* name = (const char*)sqlite3_column_text(stmt, 1);
+        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, enum_modules_func(&metadata, user_data));
+    HM_END_SQLITE3_QUERY()
 }
 
 static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data)
 {
-    hmError err = HM_OK;
-    sqlite3_stmt* stmt;
-    int sqlite_err = sqlite3_prepare_v2(
-        db,
-        "SELECT class_id, module_id, name FROM class",
-        -1,
-        &stmt,
-        HM_NULL
-    );
-    if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_INVALID_IMAGE;
-        HM_FINALIZE;
-    }
-    for (;;) {
-        sqlite_err = sqlite3_step(stmt);
-        switch (sqlite_err) {
-            case SQLITE_ROW:
-                {
-                    hmClassMetadata metadata;
-                    metadata.class_id = sqlite3_column_int(stmt, 0);
-                    metadata.module_id = sqlite3_column_int(stmt, 1);
-                    const char* name = (const char*)sqlite3_column_text(stmt, 2);
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
-                    HM_TRY_OR_FINALIZE(err, enum_classes_func(&metadata, user_data));
-                }
-                break;
-            case SQLITE_DONE:
-                HM_FINALIZE;
-            case SQLITE_ERROR:
-                err = HM_ERROR_INVALID_IMAGE;
-                HM_FINALIZE;
-        }
-    }
-HM_ON_FINALIZE
-    sqlite_err = sqlite3_finalize(stmt);
-    if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
-    }
-    return err;
+    HM_BEGIN_SQLITE3_QUERY("SELECT class_id, module_id, name FROM class")
+        hmClassMetadata metadata;
+        metadata.class_id = sqlite3_column_int(stmt, 0);
+        metadata.module_id = sqlite3_column_int(stmt, 1);
+        const char* name = (const char*)sqlite3_column_text(stmt, 2);
+        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, enum_classes_func(&metadata, user_data));
+    HM_END_SQLITE3_QUERY()
 }
