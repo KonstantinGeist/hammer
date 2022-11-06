@@ -1,3 +1,4 @@
 runtime_sources = files(
-    'module.c'
+    'module.c',
+    'image.c'
 )

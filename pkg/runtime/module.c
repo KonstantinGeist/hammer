@@ -14,11 +14,13 @@
 #include <runtime/module.h>
 #include <core/allocator.h>
 #include <core/primitives.h>
-#include <vendor/sqlite3/sqlite3.h>
+#include <runtime/image.h>
 
-static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db);
 static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module);
-static hmError hmModuleRegistryLoadClasses(hmModuleRegistry* registry, sqlite3* db);
+static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name_view);
+static hmError hmModuleRegistryRegisterClass(hmModuleRegistry* registry, hm_int32 class_id, hm_int32 module_id, hmString* name_view);
+static hmError hmModuleRegistry_enumerateModulesFunc(hm_int32 module_id, hmString* name, void* user_data);
+static hmError hmModuleRegistry_enumerateClassesFunc(hm_int32 class_id, hm_int32 module_id, hmString* name, void* user_data);
 static hmError hmModuleDispose(hmModule* module);
 static hmError hmClassDispose(hmClass* hm_class);
 static hmError hmModuleDisposeFunc(void* object);
@@ -63,22 +65,12 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
 {
-    if (!image_path) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
-    hmError err = HM_OK;
-    sqlite3* db;
-    int sqlite_err = sqlite3_open_v2(hmStringContent(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
-    if (sqlite_err != SQLITE_OK) {
-        return HM_ERROR_NOT_FOUND;
-    }
-    err = hmModuleRegistryLoadModules(registry, db);
-    err = hmCombineErrors(err, hmModuleRegistryLoadClasses(registry, db));
-    sqlite_err = sqlite3_close(db);
-    if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
-    }
-    return err;
+    return hmEnumerateMetadataInImage(
+        image_path,
+        &hmModuleRegistry_enumerateModulesFunc,
+        &hmModuleRegistry_enumerateClassesFunc,
+        registry
+    );
 }
 
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module)
@@ -95,6 +87,16 @@ hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** ou
     HM_TRY(hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
     *out_class = (hmClass*)class_ref;
     return HM_OK;
+}
+
+static hmError hmModuleRegistry_enumerateModulesFunc(hm_int32 module_id, hmString* name, void* user_data)
+{
+    return hmModuleRegistryRegisterModule((hmModuleRegistry*)user_data, module_id, name);
+}
+
+static hmError hmModuleRegistry_enumerateClassesFunc(hm_int32 class_id, hm_int32 module_id, hmString* name, void* user_data)
+{
+    return hmModuleRegistryRegisterClass((hmModuleRegistry*)user_data, class_id, module_id, name);
 }
 
 static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_int32 module_id, hmModule** out_module)
@@ -159,48 +161,6 @@ static hmError hmModuleRegistryRegisterModule(hmModuleRegistry* registry, hm_int
     HM_MOVED(name_key, hmModuleRegistryStoreModule);
     HM_TRY(hmModuleRegistryStoreModule(registry, module_id, &name_key, &module));
     return HM_OK;
-}
-
-static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* db)
-{
-    hmError err = HM_OK;
-    sqlite3_stmt* stmt;
-    int sqlite_err = sqlite3_prepare_v2(
-        db,
-        "SELECT module_id, name FROM module",
-        -1,
-        &stmt,
-        HM_NULL
-    );
-    if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_INVALID_IMAGE;
-        HM_FINALIZE;
-    }
-    for (;;) {
-        sqlite_err = sqlite3_step(stmt);
-        switch (sqlite_err) {
-            case SQLITE_ROW:
-                {
-                    hm_int32 module_id = sqlite3_column_int(stmt, 0);
-                    const char* name = (const char*)sqlite3_column_text(stmt, 1);
-                    hmString name_view;
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TRY_OR_FINALIZE(err, hmModuleRegistryRegisterModule(registry, module_id, &name_view));
-                }
-                break;
-            case SQLITE_DONE:
-                HM_FINALIZE;
-            case SQLITE_ERROR:
-                err = HM_ERROR_INVALID_IMAGE;
-                HM_FINALIZE;
-        }
-    }
-HM_ON_FINALIZE
-    sqlite_err = sqlite3_finalize(stmt);
-    if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
-    }
-    return err;
 }
 
 static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name_view, hmModule* in_module)
@@ -306,49 +266,6 @@ static hmError hmModuleRegistryRegisterClass(hmModuleRegistry* registry, hm_int3
     HM_MOVED(name_key, hmModuleStoreClass);
     HM_TRY(hmModuleStoreClass(module_ref, class_id, &name_key, &hm_class));
     return HM_OK;
-}
-
-static hmError hmModuleRegistryLoadClasses(hmModuleRegistry* registry, sqlite3* db)
-{
-    hmError err = HM_OK;
-    sqlite3_stmt* stmt;
-    int sqlite_err = sqlite3_prepare_v2(
-        db,
-        "SELECT class_id, module_id, name FROM class",
-        -1,
-        &stmt,
-        HM_NULL
-    );
-    if (sqlite_err != SQLITE_OK) {
-        err = HM_ERROR_INVALID_IMAGE;
-        HM_FINALIZE;
-    }
-    for (;;) {
-        sqlite_err = sqlite3_step(stmt);
-        switch (sqlite_err) {
-            case SQLITE_ROW:
-                {
-                    hm_int32 class_id = sqlite3_column_int(stmt, 0);
-                    hm_int32 module_id = sqlite3_column_int(stmt, 1);
-                    const char* name = (const char*)sqlite3_column_text(stmt, 2);
-                    hmString name_view;
-                    HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &name_view));
-                    HM_TRY_OR_FINALIZE(err, hmModuleRegistryRegisterClass(registry, class_id, module_id, &name_view));
-                }
-                break;
-            case SQLITE_DONE:
-                HM_FINALIZE;
-            case SQLITE_ERROR:
-                err = HM_ERROR_INVALID_IMAGE;
-                HM_FINALIZE;
-        }
-    }
-HM_ON_FINALIZE
-    sqlite_err = sqlite3_finalize(stmt);
-    if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
-    }
-    return err;
 }
 
 static hmError hmModuleDispose(hmModule* module)
