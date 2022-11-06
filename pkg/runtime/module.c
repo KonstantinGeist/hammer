@@ -20,6 +20,7 @@ static hmError hmModuleRegistryLoadModules(hmModuleRegistry* registry, sqlite3* 
 static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module);
 static hmError hmModuleRegistryLoadClasses(hmModuleRegistry* registry, sqlite3* db);
 static hmError hmModuleDispose(hmModule* module);
+static hmError hmClassDispose(hmClass* hm_class);
 static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
 
@@ -88,6 +89,14 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
     return HM_OK;
 }
 
+hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** out_class)
+{
+    void* class_ref;
+    HM_TRY(hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
+    *out_class = (hmClass*)class_ref;
+    return HM_OK;
+}
+
 static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_int32 module_id, hmModule** out_module)
 {
     void* module_ref;
@@ -108,7 +117,7 @@ static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 
     name_and_module_owned = HM_FALSE;
     void* module_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&registry->name_to_module_map, name, &module_ref));
-    err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, (hmModule*)module_ref);
+    err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, &module_ref);
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_module_owned) {
@@ -122,9 +131,9 @@ HM_ON_FINALIZE
     return err;
 }
 
-static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_int32 module_id, hmString* name)
+static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_int32 module_id, hmString* name_view)
 {
-    hm_bool found = hmHashMapContains(&registry->name_to_module_map, name);
+    hm_bool found = hmHashMapContains(&registry->name_to_module_map, name_view);
     if (found) {
         return HM_ERROR_INVALID_IMAGE;
     }
@@ -204,36 +213,98 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         sizeof(hmClass),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
-        &in_module->classes
+        &in_module->name_to_class_map
     );
     if (err != HM_OK) {
         return hmCombineErrors(err, hmStringDispose(&in_module->name));
     }
     HM_MOVED(in_module->name, in_module);
+    err = hmCreateHashMap(
+        allocator,
+        &hmInt32HashFunc,
+        &hmInt32EqualsFunc,
+        HM_NULL,            // key_dispose_func
+        HM_NULL,            // value_dispose_func,
+        sizeof(hm_int32),
+        sizeof(hmClass*),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        &in_module->class_id_to_class_ref_map
+    );
+    if (err != HM_OK) {
+        err = hmCombineErrors(err, hmStringDispose(&in_module->name));
+        return hmCombineErrors(err, hmHashMapDispose(&in_module->name_to_class_map));
+    }
     in_module->module_id = module_id;
     return HM_OK;
 }
 
-// TODO check if class under same class_id, name already exists inside a given module; also check if module_id actually exists
+static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_int32 class_id, hmString* name)
+{
+    hm_bool found = hmHashMapContains(&module->name_to_class_map, name);
+    if (found) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    found = hmHashMapContains(&module->class_id_to_class_ref_map, &class_id);
+    if (found) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    return HM_OK;
+}
+
+static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString* name_view, hmClass* in_class)
+{
+    HM_TRY(hmStringDuplicate(allocator, name_view, &in_class->name));
+    HM_MOVED(in_class->name, in_class);
+    in_class->class_id = class_id;
+    return HM_OK;
+}
+
+static hmError hmModuleStoreClass(hmModule* module, hm_int32 class_id, hmString* name, hmClass* hm_class)
+{
+    HM_OWNED(name);
+    HM_OWNED(hm_class);
+    hmError err = HM_OK;
+    hm_bool name_and_class_owned = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmHashMapPut(&module->name_to_class_map, name, hm_class));
+    HM_MOVED(name, module->name_to_class_map);
+    HM_MOVED(hm_class, module->name_to_class_map);
+    name_and_class_owned = HM_FALSE;
+    void* class_ref;
+    HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
+    err = hmHashMapPut(&module->class_id_to_class_ref_map, &class_id, (hmClass*)class_ref);
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        if (name_and_class_owned) {
+            err = hmCombineErrors(err, hmStringDispose(name));
+            err = hmCombineErrors(err, hmClassDispose(hm_class));
+        } else {
+            err = hmCombineErrors(err, hmHashMapRemove(&module->name_to_class_map, name, HM_NULL));
+            err = hmCombineErrors(err, hmHashMapRemove(&module->class_id_to_class_ref_map, &class_id, HM_NULL));
+        }
+    }
+    return err;
+}
+
 static hmError hmModuleRegistryRegisterClass(hmModuleRegistry* registry, hm_int32 class_id, hm_int32 module_id, hmString* name_view)
 {
-    /*hmClass klass;
-    HM_TRY(hmCreateClass(registry->allocator, class_id, module_id, name, &klass));
-    HM_OWNED(klass);
+    hmModule* module_ref;
+    hmError err = hmModuleRegistryGetModuleRefByID(registry, module_id, &module_ref);
+    if (err != HM_OK) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    HM_TRY(hmModuleValidateClassDoesNotExist(module_ref, class_id, name_view));
+    hmClass hm_class;
+    HM_TRY(hmCreateClass(registry->allocator, class_id, name_view, &hm_class));
+    HM_OWNED(hm_class);
     hmString name_key;
-    hmError err = hmStringDuplicate(registry->allocator, name, &name_key);
+    err = hmStringDuplicate(registry->allocator, name_view, &name_key);
     if (err != HM_OK) {
-        return hmCombineErrors(err, hmModuleDispose(&klass));
+        return hmCombineErrors(err, hmClassDispose(&hm_class));
     }
-    HM_OWNED(name_key);
-    err = hmHashMapPut(&registry->name_to_module_map, &name_key, &module);
-    if (err != HM_OK) {
-        err = hmCombineErrors(err, hmStringDispose(&name_key));
-        err = hmCombineErrors(err, hmModuleDispose(&klass));
-        return err;
-    }
-    HM_MOVED(module, registry->name_to_module_map);
-    HM_MOVED(name_key, registry->name_to_module_map);*/
+    HM_MOVED(hm_class, hmModuleStoreClass);
+    HM_MOVED(name_key, hmModuleStoreClass);
+    HM_TRY(hmModuleStoreClass(module_ref, class_id, &name_key, &hm_class));
     return HM_OK;
 }
 
@@ -283,7 +354,8 @@ HM_ON_FINALIZE
 static hmError hmModuleDispose(hmModule* module)
 {
     hmError err = hmStringDispose(&module->name);
-    return hmCombineErrors(err, hmHashMapDispose(&module->classes));
+    err = hmCombineErrors(err, hmHashMapDispose(&module->name_to_class_map));
+    return hmCombineErrors(err, hmHashMapDispose(&module->class_id_to_class_ref_map));
 }
 
 static hmError hmModuleDisposeFunc(void* object)
@@ -292,8 +364,13 @@ static hmError hmModuleDisposeFunc(void* object)
     return hmModuleDispose(module);
 }
 
+static hmError hmClassDispose(hmClass* hm_class)
+{
+    return hmStringDispose(&hm_class->name);
+}
+
 static hmError hmClassDisposeFunc(void* object)
 {
-    // TODO
-    return HM_OK;
+    hmClass* hm_class = (hmClass*)object;
+    return hmClassDispose(hm_class);
 }

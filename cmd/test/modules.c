@@ -37,18 +37,27 @@ static void dispose_module_registry_and_allocator(hmModuleRegistry* module_regis
 static void test_can_load_existing_module()
 {
     #define CORE_MODULE_NAME "core"
+    #define POINT_CLASS_NAME "Point"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry(&module_registry, &allocator);
-    hmString code_module_name;
-    hmError err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &code_module_name);
+    hmString core_module_name;
+    hmError err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &core_module_name);
     HM_TEST_ASSERT_OK(err);
     hmModule* module = HM_NULL;
-    err = hmModuleRegistryGetModuleRefByName(&module_registry, &code_module_name, &module);
+    err = hmModuleRegistryGetModuleRefByName(&module_registry, &core_module_name, &module);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(module != HM_NULL);
     HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleName(module), CORE_MODULE_NAME));
     HM_TEST_ASSERT(hmModuleID(module) == 1);
+    hmString point_class_name;
+    err = hmCreateStringViewFromCString(POINT_CLASS_NAME, &point_class_name);
+    hmClass* hm_class = HM_NULL;
+    err = hmModuleGetClassRefByName(module, &point_class_name, &hm_class);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hm_class != HM_NULL);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&hmClassName(hm_class), POINT_CLASS_NAME));
+    HM_TEST_ASSERT(hmClassID(hm_class) == 1);
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 

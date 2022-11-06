@@ -22,26 +22,17 @@
 
 struct _hmAllocator;
 
-typedef struct {
-    struct _hmAllocator* allocator;
-    hmString             name;         /* The name of the method. The name should be unique in a given class. */
-    hmArray/*<TypeRef>*/ params;
-    hmArray/*<Opcode>*/  opcodes;      /* Bytecode of the method to be interpreted. */
-    hmTypeRef            return_value; /* The typeref of the returned value. Can be HM_TYPEKIND_VOID as well. */
-} hmMethod;
-
 typedef struct _hmClass {
-    struct _hmAllocator*  allocator;
     hm_int32              class_id;
     hmString              name;      /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
-                                         should be unique in a given module. */
-    hmHashMap             methods;   /* hmHashMap<hmString, hmMethod> */
+                                        should be unique in a given module. */
 } hmClass;
 
 typedef struct {
     hm_int32             module_id;
     hmString             name;      /* The name of the module. Should be unique in a given module registry. */
-    hmHashMap            classes;   /* hmHashMap<hmString, hmClass> */
+    hmHashMap            name_to_class_map;         /* hmHashMap<hmString, hmClass> */
+    hmHashMap            class_id_to_class_ref_map; /* hmHashMap<hm_int32, hmClass*> */
 } hmModule;
 
 typedef struct {
@@ -61,7 +52,13 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* im
    Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module);
 
+/* Similar to hmModuleRegistryGetModuleRefByName, but works with classes instead. */
+hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** out_class);
+
 #define hmModuleName(module) (module)->name
 #define hmModuleID(module) (module)->module_id
+
+#define hmClassName(hm_class) (hm_class)->name
+#define hmClassID(hm_class) (hm_class)->class_id
 
 #endif /* HM_MODULE_H */
