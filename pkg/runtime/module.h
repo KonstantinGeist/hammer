@@ -46,7 +46,7 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
 
 /* Loads a module from a Hammer image denoted by the path on disk. After registering, all classes in the module
    are immediately usable. */
-hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path);
+hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path);
 
 /* Returns a pointer to a module by its name in out_module. Returns HM_NULL if no module was found.
    Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */

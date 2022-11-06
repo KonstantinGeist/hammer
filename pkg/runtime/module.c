@@ -61,14 +61,14 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
     return hmCombineErrors(err, hmHashMapDispose(&registry->module_id_to_module_ref_map));
 }
 
-hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, const char* image_path)
+hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
 {
     if (!image_path) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmError err = HM_OK;
     sqlite3* db;
-    int sqlite_err = sqlite3_open_v2(image_path, &db, SQLITE_OPEN_READONLY, HM_NULL);
+    int sqlite_err = sqlite3_open_v2(hmStringContent(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }

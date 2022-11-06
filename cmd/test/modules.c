@@ -22,7 +22,10 @@ static void create_module_registry(hmModuleRegistry* module_registry, hmAllocato
     HM_TEST_ASSERT_OK(err);
     err = hmCreateModuleRegistry(allocator, module_registry);
     HM_TEST_ASSERT_OK(err);
-    err = hmModuleRegistryLoadFromImage(module_registry, "../cmd/test/data/modules.hma");
+    hmString image_path;
+    err = hmCreateStringViewFromCString("../cmd/test/data/modules.hma", &image_path);
+    HM_TEST_ASSERT_OK(err);
+    err = hmModuleRegistryLoadFromImage(module_registry, &image_path);
     HM_TEST_ASSERT_OK(err);
 }
 
