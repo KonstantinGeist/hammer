@@ -108,9 +108,9 @@ static hmError hmClassDisposeFunc(void* object)
     return hmClassDispose(hm_class);
 }
 
-static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_int32 module_id, hmString* name_view)
+static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_int32 module_id, hmString* name)
 {
-    hm_bool found = hmHashMapContains(&registry->name_to_module_map, name_view);
+    hm_bool found = hmHashMapContains(&registry->name_to_module_map, name);
     if (found) {
         return HM_ERROR_INVALID_IMAGE;
     }
@@ -121,9 +121,9 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
     return HM_OK;
 }
 
-static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name_view, hmModule* in_module)
+static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module)
 {
-    HM_TRY(hmStringDuplicate(allocator, name_view, &in_module->name));
+    HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
     HM_OWNED(in_module->name);
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
@@ -198,14 +198,14 @@ static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void
     hmModule module;
     HM_TRY(hmCreateModule(registry->allocator, metadata->module_id, &metadata->name, &module));
     HM_OWNED(module);
-    hmString name_key;
-    hmError err = hmStringDuplicate(registry->allocator, &metadata->name, &name_key);
+    hmString name;
+    hmError err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
         return hmCombineErrors(err, hmModuleDispose(&module));
     }
     HM_MOVED(module, hmModuleRegistryStoreModule);
-    HM_MOVED(name_key, hmModuleRegistryStoreModule);
-    HM_TRY(hmModuleRegistryStoreModule(registry, metadata->module_id, &name_key, &module));
+    HM_MOVED(name, hmModuleRegistryStoreModule);
+    HM_TRY(hmModuleRegistryStoreModule(registry, metadata->module_id, &name, &module));
     return HM_OK;
 }
 
@@ -222,9 +222,9 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_int32 clas
     return HM_OK;
 }
 
-static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString* name_view, hmClass* in_class)
+static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString* name, hmClass* in_class)
 {
-    HM_TRY(hmStringDuplicate(allocator, name_view, &in_class->name));
+    HM_TRY(hmStringDuplicate(allocator, name, &in_class->name));
     HM_MOVED(in_class->name, in_class);
     in_class->class_id = class_id;
     return HM_OK;
@@ -268,13 +268,13 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     hmClass hm_class;
     HM_TRY(hmCreateClass(registry->allocator, metadata->class_id, &metadata->name, &hm_class));
     HM_OWNED(hm_class);
-    hmString name_key;
-    err = hmStringDuplicate(registry->allocator, &metadata->name, &name_key);
+    hmString name;
+    err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
         return hmCombineErrors(err, hmClassDispose(&hm_class));
     }
     HM_MOVED(hm_class, hmModuleStoreClass);
-    HM_MOVED(name_key, hmModuleStoreClass);
-    HM_TRY(hmModuleStoreClass(module_ref, metadata->class_id, &name_key, &hm_class));
+    HM_MOVED(name, hmModuleStoreClass);
+    HM_TRY(hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class));
     return HM_OK;
 }
