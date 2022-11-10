@@ -52,7 +52,7 @@ hmError hmArrayDispose(hmArray* array)
 
 hmError hmArrayAdd(hmArray* array, void* in_value)
 {
-    memcpy(array->items + array->count*array->item_size, in_value, array->item_size);
+    memcpy(array->items + array->count * array->item_size, in_value, array->item_size);
     array->count++;
     if (array->count >= array->capacity) {
         hm_nint new_capacity = array->capacity*2;
@@ -76,7 +76,7 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value)
     if (index >= array->count) {
         return HM_ERROR_OUT_OF_RANGE;
     }
-    memcpy(in_value, array->items + index*array->item_size, array->item_size);
+    memcpy(in_value, array->items + index * array->item_size, array->item_size);
     return HM_OK;
 }
 
@@ -85,7 +85,7 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
     if (index >= array->count) {
         return HM_ERROR_OUT_OF_RANGE;
     }
-    memcpy(array->items + index*array->item_size, in_value, array->item_size);
+    memcpy(array->items + index * array->item_size, in_value, array->item_size);
     return HM_OK;
 }
 
@@ -96,7 +96,7 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
     }
     hm_nint new_count = array->count+count;
     if (new_count > array->capacity) {
-        hm_nint new_capacity = array->capacity+count;
+        hm_nint new_capacity = array->capacity + count;
         char* new_items = hmRealloc(
             array->allocator,
             array->items,
@@ -110,14 +110,14 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         array->capacity = new_capacity;
     }
     if (array_expand_func) {
-        char* item = array->items+array->count*array->item_size;
+        char* item = array->items+array->count * array->item_size;
         for (hm_nint i = 0; i < count; i++) {
             // NOTE: no need to deallocate array->items on error
-            HM_TRY(array_expand_func(array, array->count+i, item, user_data));
+            HM_TRY(array_expand_func(array, array->count + i, item, user_data));
             item += array->item_size;
         }
     } else {
-        memset(array->items+array->count*array->item_size, 0, array->item_size*count);
+        memset(array->items+array->count * array->item_size, 0, array->item_size * count);
     }
     array->count = new_count;
     return HM_OK;

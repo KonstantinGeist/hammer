@@ -6,6 +6,7 @@ test_sources = files(
     'hashes.c',
     'hashmaps.c',
     'modules.c',
+    'queues.c',
     'readers.c',
     'strings.c',
     'utils.c'

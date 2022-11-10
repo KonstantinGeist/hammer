@@ -16,7 +16,7 @@
 #include <runtime/module.h>
 #include <core/string.h>
 
-static void create_module_registry(hmModuleRegistry* module_registry, hmAllocator* allocator)
+static void create_module_registry_and_allocator(hmModuleRegistry* module_registry, hmAllocator* allocator)
 {
     hmError err = hmCreateSystemAllocator(allocator);
     HM_TEST_ASSERT_OK(err);
@@ -43,7 +43,7 @@ static void test_can_load_existing_module()
     #define POINT_CLASS_NAME "Point"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
-    create_module_registry(&module_registry, &allocator);
+    create_module_registry_and_allocator(&module_registry, &allocator);
     hmString core_module_name;
     hmError err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &core_module_name);
     HM_TEST_ASSERT_OK(err);
@@ -69,7 +69,7 @@ static void test_cannot_load_non_existing_module()
     #define NON_EXISTING_MODULE_NAME "non_existing"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
-    create_module_registry(&module_registry, &allocator);
+    create_module_registry_and_allocator(&module_registry, &allocator);
     hmString non_existing_module_name;
     hmError err = hmCreateStringViewFromCString(NON_EXISTING_MODULE_NAME, &non_existing_module_name);
     HM_TEST_ASSERT_OK(err);

@@ -23,11 +23,11 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hm_nint length = strlen(content);
-    char* content_copy = hmAlloc(allocator, length+1); // including null terminator
+    char* content_copy = hmAlloc(allocator, length + 1); // including null terminator
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    memcpy(content_copy, content, length+1); // including null terminator
+    memcpy(content_copy, content, length + 1); // including null terminator
     in_string->content = content_copy;
     in_string->allocator = allocator;
     in_string->length = length;

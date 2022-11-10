@@ -117,8 +117,8 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         data->large_objects = hmRealloc(
             data->base_allocator,
             data->large_objects,
-            sizeof(char*)*data->large_object_count,
-            sizeof(char*)*(data->large_object_count+1)
+            sizeof(char*) * data->large_object_count,
+            sizeof(char*) * (data->large_object_count+1)
         );
         if (!data->large_objects) {
             hmFree(data->base_allocator, result);
@@ -131,7 +131,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     sz = hmAlignSize(sz);
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
     if (!cur_segment || cur_segment->index + sz > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE) {
-        hm_nint full_segment_size = sizeof(hmBumpPointerAllocatorSegment)+HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE-1;
+        hm_nint full_segment_size = sizeof(hmBumpPointerAllocatorSegment) + HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE - 1;
         hmBumpPointerAllocatorSegment* new_segment = hmAlloc(data->base_allocator, full_segment_size);
         if (!new_segment) {
             return HM_NULL;

@@ -24,5 +24,6 @@ int main()
     test_hashmaps();
     test_hashes();
     test_errors();
+    test_queues();
     return 0;
 }

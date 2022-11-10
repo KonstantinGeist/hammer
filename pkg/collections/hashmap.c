@@ -78,7 +78,7 @@ hmError hmCreateHashMap(
     if (!initial_capacity || load_factor <= 0.5 || load_factor > 1.0) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    in_hashmap->buckets = hmAllocZeroInitialized(allocator, sizeof(hmHashMapEntry*)*initial_capacity);
+    in_hashmap->buckets = hmAllocZeroInitialized(allocator, sizeof(hmHashMapEntry*) * initial_capacity);
     if (!in_hashmap->buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -146,8 +146,8 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;
     hm_nint old_bucket_count = hash_map->bucket_count;
-    hm_nint new_bucket_count = old_bucket_count*2+1;
-    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*)*new_bucket_count);
+    hm_nint new_bucket_count = old_bucket_count * 2 + 1;
+    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*) * new_bucket_count);
     if (!new_buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -194,7 +194,7 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     }
     hmHashMapEntry* new_entry = hmAlloc(
         hash_map->allocator,
-        sizeof(hmHashMapEntry)-1+hash_map->key_size+hash_map->value_size // -1 for "char[1] payload"
+        sizeof(hmHashMapEntry) - 1 + hash_map->key_size + hash_map->value_size // -1 for "char[1] payload"
     );
     if (!new_entry) {
         return HM_ERROR_OUT_OF_MEMORY;
