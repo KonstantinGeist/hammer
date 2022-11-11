@@ -29,6 +29,7 @@ typedef struct {
     hm_nint              count;
     hm_nint              read_index;
     hm_nint              write_index;
+    hm_bool              is_bounded;
 } hmQueue;
 
 /* Creates a ring buffer-based queue. Arguments and the semantics are similar to those of hmArray (see).
@@ -38,10 +39,13 @@ hmError hmCreateQueue(
     hm_nint item_size,
     hm_nint initial_capacity,
     hmDisposeFunc item_dispose_func,
+    hm_bool is_bounded, /* A bounded queue returns HM_ERROR_LIMIT_EXCEEDED if the queue is full, instead of increasing the capacity. */
     hmQueue* in_queue
 );
 /* Enqueues an item whose value is moved inside the queue.
-   item_dispose_func (if any) will be called on the value if it's still inside the queue when hmQueueDispose is called. */
+   item_dispose_func (if any) will be called on the value if it's still inside the queue when hmQueueDispose is called.
+   If the queue is bounded and it's full, returns HM_ERROR_LIMIT_EXCEEDED.
+   If the queue is unbounded and it's full, doubles the capacity. */
 hmError hmQueueEnqueue(hmQueue* queue, void* value);
 /* Dequeues an item. Its value is moved out of the queue and item_dispose_func won't be called on it in hmQueueDispose. */
 hmError hmQueueDequeue(hmQueue* queue, void* in_value);

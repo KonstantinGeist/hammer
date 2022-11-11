@@ -57,6 +57,7 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file, or an element in a hashmap) was not found. */
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
 #define HM_ERROR_INVALID_IMAGE      ((hmError)7) /* Invalid binary data found. */
+#define HM_ERROR_LIMIT_EXCEEDED     ((hmError)8) /* A certain limit was exceeded. */
 
 /* Allows to combine several errors into one. Usually useful when a new error occurs while processing another error. */
 hmError hmCombineErrors(hmError older, hmError newer);

@@ -24,6 +24,7 @@ hmError hmCreateQueue(
     hm_nint item_size,
     hm_nint initial_capacity,
     hmDisposeFunc item_dispose_func,
+    hm_bool is_bounded,
     hmQueue* in_queue
 )
 {
@@ -42,12 +43,16 @@ hmError hmCreateQueue(
     in_queue->count = 0;
     in_queue->read_index = 0;
     in_queue->write_index = 0;
+    in_queue->is_bounded = is_bounded;
     return HM_OK;
 }
 
 hmError hmQueueEnqueue(hmQueue* queue, void* value)
 {
     if (queue->count == queue->capacity) {
+        if (queue->is_bounded) {
+            return HM_ERROR_LIMIT_EXCEEDED;
+        }
         HM_TRY(hmQueueDoubleQueue(queue));
     }
     memcpy(queue->items + queue->item_size * queue->write_index, value, queue->item_size);
