@@ -25,5 +25,6 @@ int main()
     test_hashes();
     test_errors();
     test_queues();
+    test_mutexes();
     return 0;
 }

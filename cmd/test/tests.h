@@ -21,3 +21,4 @@ void test_hashmaps();
 void test_hashes();
 void test_errors();
 void test_queues();
+void test_mutexes();
