@@ -24,6 +24,7 @@ There are several conventions to follow:
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
 * Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
 * Static functions should come after public functions.
+* All objects are thread-unsafe and move-only by default, unless stated otherwise.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

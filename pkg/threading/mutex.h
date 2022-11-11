@@ -24,12 +24,11 @@ typedef struct {
                                            Also a pointer guards against moves/copies. */
 } hmMutex;
 
-/* Creates a recursive mutex (possible, in the same thread, to lock it multiple times before
-   unlocking the same number of time). */
+/* Creates a recursive mutex. */
 hmError hmCreateMutex(struct _hmAllocator* allocator, hmMutex* in_mutex);
 hmError hmMutexLock(hmMutex* mutex);
 hmError hmMutexUnlock(hmMutex* mutex);
-/* It's undefined behavior across platforms when a mutex is destroyed while it's locked. */
+/* It's undefined behavior when a mutex is destroyed while it's locked. */
 hmError hmMutexDispose(hmMutex* mutex);
 
 #endif /* HM_MUTEX_H */

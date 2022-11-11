@@ -58,6 +58,7 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
 #define HM_ERROR_INVALID_IMAGE      ((hmError)7) /* Invalid binary data found. */
 #define HM_ERROR_LIMIT_EXCEEDED     ((hmError)8) /* A certain limit was exceeded. */
+#define HM_ERROR_TIMEOUT            ((hmError)9) /* An operation timed out. */
 
 /* Allows to combine several errors into one. Usually useful when a new error occurs while processing another error. */
 hmError hmCombineErrors(hmError older, hmError newer);

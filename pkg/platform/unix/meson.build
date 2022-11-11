@@ -1,3 +1,4 @@
 platform_sources = files(
-    'mutex.c'
+    'mutex.c',
+    'waitobject.c'
 )

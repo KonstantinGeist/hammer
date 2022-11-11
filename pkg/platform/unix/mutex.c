@@ -19,45 +19,43 @@ typedef struct {
     pthread_mutex_t posix_mutex;
 } hmMutexPlatformData;
 
+#define hmResultToError(result) ((result) ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmMutexGetPosixMutexRef(mutex) &((hmMutexPlatformData*)(mutex)->platform_data)->posix_mutex
+#define HM_TRY_OR_FINALIZE_FOR_RESULT(err, expr) HM_TRY_OR_FINALIZE(err, hmResultToError(expr))
 
-hmError hmCreateMutex(struct _hmAllocator* allocator, hmMutex* in_mutex)
+hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex)
 {
     hmMutexPlatformData* platform_data = (hmMutexPlatformData*)hmAlloc(allocator, sizeof(hmMutexPlatformData));
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
+    hmError err = HM_OK;
     pthread_mutexattr_t mutex_attr;
-    pthread_mutexattr_init(&mutex_attr);
-    pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
-    int result = pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr);
-    if (result) {
-        hmFree(allocator, platform_data);
-        return HM_ERROR_PLATFORM_DEPENDENT;
-    }
+    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutexattr_init(&mutex_attr));
+    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE));
+    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr));
     in_mutex->allocator = allocator;
     in_mutex->platform_data = platform_data;
-    return HM_OK;
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        hmFree(allocator, platform_data);
+    }
+    return err;
 }
 
 hmError hmMutexLock(hmMutex* mutex)
 {
-    int result = pthread_mutex_lock(hmMutexGetPosixMutexRef(mutex));
-    return result ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
+    return hmResultToError(pthread_mutex_lock(hmMutexGetPosixMutexRef(mutex)));
 }
 
 hmError hmMutexUnlock(hmMutex* mutex)
 {
-    int result = pthread_mutex_unlock(hmMutexGetPosixMutexRef(mutex));
-    return result ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
+    return hmResultToError(pthread_mutex_unlock(hmMutexGetPosixMutexRef(mutex)));
 }
 
 hmError hmMutexDispose(hmMutex* mutex)
 {
-    int result = pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex));
-    if (result) {
-        return HM_ERROR_PLATFORM_DEPENDENT;
-    }
+    hmError err = hmResultToError(pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex)));
     hmFree(mutex->allocator, mutex->platform_data);
-    return HM_OK;
+    return err;
 }
