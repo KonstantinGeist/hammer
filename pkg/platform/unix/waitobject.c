@@ -32,7 +32,9 @@ typedef struct {
     hm_bool         signaled_state; /* access to be protected with the mutex */
 } hmWaitObjectPlatformData;
 
-#define hmResultToError(result) ((result) ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
+#define POSIX_RESULT_OK 0
+
+#define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmWaitObjectGetPlatformData(wait_object) ((hmWaitObjectPlatformData*)(wait_object)->platform_data)
 #define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
 
@@ -122,12 +124,12 @@ static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_da
         platform_data->signaled_state = HM_FALSE;
         return HM_OK;
     }
-    int result = 0;
+    int result = POSIX_RESULT_OK;
     struct timespec ts = convert_timeout_ms_to_timespec(timeout_ms);
     do {
         result = pthread_cond_timedwait(&platform_data->cond_variable, &platform_data->mutex, &ts);
-    } while (result == 0 && !platform_data->signaled_state);
-    if (result == 0) {
+    } while (result == POSIX_RESULT_OK && !platform_data->signaled_state); /* a check to protect against spurious wakeups */
+    if (result == POSIX_RESULT_OK) {
         platform_data->signaled_state = HM_FALSE;
     }
     return result == ETIMEDOUT ? HM_ERROR_TIMEOUT : HM_OK;

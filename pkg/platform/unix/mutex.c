@@ -19,7 +19,9 @@ typedef struct {
     pthread_mutex_t posix_mutex;
 } hmMutexPlatformData;
 
-#define hmResultToError(result) ((result) ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
+#define POSIX_RESULT_OK 0
+
+#define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmMutexGetPosixMutexRef(mutex) &((hmMutexPlatformData*)(mutex)->platform_data)->posix_mutex
 
 hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex)
