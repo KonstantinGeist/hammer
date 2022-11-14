@@ -26,5 +26,6 @@ int main()
     test_errors();
     test_queues();
     test_mutexes();
+    test_wait_objects();
     return 0;
 }

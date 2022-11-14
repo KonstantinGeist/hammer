@@ -21,7 +21,6 @@ typedef struct {
 
 #define hmResultToError(result) ((result) ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmMutexGetPosixMutexRef(mutex) &((hmMutexPlatformData*)(mutex)->platform_data)->posix_mutex
-#define HM_TRY_OR_FINALIZE_FOR_RESULT(err, expr) HM_TRY_OR_FINALIZE(err, hmResultToError(expr))
 
 hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex)
 {
@@ -31,9 +30,9 @@ hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex)
     }
     hmError err = HM_OK;
     pthread_mutexattr_t mutex_attr;
-    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutexattr_init(&mutex_attr));
-    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE));
-    HM_TRY_OR_FINALIZE_FOR_RESULT(err, pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr));
+    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutexattr_init(&mutex_attr)));
+    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE)));
+    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr)));
     in_mutex->allocator = allocator;
     in_mutex->platform_data = platform_data;
 HM_ON_FINALIZE

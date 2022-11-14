@@ -10,7 +10,8 @@ test_sources = files(
     'queues.c',
     'readers.c',
     'strings.c',
-    'utils.c'
+    'utils.c',
+    'waitobjects.c'
 )
 
 executable('hammer-test', test_sources, link_with: hammer_lib, include_directories: inc)

@@ -16,10 +16,10 @@
 
 #include <core/common.h>
 
-#define HM_DEFAULT_WAIT_OBJECT_INITIAL_STATE HM_FALSE
-#define HM_DEFAULT_WAIT_OBJECT_AUTO_RESET HM_TRUE
-
 struct _hmAllocator;
+
+#define HM_WAIT_OBJECT_MIN_TIMEOUT_MS 1
+#define HM_WAIT_OBJECT_MAX_TIMEOUT_MS (24*60*60*1000) /* 24 hours must be more than enough */
 
 typedef struct {
     struct _hmAllocator* allocator;
@@ -29,22 +29,19 @@ typedef struct {
 
 /* Creates a "wait object" which allows to block the current thread until its Pulse() method is called.
    Useful for building queue consumers to avoid burning the CPU while waiting. */
-hmError hmCreateWaitObject(
-    struct _hmAllocator* allocator,
-    hmWaitObject* in_wait_object,
-    hm_bool initial_state,
-    hm_bool auto_reset
-);
-/* Blocks the current thread until the wait object receives a signal (gets Pulse() called) using an integer `timeout`
+hmError hmCreateWaitObject(struct _hmAllocator* allocator, hmWaitObject* in_wait_object);
+hmError hmWaitObjectDispose(hmWaitObject* wait_object);
+/* Blocks the current thread until the wait object receives a signal (gets Pulse() called) using an integer `timeout_ms`
    value (in milliseconds) to specify the time interval. The function waits until the object is signaled or
-   the interval elapses. If the parameter is 0, the function will return only when the object is signaled.
+   the interval elapses.
    Returns HM_OK if the thread was woken up; returns HM_ERROR_TIMEOUT if the timeout expired.
+   `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
+   HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases.
  */
-hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout);
+hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms);
 /* Sets the state of the object to "signaled", allowing the waiting thread to proceed. Automatically resets
    to non-signaled once the thread is released (if auto_reset is set to HM_TRUE).
    Only one thread at a time is guaranteed to proceed. */
 hmError hmWaitObjectPulse(hmWaitObject* wait_object);
-hmError hmWaitObjectDispose(hmWaitObject* wait_object);
 
 #endif /* HM_WAIT_OBJECT_H */
