@@ -21,7 +21,6 @@
 
 #include <threading/waitobject.h>
 #include <core/allocator.h>
-#include <assert.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
@@ -38,8 +37,8 @@ typedef struct {
 #define hmWaitObjectGetPlatformData(wait_object) ((hmWaitObjectPlatformData*)(wait_object)->platform_data)
 #define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
 
-static hmError hmWaitObjectSignalEvent(hmWaitObjectPlatformData* platform_data);
-static hmError hmWaitObjectResetEvent(hmWaitObjectPlatformData* platform_data);
+static hmError hmWaitObjectSignal(hmWaitObjectPlatformData* platform_data);
+static hmError hmWaitObjectReset(hmWaitObjectPlatformData* platform_data);
 static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout);
 
 hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
@@ -85,11 +84,11 @@ hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms)
 hmError hmWaitObjectPulse(hmWaitObject* wait_object)
 {
     hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
-    HM_TRY(hmWaitObjectSignalEvent(platform_data));
-    return hmWaitObjectResetEvent(platform_data);
+    HM_TRY(hmWaitObjectSignal(platform_data));
+    return hmWaitObjectReset(platform_data);
 }
 
-static hmError hmWaitObjectSignalEvent(hmWaitObjectPlatformData* platform_data)
+static hmError hmWaitObjectSignal(hmWaitObjectPlatformData* platform_data)
 {
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
     platform_data->signaled_state = HM_TRUE;
@@ -98,7 +97,7 @@ static hmError hmWaitObjectSignalEvent(hmWaitObjectPlatformData* platform_data)
     return HM_OK;
 }
 
-static hmError hmWaitObjectResetEvent(hmWaitObjectPlatformData* platform_data)
+static hmError hmWaitObjectReset(hmWaitObjectPlatformData* platform_data)
 {
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
     platform_data->signaled_state = HM_FALSE;

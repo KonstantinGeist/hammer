@@ -31,17 +31,15 @@ typedef struct {
    Useful for building queue consumers to avoid burning the CPU while waiting. */
 hmError hmCreateWaitObject(struct _hmAllocator* allocator, hmWaitObject* in_wait_object);
 hmError hmWaitObjectDispose(hmWaitObject* wait_object);
-/* Blocks the current thread until the wait object receives a signal (gets Pulse() called) using an integer `timeout_ms`
-   value (in milliseconds) to specify the time interval. The function waits until the object is signaled or
-   the interval elapses.
-   Returns HM_OK if the thread was woken up; returns HM_ERROR_TIMEOUT if the timeout expired.
+/* Blocks the current thread until the wait object receives a signal (gets Pulse() called) or the interval `timeout_ms`
+   (in milliseconds) elapses.
+   Returns HM_OK if the thread was woken up (via Pulse()); returns HM_ERROR_TIMEOUT if the timeout expired.
    `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
    HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases.
  */
 hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms);
 /* Sets the state of the object to "signaled", allowing the waiting thread to proceed. Automatically resets
-   to non-signaled once the thread is released (if auto_reset is set to HM_TRUE).
-   Only one thread at a time is guaranteed to proceed. */
+   to non-signaled once the thread is released. Only one thread at a time is guaranteed to proceed. */
 hmError hmWaitObjectPulse(hmWaitObject* wait_object);
 
 #endif /* HM_WAIT_OBJECT_H */
