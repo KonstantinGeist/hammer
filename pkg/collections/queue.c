@@ -47,6 +47,18 @@ hmError hmCreateQueue(
     return HM_OK;
 }
 
+hmError hmQueueDispose(hmQueue* queue)
+{
+    hmError err = HM_OK;
+    if (queue->item_dispose_func) {
+        for(hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
+            err = hmCombineErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
+        }
+    }
+    hmFree(queue->allocator, queue->items);
+    return err;
+}
+
 hmError hmQueueEnqueue(hmQueue* queue, void* value)
 {
     if (queue->count == queue->capacity) {
@@ -70,18 +82,6 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
     queue->read_index = hmQueueIncrementIndex(queue, queue->read_index);
     queue->count--;
     return HM_OK;
-}
-
-hmError hmQueueDispose(hmQueue* queue)
-{
-    hmError err = HM_OK;
-    if (queue->item_dispose_func) {
-        for(hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
-            err = hmCombineErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
-        }
-    }
-    hmFree(queue->allocator, queue->items);
-    return err;
 }
 
 static hmError hmQueueDoubleQueue(hmQueue* queue)

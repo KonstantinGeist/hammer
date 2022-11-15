@@ -44,6 +44,13 @@ HM_ON_FINALIZE
     return err;
 }
 
+hmError hmMutexDispose(hmMutex* mutex)
+{
+    hmError err = hmResultToError(pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex)));
+    hmFree(mutex->allocator, mutex->platform_data);
+    return err;
+}
+
 hmError hmMutexLock(hmMutex* mutex)
 {
     return hmResultToError(pthread_mutex_lock(hmMutexGetPosixMutexRef(mutex)));
@@ -52,11 +59,4 @@ hmError hmMutexLock(hmMutex* mutex)
 hmError hmMutexUnlock(hmMutex* mutex)
 {
     return hmResultToError(pthread_mutex_unlock(hmMutexGetPosixMutexRef(mutex)));
-}
-
-hmError hmMutexDispose(hmMutex* mutex)
-{
-    hmError err = hmResultToError(pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex)));
-    hmFree(mutex->allocator, mutex->platform_data);
-    return err;
 }

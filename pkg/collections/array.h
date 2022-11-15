@@ -44,7 +44,6 @@ hmError hmCreateArray(
     hmDisposeFunc item_dispose_func,
     hmArray* in_array
 );
-
 hmError hmArrayDispose(hmArray* array);
 /* Adds a new value to the array. in_value must be a reference to the actual value. An object is stored in an array
    by having a shallow copy. in_value is a reference to the value (not the value itself). The value is copied

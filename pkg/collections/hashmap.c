@@ -142,6 +142,30 @@ hmError hmCreateHashMapWithStringRefKeys(
     );
 }
 
+hmError hmHashMapDispose(hmHashMap* hash_map)
+{
+    hmError err = HM_OK;
+    for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
+        hmHashMapEntry* entry = hash_map->buckets[i];
+        hmHashMapEntry* next_entry = HM_NULL;
+        while (entry) {
+            if (hash_map->key_dispose_func) {
+                void* key = hmHashMapEntryGetKey(hash_map, entry);
+                err = hmCombineErrors(err, hash_map->key_dispose_func(key));
+            }
+            if (hash_map->value_dispose_func) {
+                void* value = hmHashMapEntryGetValue(hash_map, entry);
+                err = hmCombineErrors(err, hash_map->value_dispose_func(value));
+            }
+            next_entry = entry->next;
+            hmFree(hash_map->allocator, entry);
+            entry = next_entry;
+        }
+    }
+    hmFree(hash_map->allocator, hash_map->buckets);
+    return err;
+}
+
 static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;
@@ -270,28 +294,4 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
         *out_removed = HM_FALSE;
     }
     return HM_OK;
-}
-
-hmError hmHashMapDispose(hmHashMap* hash_map)
-{
-    hmError err = HM_OK;
-    for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
-        hmHashMapEntry* entry = hash_map->buckets[i];
-        hmHashMapEntry* next_entry = HM_NULL;
-        while (entry) {
-            if (hash_map->key_dispose_func) {
-                void* key = hmHashMapEntryGetKey(hash_map, entry);
-                err = hmCombineErrors(err, hash_map->key_dispose_func(key));
-            }
-            if (hash_map->value_dispose_func) {
-                void* value = hmHashMapEntryGetValue(hash_map, entry);
-                err = hmCombineErrors(err, hash_map->value_dispose_func(value));
-            }
-            next_entry = entry->next;
-            hmFree(hash_map->allocator, entry);
-            entry = next_entry;
-        }
-    }
-    hmFree(hash_map->allocator, hash_map->buckets);
-    return err;
 }

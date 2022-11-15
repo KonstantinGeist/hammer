@@ -78,6 +78,7 @@ hmError hmCreateHashMapWithStringRefKeys(
     hm_float             load_factor,
     hmHashMap*           in_hashmap
 );
+hmError hmHashMapDispose(hmHashMap* hash_map);
 /* Puts a value in the map by the given key. Note that if dispose_func is provided, it's always called on the old value,
    even if it's the same value -- which can lead to use-after-free if used without care. */
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value);
@@ -93,7 +94,6 @@ hm_bool hmHashMapContains(hmHashMap* hash_map, void* key);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);
-hmError hmHashMapDispose(hmHashMap* hash_map);
 #define hmHashMapCount(hash_map) ((hash_map)->count)
 
 #endif /* HM_HASHMAP_H */

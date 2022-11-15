@@ -26,9 +26,9 @@ typedef struct {
 
 /* Creates a recursive mutex. */
 hmError hmCreateMutex(struct _hmAllocator* allocator, hmMutex* in_mutex);
-hmError hmMutexLock(hmMutex* mutex);
-hmError hmMutexUnlock(hmMutex* mutex);
 /* It's undefined behavior when a mutex is destroyed while it's locked. */
 hmError hmMutexDispose(hmMutex* mutex);
+hmError hmMutexLock(hmMutex* mutex);
+hmError hmMutexUnlock(hmMutex* mutex);
 
 #endif /* HM_MUTEX_H */

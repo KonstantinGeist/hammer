@@ -42,6 +42,8 @@ hmError hmCreateQueue(
     hm_bool is_bounded, /* A bounded queue returns HM_ERROR_LIMIT_EXCEEDED if the queue is full, instead of increasing the capacity. */
     hmQueue* in_queue
 );
+/* Disposes of the queue and calls item_dispose_func (if any) on all the items still in the queue. */
+hmError hmQueueDispose(hmQueue* queue);
 /* Enqueues an item whose value is moved inside the queue.
    item_dispose_func (if any) will be called on the value if it's still inside the queue when hmQueueDispose is called.
    If the queue is bounded and it's full, returns HM_ERROR_LIMIT_EXCEEDED.
@@ -49,8 +51,6 @@ hmError hmCreateQueue(
 hmError hmQueueEnqueue(hmQueue* queue, void* value);
 /* Dequeues an item. Its value is moved out of the queue and item_dispose_func won't be called on it in hmQueueDispose. */
 hmError hmQueueDequeue(hmQueue* queue, void* in_value);
-/* Disposes of the queue and calls item_dispose_func (if any) on all the items still in the queue. */
-hmError hmQueueDispose(hmQueue* queue);
 
 #define hmQueueCount(queue) (queue)->count
 #define hmQueueIsEmpty(queue) ((queue)->count == 0)
