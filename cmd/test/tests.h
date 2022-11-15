@@ -23,3 +23,4 @@ void test_errors();
 void test_queues();
 void test_mutexes();
 void test_wait_objects();
+void test_threads();

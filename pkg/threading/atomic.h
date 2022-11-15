@@ -11,22 +11,16 @@
 //
 // *****************************************************************************
 
-#include "tests.h"
+#ifndef HM_ATOMIC_H
+#define HM_ATOMIC_H
 
-int main()
-{
-    test_allocators();
-    test_readers();
-    test_arrays();
-    test_modules();
-    test_strings();
-    test_utils();
-    test_hashmaps();
-    test_hashes();
-    test_errors();
-    test_queues();
-    test_mutexes();
-    test_wait_objects();
-    test_threads();
-    return 0;
-}
+#include <stdatomic.h>
+
+typedef atomic_size_t hm_atomic_nint;
+
+#define hmAtomicStore(object, value) atomic_store_explicit(&object, value, memory_order_relaxed)
+#define hmAtomicLoad(object) atomic_load_explicit(&object, memory_order_relaxed)
+#define hmAtomicIncrement(ref_count) atomic_fetch_add_explicit(&ref_count, 1, memory_order_relaxed)
+#define hmAtomicDecrement(ref_count) atomic_fetch_sub_explicit(&ref_count, 1, memory_order_relaxed)
+
+#endif /* HM_ATOMIC_H */

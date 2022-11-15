@@ -20,15 +20,17 @@
  */
 
 #include <threading/waitobject.h>
+#include <threading/atomic.h>
+
 #include <core/allocator.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
 
 typedef struct {
-    pthread_mutex_t mutex;
-    pthread_cond_t  cond_variable;
-    hm_bool         signaled_state; /* access to be protected with the mutex */
+    pthread_mutex_t         mutex;
+    pthread_cond_t          cond_variable;
+    volatile hm_atomic_nint signaled_state; /* access to be protected with the mutex */
 } hmWaitObjectPlatformData;
 
 #define POSIX_RESULT_OK 0
@@ -50,7 +52,7 @@ hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
     hmError err = HM_OK;
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_cond_init(&platform_data->cond_variable, 0)));
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->mutex, 0)));
-    platform_data->signaled_state = HM_FALSE;
+    hmAtomicStore(platform_data->signaled_state, HM_FALSE);
     in_wait_object->allocator = allocator;
     in_wait_object->platform_data = platform_data;
 HM_ON_FINALIZE
@@ -91,7 +93,7 @@ hmError hmWaitObjectPulse(hmWaitObject* wait_object)
 static hmError hmWaitObjectSignal(hmWaitObjectPlatformData* platform_data)
 {
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
-    platform_data->signaled_state = HM_TRUE;
+    hmAtomicStore(platform_data->signaled_state, HM_TRUE);
     HM_TRY_FOR_RESULT(pthread_mutex_unlock(&platform_data->mutex));
     HM_TRY_FOR_RESULT(pthread_cond_signal(&platform_data->cond_variable));
     return HM_OK;
@@ -99,9 +101,7 @@ static hmError hmWaitObjectSignal(hmWaitObjectPlatformData* platform_data)
 
 static hmError hmWaitObjectReset(hmWaitObjectPlatformData* platform_data)
 {
-    HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
-    platform_data->signaled_state = HM_FALSE;
-    HM_TRY_FOR_RESULT(pthread_mutex_unlock(&platform_data->mutex));
+    hmAtomicStore(platform_data->signaled_state, HM_FALSE);
     return HM_OK;
 }
 
@@ -119,17 +119,17 @@ static struct timespec convert_timeout_ms_to_timespec(hm_nint timeout_ms)
 
 static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout_ms)
 {
-    if (platform_data->signaled_state) {
-        platform_data->signaled_state = HM_FALSE;
+    if (hmAtomicLoad(platform_data->signaled_state)) {
+        hmAtomicStore(platform_data->signaled_state, HM_FALSE);
         return HM_OK;
     }
     int result = POSIX_RESULT_OK;
     struct timespec ts = convert_timeout_ms_to_timespec(timeout_ms);
     do {
         result = pthread_cond_timedwait(&platform_data->cond_variable, &platform_data->mutex, &ts);
-    } while (result == POSIX_RESULT_OK && !platform_data->signaled_state); /* a check to protect against spurious wakeups */
+    } while (result == POSIX_RESULT_OK && !hmAtomicLoad(platform_data->signaled_state)); /* a check to protect against spurious wakeups */
     if (result == POSIX_RESULT_OK) {
-        platform_data->signaled_state = HM_FALSE;
+        hmAtomicStore(platform_data->signaled_state, HM_FALSE);
     }
     return result == ETIMEDOUT ? HM_ERROR_TIMEOUT : HM_OK;
 }
