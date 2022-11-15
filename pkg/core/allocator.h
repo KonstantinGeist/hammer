@@ -50,11 +50,11 @@ void hmFree(hmAllocator* allocator, void* mem);
 hmError hmAllocatorDispose(hmAllocator* allocator);
 
 /* Creates a system allocator - it merely redirects to the OS or the standard library which implement alloc/free.
-   Memory alignment is OS-specific. */
+   Memory alignment is OS-specific. This allocator is thread-safe and can be used with hmThread. */
 hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
 /* Creates a simple, but fast bump pointer allocator. Allocations are fast (just a pointer is bumped), and frees
    are no-ops. Useful for static objects which are allocated together and deleted at once (for example, class
-   metadata. */
+   metadata. Note that this allocator is not thread-safe and shouldn't be used with hmThread. */
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
 
 #endif /* HM_ALLOCATOR_H */
