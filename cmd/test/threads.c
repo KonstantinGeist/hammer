@@ -16,6 +16,8 @@
 #include <core/string.h>
 #include <threading/thread.h>
 
+/* These tests rely on some timing, so sporadically they can fail on busy machines. */
+
 #define TEST_THREAD_NAME "TestThread"
 
 static void create_thread_and_allocator(hmThread* thread, hmAllocator* allocator, hmThreadStartFunc start_func, void* user_data)
@@ -144,6 +146,24 @@ static void test_threads_have_correct_statuses()
     dispose_thread_and_allocator(&thread, &allocator);
 }
 
+static hmError can_dispose_thread_before_it_finishes_thread_func(void* user_data)
+{
+    return hmSleep(200);
+}
+
+static void test_can_dispose_thread_before_it_finishes()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &can_dispose_thread_before_it_finishes_thread_func, HM_NULL);
+    hmError err = hmThreadDispose(&thread); /* Dispose immediately while the thread is running (sleeps for 200 ms). */
+    HM_TEST_ASSERT_OK(err);
+    err = hmSleep(400); /* Wait twice more time than the thread is running to make sure it stops running (to avoid memory leak report). */
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 void test_threads()
 {
     test_can_start_sleep_and_join_thread();
@@ -151,4 +171,5 @@ void test_threads()
     test_threads_can_abort();
     test_can_join_too_late();
     test_threads_have_correct_statuses();
+    test_can_dispose_thread_before_it_finishes();
 }
