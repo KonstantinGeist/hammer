@@ -124,10 +124,31 @@ static void test_can_join_too_late()
     dispose_thread_and_allocator(&thread, &allocator);
 }
 
+static hmError threads_have_correct_statuses_thread_func(void* user_data)
+{
+    hmThread* thread = (hmThread*)user_data;
+    HM_TEST_ASSERT(hmThreadGetState(thread) == HM_THREAD_STATE_RUNNING);
+    return HM_OK;
+}
+
+static void test_threads_have_correct_statuses()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &threads_have_correct_statuses_thread_func, &thread);
+    hmError err = hmThreadJoin(&thread);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmThreadGetState(&thread) == HM_THREAD_STATE_STOPPED);
+    hmError exit_error = hmThreadGetExitError(&thread);
+    HM_TEST_ASSERT_OK(exit_error);
+    dispose_thread_and_allocator(&thread, &allocator);
+}
+
 void test_threads()
 {
     test_can_start_sleep_and_join_thread();
     test_returns_error_when_joining_self();
     test_threads_can_abort();
     test_can_join_too_late();
+    test_threads_have_correct_statuses();
 }
