@@ -15,11 +15,11 @@
 #define HM_THREAD_H
 
 #include <core/common.h>
+#include <core/string.h>
 #include <threading/atomic.h>
 
 struct _hmAllocator;
 struct _hmArray;
-struct _hmString;
 struct _hmThread;
 
 typedef hm_atomic_nint hmThreadState;
@@ -31,10 +31,10 @@ typedef hm_atomic_nint hmThreadState;
 typedef hmError(*hmThreadStartFunc)(void* user_data);
 
 typedef struct {
-    struct _hmString* name;     /* The name of the thread, for debugging purposes. The string will be duplicated because
-                                   we must ensure it's allocated using a thread-safe allocator. */
-    hm_int32          priority; /* Thread priority from 0 to 100. -1 to use the default priority. */
-    hm_int32          affinity; /* Processor ID this thread has affinity to. -1 to use affinity assigned by the OS. */
+    hmString* name;     /* The name of the thread, for debugging purposes. The string will be duplicated because
+                           we must ensure it's allocated using a thread-safe allocator. */
+    hm_int32  priority; /* Thread priority from 0 to 100. -1 to use the default priority. */
+    hm_int32  affinity; /* Processor ID this thread has affinity to. -1 to use affinity assigned by the OS. */
 } hmThreadProperties;
 
 typedef struct _hmThread {
@@ -43,7 +43,7 @@ typedef struct _hmThread {
                              from its variable's lifetime (for example, a thread is still running, but hmThreadDispose was called). */
 } hmThread;
 
-/* Creates and starts a new thread. The allocator should be thread-safe, as it will allocate/deallocate on different threads. */
+/* Creates and starts a new thread. The allocator must be thread-safe, as it will allocate/deallocate on different threads. */
 hmError hmCreateThread(
     struct _hmAllocator* allocator,
     hmThreadProperties   properties,
@@ -63,7 +63,7 @@ hmError hmThreadJoin(hmThread* thread);
 hmThreadState hmThreadGetState(hmThread* thread);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */
-hmError hmThreadGetName(hmThread* thread, struct _hmString* in_string);
+hmError hmThreadGetName(hmThread* thread, hmString* in_string);
 /* Lists all threads known to the runtime. Depending on the current platform, it can be only the threads created with
    hmCreateThread, or all threads in the system. Useful for debugging/monitoring. Should be disposed with hmArrayDispose. */
 hmError hmListThreads(struct _hmArray* in_array); /* hmArray<hmThread> */

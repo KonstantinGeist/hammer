@@ -14,6 +14,7 @@
 #include <threading/thread.h>
 #include <core/allocator.h>
 #include <core/string.h>
+#include <core/utils.h>
 #include <collections/array.h>
 
 #include <pthread.h>
@@ -31,8 +32,10 @@ volatile
     hmThreadState     state;
 volatile
     hm_atomic_nint    ref_count;
-    hmError           exit_error;
-    hm_bool           is_detached;
+volatile
+    hm_atomic_nint    exit_error; /* actually, hmError */
+volatile
+    hm_atomic_bool    is_detached;
 } hmThreadPlatformData;
 
 #define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
@@ -61,8 +64,8 @@ hmError hmCreateThread(
     platform_data->user_data = user_data;
     platform_data->thread_func = thread_func;
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_UNSTARTED);
-    platform_data->exit_error = HM_OK;
-    platform_data->is_detached = HM_FALSE;
+    hmAtomicStore(platform_data->exit_error, HM_OK);
+    hmAtomicStore(platform_data->is_detached, HM_FALSE);
     in_thread->platform_data = platform_data;
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
 HM_ON_FINALIZE
@@ -103,7 +106,7 @@ hmError hmThreadJoin(hmThread* thread)
     }
     hmError err = hmResultToError(pthread_join(platform_data->posix_thread, 0));
     if (err == HM_OK) {
-        platform_data->is_detached = HM_TRUE; /* We shouldn't call pthread_detach on a thread which was successfully joined. */
+        hmAtomicStore(platform_data->is_detached, HM_TRUE); /* We shouldn't call pthread_detach on a thread which was successfully joined. */
     }
     return err;
 }
@@ -114,7 +117,7 @@ hmThreadState hmThreadGetState(hmThread* thread)
     return hmAtomicLoad(platform_data->state);
 }
 
-hmError hmThreadGetName(hmThread* thread, struct _hmString* in_string)
+hmError hmThreadGetName(hmThread* thread, hmString* in_string)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
     return hmStringDuplicate(platform_data->allocator, &platform_data->name, (hmString*)in_string);
@@ -142,7 +145,7 @@ hm_nint hmThreadGetProcessorTime(hmThread* thread)
 hmError hmThreadGetExitError(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return platform_data->exit_error;
+    return hmAtomicLoad(platform_data->exit_error);
 }
 
 hmError hmSleep(hm_nint ms)
@@ -160,7 +163,7 @@ static hmError hmThreadDisposePlatformData(hmThreadPlatformData* platform_data)
     hmError err = HM_OK;
     if (older_ref_count == 1) {
         err = hmCombineErrors(err, hmStringDispose(&platform_data->name));
-        if (!platform_data->is_detached) {
+        if (!hmAtomicLoad(platform_data->is_detached)) {
             err = hmCombineErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
         }
         hmFree(platform_data->allocator, platform_data);
@@ -172,9 +175,11 @@ static void* hmAdaptPosixThreadToHammer(void* arg)
 {
     hmThreadPlatformData* platform_data = (hmThreadPlatformData*)arg;
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_RUNNING);
-    platform_data->exit_error = platform_data->thread_func(platform_data->user_data);
+    hmAtomicStore(platform_data->exit_error, platform_data->thread_func(platform_data->user_data));
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_STOPPED);
-    // TODO where to report the result of this function?
-    hmThreadDisposePlatformData(platform_data); // auto-disposed when the thread finishes
+    hmError err = hmThreadDisposePlatformData(platform_data); // auto-disposed when the thread finishes
+    if (err != HM_OK) {
+        hmLog("hmThreadDisposePlatformData(..) failed");
+    }
     return 0;
 }

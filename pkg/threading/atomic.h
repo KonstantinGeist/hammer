@@ -17,6 +17,7 @@
 #include <stdatomic.h>
 
 typedef atomic_size_t hm_atomic_nint;
+typedef atomic_bool hm_atomic_bool;
 
 #define hmAtomicStore(object, value) atomic_store_explicit(&object, value, memory_order_relaxed)
 #define hmAtomicLoad(object) atomic_load_explicit(&object, memory_order_relaxed)

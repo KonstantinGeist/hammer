@@ -13,10 +13,17 @@
 
 #include <core/utils.h>
 
+#include <stdio.h>
+
 // Necessary for better alignment on typical CPU's for faster memory access.
 #define HM_ALLOC_SIZE_ALIGNMENT 16
 
 hm_nint hmAlignSize(hm_nint sz)
 {
     return (sz + HM_ALLOC_SIZE_ALIGNMENT - 1) & (-HM_ALLOC_SIZE_ALIGNMENT);
+}
+
+void hmLog(const char* msg)
+{
+    printf("%s\n", msg);
 }

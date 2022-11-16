@@ -31,7 +31,7 @@ static void test_can_start_sleep_and_join_thread()
     err = hmCreateStringViewFromCString("TestThread", &name);
     HM_TEST_ASSERT_OK(err);
     hmThreadProperties thread_properties;
-    thread_properties.name = (struct _hmString*)&name; // TODO don't force to cast
+    thread_properties.name = &name;
     err = hmCreateThread(
         &allocator,
         thread_properties,

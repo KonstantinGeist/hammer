@@ -18,4 +18,7 @@
 
 hm_nint hmAlignSize(hm_nint sz);
 
+/* Useful for logging when there's no other way to report an error. */
+void hmLog(const char* msg);
+
 #endif /* HM_UTILS_H */
