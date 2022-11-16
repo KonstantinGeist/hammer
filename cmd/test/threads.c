@@ -16,8 +16,6 @@
 #include <core/string.h>
 #include <threading/thread.h>
 
-#include <stdio.h>
-
 static hmError thread_func(void* user_data)
 {
     return hmSleep(500);

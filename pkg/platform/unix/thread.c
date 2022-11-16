@@ -32,6 +32,7 @@ volatile
 volatile
     hm_atomic_nint    ref_count;
     hmError           exit_error;
+    hm_bool           is_detached;
 } hmThreadPlatformData;
 
 #define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
@@ -55,12 +56,13 @@ hmError hmCreateThread(
     hm_bool is_string_duplicated = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, (hmString*)properties.name, &platform_data->name));
     is_string_duplicated = HM_TRUE;
-    hmAtomicStore(platform_data->ref_count, 2); /* +1 reference for the object itself, +1 reference to auto-dispose when the thread finishes */
+    hmAtomicStore(platform_data->ref_count, 2); /* +1 reference for the object itself, +1 reference to auto-dispose when the thread finishes. */
     platform_data->allocator = allocator;
     platform_data->user_data = user_data;
     platform_data->thread_func = thread_func;
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_UNSTARTED);
     platform_data->exit_error = HM_OK;
+    platform_data->is_detached = HM_FALSE;
     in_thread->platform_data = platform_data;
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
 HM_ON_FINALIZE
@@ -99,7 +101,11 @@ hmError hmThreadJoin(hmThread* thread)
     if(state == HM_THREAD_STATE_STOPPED) {
         return HM_OK;
     }
-    return hmResultToError(pthread_join(platform_data->posix_thread, 0));
+    hmError err = hmResultToError(pthread_join(platform_data->posix_thread, 0));
+    if (err == HM_OK) {
+        platform_data->is_detached = HM_TRUE; /* We shouldn't call pthread_detach on a thread which was successfully joined. */
+    }
+    return err;
 }
 
 hmThreadState hmThreadGetState(hmThread* thread)
@@ -136,7 +142,7 @@ hm_nint hmThreadGetProcessorTime(hmThread* thread)
 hmError hmThreadGetExitError(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return platform_data->state;
+    return platform_data->exit_error;
 }
 
 hmError hmSleep(hm_nint ms)
@@ -154,7 +160,9 @@ static hmError hmThreadDisposePlatformData(hmThreadPlatformData* platform_data)
     hmError err = HM_OK;
     if (older_ref_count == 1) {
         err = hmCombineErrors(err, hmStringDispose(&platform_data->name));
-        err = hmCombineErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
+        if (!platform_data->is_detached) {
+            err = hmCombineErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
+        }
         hmFree(platform_data->allocator, platform_data);
     }
     return err;
@@ -166,7 +174,7 @@ static void* hmAdaptPosixThreadToHammer(void* arg)
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_RUNNING);
     platform_data->exit_error = platform_data->thread_func(platform_data->user_data);
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_STOPPED);
-    // TODO where to the result of this function?
+    // TODO where to report the result of this function?
     hmThreadDisposePlatformData(platform_data); // auto-disposed when the thread finishes
     return 0;
 }
