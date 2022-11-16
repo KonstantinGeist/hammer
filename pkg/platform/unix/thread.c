@@ -96,17 +96,21 @@ hmError hmThreadAbort(hmThread* thread)
 }
 
 // TODO add timeout support
-// TODO check can't join itself
 hmError hmThreadJoin(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
+    if (pthread_equal(platform_data->posix_thread, pthread_self())) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmThreadState state = hmAtomicLoad(platform_data->state);
     if(state == HM_THREAD_STATE_STOPPED) {
         return HM_OK;
     }
     hmError err = hmResultToError(pthread_join(platform_data->posix_thread, 0));
     if (err == HM_OK) {
-        hmAtomicStore(platform_data->is_detached, HM_TRUE); /* We shouldn't call pthread_detach on a thread which was successfully joined. */
+        /* Makes sure we don't call pthread_detach in the destructor later on, as the thread is already
+           detached after a call to pthread_join. */
+        hmAtomicStore(platform_data->is_detached, HM_TRUE);
     }
     return err;
 }

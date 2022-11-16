@@ -57,7 +57,7 @@ hmError hmThreadDispose(hmThread* thread);
    The thread should poll for hmThreadGetState() == HM_THREAD_STATE_ABORT_REQUESTED and finish execution on its own
    to respect this function. */
 hmError hmThreadAbort(hmThread* thread);
-/* Blocks the current thread until the specified thread finishes. Returns HM_INVALID_ARGUMENT if `thread` refers
+/* Blocks the current thread until the specified thread finishes. Returns HM_ERROR_INVALID_ARGUMENT if `thread` refers
    to the current thread. Can be used together with hmThreadAbort. */
 hmError hmThreadJoin(hmThread* thread);
 hmThreadState hmThreadGetState(hmThread* thread);
