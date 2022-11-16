@@ -47,7 +47,7 @@ static void dispose_thread_and_allocator(hmThread* thread, hmAllocator* allocato
 
 static hmError can_start_sleep_and_join_thread_func(void* user_data)
 {
-    return hmSleep(500);
+    return hmSleep(200);
 }
 
 static void test_can_start_sleep_and_join_thread()
@@ -79,8 +79,55 @@ static void test_returns_error_when_joining_self()
     dispose_thread_and_allocator(&thread, &allocator);
 }
 
+static hmError threads_can_abort_thread_func(void* user_data)
+{
+    hmThread* thread = (hmThread*)user_data;
+    while (hmThreadGetState(thread) != HM_THREAD_STATE_ABORT_REQUESTED) {
+        hmError err = hmSleep(100);
+        HM_TEST_ASSERT_OK(err);
+    }
+    return HM_OK;
+}
+
+static void test_threads_can_abort()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &threads_can_abort_thread_func, &thread);
+    hmError err = hmSleep(200);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadAbort(&thread);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadJoin(&thread);
+    HM_TEST_ASSERT_OK(err);
+    hmError exit_error = hmThreadGetExitError(&thread);
+    HM_TEST_ASSERT_OK(exit_error);
+    dispose_thread_and_allocator(&thread, &allocator);
+}
+
+static hmError can_join_too_late_thread_func(void* user_data)
+{
+    return HM_OK;
+}
+
+static void test_can_join_too_late()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &can_join_too_late_thread_func, HM_NULL);
+    hmError err = hmSleep(300);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadJoin(&thread);
+    HM_TEST_ASSERT_OK(err);
+    hmError exit_error = hmThreadGetExitError(&thread);
+    HM_TEST_ASSERT_OK(exit_error);
+    dispose_thread_and_allocator(&thread, &allocator);
+}
+
 void test_threads()
 {
     test_can_start_sleep_and_join_thread();
     test_returns_error_when_joining_self();
+    test_threads_can_abort();
+    test_can_join_too_late();
 }
