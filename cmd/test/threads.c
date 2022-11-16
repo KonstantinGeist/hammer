@@ -164,6 +164,27 @@ static void test_can_dispose_thread_before_it_finishes()
     HM_TEST_ASSERT_OK(err);
 }
 
+static hmError can_retrieve_thread_name_thread_func(void* user_data)
+{
+    return HM_OK;
+}
+
+static void test_can_retrieve_thread_name()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &can_retrieve_thread_name_thread_func, &thread);
+    hmString thread_name;
+    hmError err = hmThreadGetName(&thread, &thread_name);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&thread_name, TEST_THREAD_NAME));
+    err = hmStringDispose(&thread_name);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadJoin(&thread);
+    HM_TEST_ASSERT_OK(err);
+    dispose_thread_and_allocator(&thread, &allocator);
+}
+
 void test_threads()
 {
     test_can_start_sleep_and_join_thread();
@@ -172,4 +193,5 @@ void test_threads()
     test_can_join_too_late();
     test_threads_have_correct_statuses();
     test_can_dispose_thread_before_it_finishes();
+    test_can_retrieve_thread_name();
 }
