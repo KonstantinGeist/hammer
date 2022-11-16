@@ -39,15 +39,16 @@ hmError hmCreateArray(
 
 hmError hmArrayDispose(hmArray* array)
 {
+    hmError err = HM_OK;
     if (array->item_dispose_func) {
         char* item = array->items;
         for (hm_nint i = 0; i < array->count; i++) {
-            HM_TRY(array->item_dispose_func(item));
+            err = hmCombineErrors(err, array->item_dispose_func(item));
             item += array->item_size;
         }
     }
     hmFree(array->allocator, array->items);
-    return HM_OK;
+    return err;
 }
 
 hmError hmArrayAdd(hmArray* array, void* in_value)

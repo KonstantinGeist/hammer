@@ -40,7 +40,7 @@ volatile
 
 #define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmThreadGetPlatformData(thread) ((hmThreadPlatformData*)(thread)->platform_data)
-static hmError hmThreadDisposePlatformData(hmThreadPlatformData* platform_data);
+static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_data);
 static void* hmAdaptPosixThreadToHammer(void* arg);
 
 hmError hmCreateThread(
@@ -81,7 +81,7 @@ HM_ON_FINALIZE
 hmError hmThreadDispose(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return hmThreadDisposePlatformData(platform_data);
+    return hmThreadTryDisposePlatformData(platform_data);
 }
 
 hmError hmThreadAbort(hmThread* thread)
@@ -161,7 +161,7 @@ hmError hmSleep(hm_nint ms)
     return HM_OK;
 }
 
-static hmError hmThreadDisposePlatformData(hmThreadPlatformData* platform_data)
+static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_data)
 {
     hm_nint older_ref_count = hmAtomicDecrement(platform_data->ref_count);
     hmError err = HM_OK;
@@ -181,9 +181,11 @@ static void* hmAdaptPosixThreadToHammer(void* arg)
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_RUNNING);
     hmAtomicStore(platform_data->exit_error, platform_data->thread_func(platform_data->user_data));
     hmAtomicStore(platform_data->state, HM_THREAD_STATE_STOPPED);
-    hmError err = hmThreadDisposePlatformData(platform_data); // auto-disposed when the thread finishes
+    /* Auto-disposes when the thread finishes, but the thread object may still be alive because the reference count
+       will definitely be 0 only with a call to hmThreadDispose(..) */
+    hmError err = hmThreadTryDisposePlatformData(platform_data);
     if (err != HM_OK) {
-        hmLog("hmThreadDisposePlatformData(..) failed");
+        hmLog("hmThreadTryDisposePlatformData(..) failed");
     }
     return 0;
 }

@@ -173,12 +173,38 @@ static void test_can_retrieve_thread_name()
 {
     hmAllocator allocator;
     hmThread thread;
-    create_thread_and_allocator(&thread, &allocator, &can_retrieve_thread_name_thread_func, &thread);
+    create_thread_and_allocator(&thread, &allocator, &can_retrieve_thread_name_thread_func, HM_NULL);
     hmString thread_name;
     hmError err = hmThreadGetName(&thread, &thread_name);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(&thread_name, TEST_THREAD_NAME));
     err = hmStringDispose(&thread_name);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadJoin(&thread);
+    HM_TEST_ASSERT_OK(err);
+    dispose_thread_and_allocator(&thread, &allocator);
+}
+
+static hmError thread_reports_processor_time_thread_func(void* user_data)
+{
+    hmThread* thread = (hmThread*)user_data;
+    while (hmThreadGetState(thread) != HM_THREAD_STATE_ABORT_REQUESTED) {
+        hmError err = hmSleep(100);
+        HM_TEST_ASSERT_OK(err);
+    }
+    hm_nint processor_time = hmThreadGetProcessorTime(thread);
+    HM_TEST_ASSERT(processor_time > 0);
+    return HM_OK;
+}
+
+static void test_thread_reports_processor_time()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &thread_reports_processor_time_thread_func, &thread);
+    hmError err = hmSleep(300);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadAbort(&thread);
     HM_TEST_ASSERT_OK(err);
     err = hmThreadJoin(&thread);
     HM_TEST_ASSERT_OK(err);
@@ -194,4 +220,5 @@ void test_threads()
     test_threads_have_correct_statuses();
     test_can_dispose_thread_before_it_finishes();
     test_can_retrieve_thread_name();
+    test_thread_reports_processor_time();
 }

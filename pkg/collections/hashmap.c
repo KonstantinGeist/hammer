@@ -23,44 +23,11 @@ typedef struct _hmHashMapEntry {
 
 #define hmHashMapEntryGetKey(hashmap, entry) (&((entry)->payload[0]))
 #define hmHashMapEntryGetValue(hashmap, entry) (&((entry)->payload[0])+((hashmap)->key_size))
-
-static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
-{
-    hm_uint32 hash;
-    if (hash_map->hash_func) {
-        hash = hash_map->hash_func(key);
-    } else {
-        hash = hmHash(key, hash_map->key_size);
-    }
-    return hash % hash_map->bucket_count;
-}
-
-static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2)
-{
-    if (hash_map->equals_func) {
-        return hash_map->equals_func(value1, value2);
-    }
-    return memcmp(value1, value2, hash_map->key_size) == 0;
-}
-
-static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key)
-{
-    hmHashMapEntry* entry = hash_map->buckets[bucket_index];
-    while (entry) {
-        void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
-        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
-            return entry;
-        }
-        entry = entry->next;
-    }
-    return HM_NULL;
-}
-
-static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key)
-{
-    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
-    return hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
-}
+static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key);
+static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2);
+static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key);
+static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key);
+static hmError hmHashMapRehash(hmHashMap* hash_map);
 
 hmError hmCreateHashMap(
     struct _hmAllocator* allocator,
@@ -166,41 +133,6 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
     return err;
 }
 
-static hmError hmHashMapRehash(hmHashMap* hash_map)
-{
-    hmHashMapEntry** old_buckets = hash_map->buckets;
-    hm_nint old_bucket_count = hash_map->bucket_count;
-    hm_nint new_bucket_count = old_bucket_count * 2 + 1;
-    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*) * new_bucket_count);
-    if (!new_buckets) {
-        return HM_ERROR_OUT_OF_MEMORY;
-    }
-    hash_map->buckets = new_buckets;
-    hash_map->bucket_count = new_bucket_count;
-    hash_map->threshold = (int)(new_bucket_count * hash_map->load_factor);
-    for (hm_nint i = 0; i < old_bucket_count; i++) {
-        hmHashMapEntry* old_entry = old_buckets[i];
-        while (old_entry) {
-            void* key = hmHashMapEntryGetKey(hash_map, old_entry);
-            hm_nint new_bucket_index = hmHashMapGetBucketIndex(hash_map, key);
-            hmHashMapEntry* new_entry = new_buckets[new_bucket_index];
-            if (new_entry) {
-                while (new_entry->next) {
-                    new_entry = new_entry->next;
-                }
-                new_entry->next = old_entry;
-            } else {
-                new_buckets[new_bucket_index] = old_entry;
-            }
-            hmHashMapEntry* next_old_entry = old_entry->next;
-            old_entry->next = HM_NULL;
-            old_entry = next_old_entry;
-        }
-    }
-    hmFree(hash_map->allocator, old_buckets);
-    return HM_OK;
-}
-
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
 {
     if (hash_map->count > hash_map->threshold) {
@@ -293,5 +225,78 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
     if (out_removed) {
         *out_removed = HM_FALSE;
     }
+    return HM_OK;
+}
+
+static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
+{
+    hm_uint32 hash;
+    if (hash_map->hash_func) {
+        hash = hash_map->hash_func(key);
+    } else {
+        hash = hmHash(key, hash_map->key_size);
+    }
+    return hash % hash_map->bucket_count;
+}
+
+static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2)
+{
+    if (hash_map->equals_func) {
+        return hash_map->equals_func(value1, value2);
+    }
+    return memcmp(value1, value2, hash_map->key_size) == 0;
+}
+
+static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key)
+{
+    hmHashMapEntry* entry = hash_map->buckets[bucket_index];
+    while (entry) {
+        void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
+        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
+            return entry;
+        }
+        entry = entry->next;
+    }
+    return HM_NULL;
+}
+
+static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key)
+{
+    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
+    return hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
+}
+
+static hmError hmHashMapRehash(hmHashMap* hash_map)
+{
+    hmHashMapEntry** old_buckets = hash_map->buckets;
+    hm_nint old_bucket_count = hash_map->bucket_count;
+    hm_nint new_bucket_count = old_bucket_count * 2 + 1;
+    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*) * new_bucket_count);
+    if (!new_buckets) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hash_map->buckets = new_buckets;
+    hash_map->bucket_count = new_bucket_count;
+    hash_map->threshold = (int)(new_bucket_count * hash_map->load_factor);
+    for (hm_nint i = 0; i < old_bucket_count; i++) {
+        hmHashMapEntry* old_entry = old_buckets[i];
+        while (old_entry) {
+            void* key = hmHashMapEntryGetKey(hash_map, old_entry);
+            hm_nint new_bucket_index = hmHashMapGetBucketIndex(hash_map, key);
+            hmHashMapEntry* new_entry = new_buckets[new_bucket_index];
+            if (new_entry) {
+                while (new_entry->next) {
+                    new_entry = new_entry->next;
+                }
+                new_entry->next = old_entry;
+            } else {
+                new_buckets[new_bucket_index] = old_entry;
+            }
+            hmHashMapEntry* next_old_entry = old_entry->next;
+            old_entry->next = HM_NULL;
+            old_entry = next_old_entry;
+        }
+    }
+    hmFree(hash_map->allocator, old_buckets);
     return HM_OK;
 }
