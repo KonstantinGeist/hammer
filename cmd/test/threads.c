@@ -211,6 +211,45 @@ static void test_thread_reports_processor_time()
     dispose_thread_and_allocator(&thread, &allocator);
 }
 
+static hmError can_create_and_join_100_threads_thread_func(void* user_data)
+{
+    return hmSleep(10);
+}
+
+static void test_can_create_and_join_many_threads()
+{
+    #define TEST_THREAD_COUNT 50
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmString name;
+    err = hmCreateStringViewFromCString(TEST_THREAD_NAME, &name);
+    HM_TEST_ASSERT_OK(err);
+    hmThreadProperties thread_properties;
+    thread_properties.name = &name;
+    hmThread threads[TEST_THREAD_COUNT];
+    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
+        err = hmCreateThread(
+            &allocator,
+            thread_properties,
+            &can_create_and_join_100_threads_thread_func,
+            HM_NULL,
+            &threads[i]
+        );
+        HM_TEST_ASSERT_OK(err);
+    }
+    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
+        err = hmThreadJoin(&threads[i]);
+        HM_TEST_ASSERT_OK(err);
+    }
+    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
+        err = hmThreadDispose(&threads[i]);
+        HM_TEST_ASSERT_OK(err);
+    }
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 void test_threads()
 {
     test_can_start_sleep_and_join_thread();
@@ -221,4 +260,5 @@ void test_threads()
     test_can_dispose_thread_before_it_finishes();
     test_can_retrieve_thread_name();
     test_thread_reports_processor_time();
+    test_can_create_and_join_many_threads();
 }
