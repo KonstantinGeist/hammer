@@ -59,13 +59,13 @@ hmError hmCreateThread(
     hm_bool is_string_duplicated = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, (hmString*)properties.name, &platform_data->name));
     is_string_duplicated = HM_TRUE;
-    hmAtomicStore(platform_data->ref_count, 2); /* +1 reference for the object itself, +1 reference to auto-dispose when the thread finishes. */
+    hmAtomicStore(&platform_data->ref_count, 2); /* +1 reference for the object itself, +1 reference to auto-dispose when the thread finishes. */
     platform_data->allocator = allocator;
     platform_data->user_data = user_data;
     platform_data->thread_func = thread_func;
-    hmAtomicStore(platform_data->state, HM_THREAD_STATE_UNSTARTED);
-    hmAtomicStore(platform_data->exit_error, HM_OK);
-    hmAtomicStore(platform_data->is_detached, HM_FALSE);
+    hmAtomicStore(&platform_data->state, HM_THREAD_STATE_UNSTARTED);
+    hmAtomicStore(&platform_data->exit_error, HM_OK);
+    hmAtomicStore(&platform_data->is_detached, HM_FALSE);
     in_thread->platform_data = platform_data;
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
 HM_ON_FINALIZE
@@ -89,8 +89,8 @@ hmError hmThreadAbort(hmThread* thread)
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
     /* It's a bit racy, but quite tolerable: it's possible that a thread will end up in ABORT_REQUESTED state
        despite actually being already STOPPED if it's being stopped and its abort is requested at the same time. */
-    if (hmAtomicLoad(platform_data->state) != HM_THREAD_STATE_STOPPED) {
-        hmAtomicStore(platform_data->state, HM_THREAD_STATE_ABORT_REQUESTED);
+    if (hmAtomicLoad(&platform_data->state) != HM_THREAD_STATE_STOPPED) {
+        hmAtomicStore(&platform_data->state, HM_THREAD_STATE_ABORT_REQUESTED);
     }
     return HM_OK;
 }
@@ -102,15 +102,14 @@ hmError hmThreadJoin(hmThread* thread)
     if (pthread_equal(platform_data->posix_thread, pthread_self())) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    hmThreadState state = hmAtomicLoad(platform_data->state);
-    if(state == HM_THREAD_STATE_STOPPED) {
+    if (hmAtomicLoad(&platform_data->state) == HM_THREAD_STATE_STOPPED) {
         return HM_OK;
     }
     hmError err = hmResultToError(pthread_join(platform_data->posix_thread, 0));
     if (err == HM_OK) {
         /* Makes sure we don't call pthread_detach in the destructor later on, as the thread is already
            detached after a call to pthread_join. */
-        hmAtomicStore(platform_data->is_detached, HM_TRUE);
+        hmAtomicStore(&platform_data->is_detached, HM_TRUE);
     }
     return err;
 }
@@ -118,7 +117,7 @@ hmError hmThreadJoin(hmThread* thread)
 hmThreadState hmThreadGetState(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return hmAtomicLoad(platform_data->state);
+    return hmAtomicLoad(&platform_data->state);
 }
 
 hmError hmThreadGetName(hmThread* thread, hmString* in_string)
@@ -149,7 +148,7 @@ hm_nint hmThreadGetProcessorTime(hmThread* thread)
 hmError hmThreadGetExitError(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return hmAtomicLoad(platform_data->exit_error);
+    return hmAtomicLoad(&platform_data->exit_error);
 }
 
 hmError hmSleep(hm_nint ms)
@@ -163,11 +162,11 @@ hmError hmSleep(hm_nint ms)
 
 static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_data)
 {
-    hm_nint older_ref_count = hmAtomicDecrement(platform_data->ref_count);
+    hm_nint new_ref_count = hmAtomicDecrement(&platform_data->ref_count);
     hmError err = HM_OK;
-    if (older_ref_count == 1) {
+    if (new_ref_count == 0) {
         err = hmCombineErrors(err, hmStringDispose(&platform_data->name));
-        if (!hmAtomicLoad(platform_data->is_detached)) {
+        if (!hmAtomicLoad(&platform_data->is_detached)) {
             err = hmCombineErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
         }
         hmFree(platform_data->allocator, platform_data);
@@ -178,9 +177,9 @@ static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_dat
 static void* hmAdaptPosixThreadToHammer(void* arg)
 {
     hmThreadPlatformData* platform_data = (hmThreadPlatformData*)arg;
-    hmAtomicStore(platform_data->state, HM_THREAD_STATE_RUNNING);
-    hmAtomicStore(platform_data->exit_error, platform_data->thread_func(platform_data->user_data));
-    hmAtomicStore(platform_data->state, HM_THREAD_STATE_STOPPED);
+    hmAtomicStore(&platform_data->state, HM_THREAD_STATE_RUNNING);
+    hmAtomicStore(&platform_data->exit_error, platform_data->thread_func(platform_data->user_data));
+    hmAtomicStore(&platform_data->state, HM_THREAD_STATE_STOPPED);
     /* Auto-disposes when the thread finishes, but the thread object may still be alive because the reference count
        will definitely be 0 only with a call to hmThreadDispose(..) */
     hmError err = hmThreadTryDisposePlatformData(platform_data);

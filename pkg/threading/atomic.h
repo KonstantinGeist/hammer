@@ -19,9 +19,9 @@
 typedef atomic_size_t hm_atomic_nint;
 typedef atomic_bool hm_atomic_bool;
 
-#define hmAtomicStore(object, value) atomic_store_explicit(&object, value, memory_order_relaxed)
-#define hmAtomicLoad(object) atomic_load_explicit(&object, memory_order_relaxed)
-#define hmAtomicIncrement(ref_count) atomic_fetch_add_explicit(&ref_count, 1, memory_order_relaxed)
-#define hmAtomicDecrement(ref_count) atomic_fetch_sub_explicit(&ref_count, 1, memory_order_relaxed)
+#define hmAtomicStore(object, value) atomic_store_explicit(object, value, memory_order_relaxed)
+#define hmAtomicLoad(object) atomic_load_explicit(object, memory_order_relaxed)
+#define hmAtomicIncrement(object) (atomic_fetch_add_explicit(object, 1, memory_order_relaxed) + 1)
+#define hmAtomicDecrement(object) (atomic_fetch_sub_explicit(object, 1, memory_order_relaxed) - 1)
 
 #endif /* HM_ATOMIC_H */
