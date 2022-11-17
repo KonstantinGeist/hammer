@@ -218,6 +218,7 @@ static void test_can_set_array_item()
 
 void test_arrays()
 {
+    HM_TEST_LOG("Arrays...");
     test_array_can_create_add_get_dispose_without_item_dispose_func();
     test_array_can_create_add_get_dispose_with_item_dispose_func();
     test_returns_error_if_get_out_of_range();

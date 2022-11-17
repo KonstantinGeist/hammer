@@ -252,6 +252,7 @@ static void test_can_create_and_join_many_threads()
 
 void test_threads()
 {
+    HM_TEST_LOG("Threads...");
     test_can_start_sleep_and_join_thread();
     test_returns_error_when_joining_self();
     test_threads_can_abort();

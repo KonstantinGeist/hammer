@@ -112,6 +112,7 @@ static void test_can_hash_empty_string()
 
 void test_strings()
 {
+    HM_TEST_LOG("Strings...");
     test_can_create_string();
     test_can_create_string_view();
     test_can_duplicate_string();

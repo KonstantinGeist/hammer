@@ -11,16 +11,21 @@
 //
 // *****************************************************************************
 
-#ifndef HM_TEST_H
-#define HM_TEST_H
+#include "common.h"
+#include <core/environment.h>
+#include <threading/thread.h>
 
-#include <assert.h>
-#include <core/common.h>
-#include <core/utils.h>
+static void test_tick_count_growth_monotonically()
+{
+    hm_nint first_tick_count = hmGetTickCount();
+    hmError err = hmSleep(100);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint second_tick_count = hmGetTickCount();
+    HM_TEST_ASSERT(second_tick_count > first_tick_count);
+}
 
-#define HM_TEST_ASSERT(expr) assert(expr)
-#define HM_TEST_ASSERT_OK(err) assert((err) == HM_OK)
-
-#define HM_TEST_LOG(msg) hmLog(msg)
-
-#endif /* HM_TEST_H */
+void test_environment()
+{
+    HM_TEST_LOG("Environment...");
+    test_tick_count_growth_monotonically();
+}

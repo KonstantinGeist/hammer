@@ -27,5 +27,6 @@ static void test_can_combine_errors()
 
 void test_errors()
 {
+    HM_TEST_LOG("Errors...");
     test_can_combine_errors();
 }

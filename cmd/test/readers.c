@@ -106,6 +106,7 @@ static void test_memory_reader_ignores_zero_size_requests()
 
 void test_readers()
 {
+    HM_TEST_LOG("Readers...");
     test_memory_reader_can_create_read_close();
     test_memory_can_create_seek_read_close();
     test_memory_reader_cant_seek_past_buffer();

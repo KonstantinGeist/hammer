@@ -12,9 +12,13 @@
 // *****************************************************************************
 
 #include "tests.h"
+#include "common.h"
 
 int main()
 {
+    HM_TEST_LOG("*****************");
+    HM_TEST_LOG("Starting tests...");
+    HM_TEST_LOG("*****************");
     test_allocators();
     test_readers();
     test_arrays();
@@ -28,5 +32,10 @@ int main()
     test_mutexes();
     test_wait_objects();
     test_threads();
+    test_environment();
+    HM_TEST_LOG("**************************************************");
+    HM_TEST_LOG("Tests finished. If you see this message -- ");
+    HM_TEST_LOG("all tests passed. Look below for Valgrind results.");
+    HM_TEST_LOG("**************************************************");
     return 0;
 }

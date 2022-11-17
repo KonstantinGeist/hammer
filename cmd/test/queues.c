@@ -196,6 +196,7 @@ static void test_returns_limit_exceeded_when_queue_is_full()
 
 void test_queues()
 {
+    HM_TEST_LOG("Queues...");
     test_can_create_and_dispose_empty_queue();
     test_can_enqueue_and_dequeue_from_queue_within_initial_capacity();
     test_can_enqueue_and_dequeue_from_queue_beyond_capacity();

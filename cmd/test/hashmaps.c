@@ -283,6 +283,7 @@ static void test_hashmap_can_get_value_by_ref()
 
 void test_hashmaps()
 {
+    HM_TEST_LOG("Hashmaps...");
     test_can_create_and_dispose_hash_map();
     test_can_put_and_get_integers_from_hash_map();
     test_can_remove_integers_from_hash_map();

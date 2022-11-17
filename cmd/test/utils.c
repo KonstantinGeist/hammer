@@ -25,5 +25,6 @@ static void test_can_align_size()
 
 void test_utils()
 {
+    HM_TEST_LOG("Utils...");
     test_can_align_size();
 }

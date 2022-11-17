@@ -2,6 +2,7 @@ test_sources = files(
     'main.c',
     'allocators.c',
     'arrays.c',
+    'environment.c',
     'errors.c',
     'hashes.c',
     'hashmaps.c',
