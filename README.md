@@ -18,6 +18,7 @@ The following features will be implemented:
 * multitenancy support
 * event handling & queues
 * saga support
+* ease of debugging, inspectability
   and more.
 
 Work in progress.

@@ -62,25 +62,10 @@ typedef struct {
 static hmError mutexes_protect_from_data_corruption_thread_func(void* user_data)
 {
     shared_hash_map_and_mutex_context* context = (shared_hash_map_and_mutex_context*)user_data;
-    for (hm_nint i = 0; i < 10000; i++) {
-        hmError err = hmMutexLock(&context->mutex);
-        HM_TEST_ASSERT_OK(err);
-        hm_nint key = i * 2;
-        err = hmHashMapPut(&context->hash_map, &key, &i);
-        HM_TEST_ASSERT_OK(err);
-        err = hmMutexUnlock(&context->mutex);
-        HM_TEST_ASSERT_OK(err);
-    }
-    return HM_OK;
-}
-
-static void test_mutexes_protect_from_data_corruption()
-{
-    shared_hash_map_and_mutex_context context;
-    hmError err = hmCreateSystemAllocator(&context.allocator);
+    hmError err = hmMutexLock(&context->mutex);
     HM_TEST_ASSERT_OK(err);
     err = hmCreateHashMap(
-        &context.allocator,
+        &context->allocator,
         &hmNintHashFunc,
         &hmNintEqualsFunc,
         HM_NULL,      /* key_dispose_func */
@@ -89,15 +74,29 @@ static void test_mutexes_protect_from_data_corruption()
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
-        &context.hash_map
+        &context->hash_map
     );
+    HM_TEST_ASSERT_OK(err);
+    err = hmSleep(100);
+    HM_TEST_ASSERT_OK(err);
+    err = hmHashMapDispose(&context->hash_map);
+    HM_TEST_ASSERT_OK(err);
+    err = hmMutexUnlock(&context->mutex);
+    HM_TEST_ASSERT_OK(err);
+    return HM_OK;
+}
+
+static void test_mutexes_protect_from_data_corruption()
+{
+    shared_hash_map_and_mutex_context context;
+    hmError err = hmCreateSystemAllocator(&context.allocator);
     HM_TEST_ASSERT_OK(err);
     err = hmCreateMutex(
         &context.allocator,
         &context.mutex
     );
     HM_TEST_ASSERT_OK(err);
-    #define TEST_THREAD_COUNT 5
+    #define TEST_THREAD_COUNT 20
     hmString name;
     err = hmCreateStringViewFromCString("", &name);
     HM_TEST_ASSERT_OK(err);
@@ -122,8 +121,6 @@ static void test_mutexes_protect_from_data_corruption()
         err = hmThreadDispose(&threads[i]);
         HM_TEST_ASSERT_OK(err);
     }
-    err = hmHashMapDispose(&context.hash_map);
-    HM_TEST_ASSERT_OK(err);
     err = hmMutexDispose(&context.mutex);
     HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&context.allocator);
