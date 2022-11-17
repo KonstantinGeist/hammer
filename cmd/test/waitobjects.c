@@ -33,6 +33,6 @@ static void test_wait_object_can_timeout()
 
 void test_wait_objects()
 {
-    HM_TEST_LOG("WaitObject...");
+    HM_TEST_LOG("WaitObjects...");
     test_wait_object_can_timeout();
 }

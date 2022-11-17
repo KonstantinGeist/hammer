@@ -33,8 +33,6 @@ typedef hmError(*hmThreadStartFunc)(void* user_data);
 typedef struct {
     hmString* name;     /* The name of the thread, for debugging purposes. The string will be duplicated because
                            we must ensure it's allocated using a thread-safe allocator. */
-    hm_int32  priority; /* Thread priority from 0 to 100. -1 to use the default priority. */
-    hm_int32  affinity; /* Processor ID this thread has affinity to. -1 to use affinity assigned by the OS. */
 } hmThreadProperties;
 
 typedef struct _hmThread {
