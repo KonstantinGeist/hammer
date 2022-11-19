@@ -30,11 +30,6 @@ typedef hm_atomic_nint hmThreadState;
 
 typedef hmError(*hmThreadStartFunc)(void* user_data);
 
-typedef struct {
-    hmString* name;     /* The name of the thread, for debugging purposes. The string will be duplicated because
-                           we must ensure it's allocated using a thread-safe allocator. */
-} hmThreadProperties;
-
 typedef struct _hmThread {
     void*  platform_data; /* First, platform-specific data are hidden from header files.
                              Second, an additional redirection allows to decouple a running thread's lifetime
@@ -44,7 +39,8 @@ typedef struct _hmThread {
 /* Creates and starts a new thread. The allocator must be thread-safe, as it will allocate/deallocate on different threads. */
 hmError hmCreateThread(
     struct _hmAllocator* allocator,
-    hmThreadProperties   properties,
+    hmString*            name,        /* The name of the thread, for debugging purposes. The string will be duplicated because
+                                         we must ensure it's allocated using a thread-safe allocator. Can be HM_NULL */
     hmThreadStartFunc    thread_func,
     void*                user_data,
     hmThread*            in_thread

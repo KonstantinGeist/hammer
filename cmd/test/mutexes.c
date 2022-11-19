@@ -97,16 +97,11 @@ static void test_mutexes_protect_from_data_corruption()
     );
     HM_TEST_ASSERT_OK(err);
     #define TEST_THREAD_COUNT 20
-    hmString name;
-    err = hmCreateStringViewFromCString("", &name);
-    HM_TEST_ASSERT_OK(err);
-    hmThreadProperties thread_properties;
-    thread_properties.name = &name;
     hmThread threads[TEST_THREAD_COUNT];
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
         err = hmCreateThread(
             &context.allocator,
-            thread_properties,
+            HM_NULL,
             &mutexes_protect_from_data_corruption_thread_func,
             &context,
             &threads[i]

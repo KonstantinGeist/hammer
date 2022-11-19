@@ -45,7 +45,7 @@ static void* hmAdaptPosixThreadToHammer(void* arg);
 
 hmError hmCreateThread(
     struct _hmAllocator* allocator,
-    hmThreadProperties   properties,
+    hmString*            name,
     hmThreadStartFunc    thread_func,
     void*                user_data,
     hmThread*            in_thread
@@ -57,8 +57,8 @@ hmError hmCreateThread(
     }
     hmError err = HM_OK;
     hm_bool is_string_duplicated = HM_FALSE;
-    if (properties.name) {
-        HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, (hmString*)properties.name, &platform_data->name));
+    if (name) {
+        HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, name, &platform_data->name));
     } else {
         HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString("", &platform_data->name));
     }
@@ -99,7 +99,6 @@ hmError hmThreadAbort(hmThread* thread)
     return HM_OK;
 }
 
-// TODO add timeout support
 hmError hmThreadJoin(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);

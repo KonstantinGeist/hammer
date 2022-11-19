@@ -83,8 +83,6 @@ static void test_can_wait_and_pulse_with_wait_objects()
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
-    hmThreadProperties thread_properties;
-    thread_properties.name = HM_NULL;
     shared_thread_context context;
     hmAtomicStore(&context.result, 0);
     err = hmCreateWaitObject(&allocator, &context.wait_object);
@@ -93,7 +91,7 @@ static void test_can_wait_and_pulse_with_wait_objects()
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
         err = hmCreateThread(
             &allocator,
-            thread_properties,
+            HM_NULL,
             i % 2 == 0 ? &producer_thread_proc : &consumer_thread_proc,
             &context,
             &threads[i]

@@ -27,11 +27,9 @@ static void create_thread_and_allocator(hmThread* thread, hmAllocator* allocator
     hmString name;
     err = hmCreateStringViewFromCString(TEST_THREAD_NAME, &name);
     HM_TEST_ASSERT_OK(err);
-    hmThreadProperties thread_properties;
-    thread_properties.name = &name;
     err = hmCreateThread(
         allocator,
-        thread_properties,
+        &name,
         start_func,
         user_data,
         thread
@@ -225,13 +223,11 @@ static void test_can_create_and_join_many_threads()
     hmString name;
     err = hmCreateStringViewFromCString(TEST_THREAD_NAME, &name);
     HM_TEST_ASSERT_OK(err);
-    hmThreadProperties thread_properties;
-    thread_properties.name = &name;
     hmThread threads[TEST_THREAD_COUNT];
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
         err = hmCreateThread(
             &allocator,
-            thread_properties,
+            &name,
             &can_create_and_join_100_threads_thread_func,
             HM_NULL,
             &threads[i]
