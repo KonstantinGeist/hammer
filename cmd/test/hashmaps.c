@@ -181,13 +181,13 @@ static void test_hash_map_reports_correct_count()
     hmAllocator allocator;
     hmHashMap hash_map;
     create_integer_hash_map_and_allocator(&hash_map, &allocator);
-    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == 0);
+    HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == 0);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
         hm_nint value = i*2;
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK(err);
     }
-    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == ITERATION_COUNT);
+    HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == ITERATION_COUNT);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // removes all non-odd elements
         if (i % 2 == 0) {
             hm_bool removed;
@@ -196,7 +196,7 @@ static void test_hash_map_reports_correct_count()
             HM_TEST_ASSERT(removed);
         }
     }
-    HM_TEST_ASSERT(hmHashMapCount(&hash_map) == ITERATION_COUNT/2);
+    HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == ITERATION_COUNT/2);
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 

@@ -94,6 +94,6 @@ hm_bool hmHashMapContains(hmHashMap* hash_map, void* key);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);
-#define hmHashMapCount(hash_map) ((hash_map)->count)
+#define hmHashMapGetCount(hash_map) ((hash_map)->count)
 
 #endif /* HM_HASHMAP_H */

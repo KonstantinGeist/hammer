@@ -47,7 +47,7 @@ static void test_can_create_and_dispose_empty_queue()
     create_integer_queue_and_allocator(HM_TRUE, &queue, &allocator);
     hm_bool is_empty = hmQueueIsEmpty(&queue);
     HM_TEST_ASSERT(is_empty == HM_TRUE);
-    hm_nint count = hmQueueCount(&queue);
+    hm_nint count = hmQueueGetCount(&queue);
     HM_TEST_ASSERT(count == 0);
     dispose_queue_and_allocator(&queue, &allocator);
 }
@@ -61,7 +61,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
         HM_TEST_ASSERT_OK(err);
-        hm_nint count = hmQueueCount(&queue);
+        hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == i + 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
@@ -71,7 +71,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
         HM_TEST_ASSERT_OK(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
-        hm_nint count = hmQueueCount(&queue);
+        hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i - 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
@@ -89,7 +89,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
         HM_TEST_ASSERT_OK(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
-        hm_nint count = hmQueueCount(&queue);
+        hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
@@ -115,7 +115,7 @@ static void test_can_enqueue_and_dequeue_from_queue_beyond_capacity()
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
         HM_TEST_ASSERT_OK(err);
-        hm_nint count = hmQueueCount(&queue);
+        hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == i + 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
@@ -125,7 +125,7 @@ static void test_can_enqueue_and_dequeue_from_queue_beyond_capacity()
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
         HM_TEST_ASSERT_OK(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
-        hm_nint count = hmQueueCount(&queue);
+        hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_QUEUE_COUNT_BEYOND_CAPACITY - i - 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == ((i < HM_QUEUE_COUNT_BEYOND_CAPACITY - 1) ? HM_FALSE : HM_TRUE));

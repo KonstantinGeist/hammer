@@ -126,8 +126,8 @@ static void test_can_iterate_over_raw_array()
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK(err);
     }
-    testItem* raw_items = hmArrayRaw(&array, testItem);
-    for (hm_nint i = 0; i < hmArrayCount(&array); i++) {
+    testItem* raw_items = hmArrayGetRaw(&array, testItem);
+    for (hm_nint i = 0; i < hmArrayGetCount(&array); i++) {
         testItem control_item;
         control_item.x = i*10;
         control_item.y = i*20;
@@ -152,8 +152,8 @@ static void test_can_expand_array_without_expand_func()
     }
     hmError err = hmArrayExpand(&array, TEST_ARRAY_EXPAND_COUNT, HM_NULL, HM_NULL);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmArrayCount(&array) == TEST_ARRAY_CAPACITY+TEST_ARRAY_EXPAND_COUNT);
-    testItem* test_item = hmArrayRaw(&array, testItem)+TEST_ARRAY_CAPACITY;
+    HM_TEST_ASSERT(hmArrayGetCount(&array) == TEST_ARRAY_CAPACITY+TEST_ARRAY_EXPAND_COUNT);
+    testItem* test_item = hmArrayGetRaw(&array, testItem)+TEST_ARRAY_CAPACITY;
     for (hm_nint i = 0; i < TEST_ARRAY_EXPAND_COUNT; i++) {
         HM_TEST_ASSERT(test_item->x == 0);
         HM_TEST_ASSERT(test_item->y == 0);
@@ -186,8 +186,8 @@ static void test_can_expand_array_with_expand_func()
     hm_nint base_int = 666;
     hmError err = hmArrayExpand(&array, TEST_ARRAY_EXPAND_COUNT, &array_expand_func, &base_int);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmArrayCount(&array) == TEST_ARRAY_CAPACITY+TEST_ARRAY_EXPAND_COUNT);
-    testItem* test_item = hmArrayRaw(&array, testItem)+TEST_ARRAY_CAPACITY;
+    HM_TEST_ASSERT(hmArrayGetCount(&array) == TEST_ARRAY_CAPACITY+TEST_ARRAY_EXPAND_COUNT);
+    testItem* test_item = hmArrayGetRaw(&array, testItem)+TEST_ARRAY_CAPACITY;
     for (hm_nint i = 0; i < TEST_ARRAY_EXPAND_COUNT; i++) {
         HM_TEST_ASSERT(test_item->x == base_int+(i+TEST_ARRAY_CAPACITY)*10);
         HM_TEST_ASSERT(test_item->y == base_int+(i+TEST_ARRAY_CAPACITY)*20);

@@ -26,8 +26,8 @@ static void test_can_create_string()
     hmString string;
     err = hmCreateStringFromCString(&allocator, STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringLength(&string) == strlen(STRING_CONTENT));
-    HM_TEST_ASSERT(strcmp(hmStringContent(&string), STRING_CONTENT) == 0);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&allocator);
@@ -39,8 +39,8 @@ static void test_can_create_string_view()
     hmString string;
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringLength(&string) == strlen(STRING_CONTENT));
-    HM_TEST_ASSERT(strcmp(hmStringContent(&string), STRING_CONTENT) == 0);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string); // not necessary for views; just checking it doesn't crash
     HM_TEST_ASSERT_OK(err);
 }
@@ -56,8 +56,8 @@ static void test_can_duplicate_string()
     hmString duplicate;
     err = hmStringDuplicate(&allocator, &string, &duplicate);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringLength(&string) == hmStringLength(&duplicate));
-    HM_TEST_ASSERT(strcmp(hmStringContent(&string), hmStringContent(&duplicate)) == 0);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == hmStringGetLength(&duplicate));
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), hmStringGetRaw(&duplicate)) == 0);
     err = hmStringDispose(&duplicate);
     HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&allocator);

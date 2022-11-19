@@ -29,7 +29,7 @@ hmError hmEnumMetadataInImage(
     }
     hmError err = HM_OK;
     sqlite3* db;
-    int sqlite_err = sqlite3_open_v2(hmStringContent(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
+    int sqlite_err = sqlite3_open_v2(hmStringGetRaw(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }

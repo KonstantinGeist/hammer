@@ -52,7 +52,7 @@ hmError hmQueueEnqueue(hmQueue* queue, void* value);
 /* Dequeues an item. Its value is moved out of the queue and item_dispose_func won't be called on it in hmQueueDispose. */
 hmError hmQueueDequeue(hmQueue* queue, void* in_value);
 
-#define hmQueueCount(queue) (queue)->count
+#define hmQueueGetCount(queue) (queue)->count
 #define hmQueueIsEmpty(queue) ((queue)->count == 0)
 
 #endif /* HM_QUEUE_H */

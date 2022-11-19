@@ -55,8 +55,8 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);
 /* See hmArrayGet. */
 hmError hmArraySet(hmArray* array, hm_nint index, void* in_value);
 /* Gets access to the raw data of the array. Useful for fast iterations as it doesn't do range checks. */
-#define hmArrayRaw(array, type) (type*)((array)->items)
-#define hmArrayCount(array) (array)->count
+#define hmArrayGetRaw(array, type) (type*)((array)->items)
+#define hmArrayGetCount(array) (array)->count
 /* Expands the array by initializing elements of the array with the given callback. If no callback is provided,
    initializes the elements with all zeros (useful only if the array contains only zeroable types: integers, floats, pointers).
    The user_data parameter is passed to the expand function as is (meaningful only if array_expand_func is provided). */

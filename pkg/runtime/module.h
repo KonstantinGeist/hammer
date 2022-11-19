@@ -55,10 +55,10 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
 /* Similar to hmModuleRegistryGetModuleRefByName, but works with classes instead. */
 hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** out_class);
 
-#define hmModuleName(module) (module)->name
-#define hmModuleID(module) (module)->module_id
+#define hmModuleGetName(module) (module)->name
+#define hmModuleGetID(module) (module)->module_id
 
-#define hmClassName(hm_class) (hm_class)->name
-#define hmClassID(hm_class) (hm_class)->class_id
+#define hmClassGetName(hm_class) (hm_class)->name
+#define hmClassGetID(hm_class) (hm_class)->class_id
 
 #endif /* HM_MODULE_H */

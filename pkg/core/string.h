@@ -39,8 +39,8 @@ hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
 hm_uint32 hmStringHash(hmString* string);
-#define hmStringLength(string) (string)->length
-#define hmStringContent(string) ((const char*)(string)->content)
+#define hmStringGetLength(string) (string)->length
+#define hmStringGetRaw(string) ((const char*)(string)->content)
 
 hm_uint32 hmStringHashFunc(void* key);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);

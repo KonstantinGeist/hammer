@@ -51,16 +51,16 @@ static void test_can_load_existing_module()
     err = hmModuleRegistryGetModuleRefByName(&module_registry, &core_module_name, &module);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(module != HM_NULL);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleName(module), CORE_MODULE_NAME));
-    HM_TEST_ASSERT(hmModuleID(module) == 1);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&hmModuleGetName(module), CORE_MODULE_NAME));
+    HM_TEST_ASSERT(hmModuleGetID(module) == 1);
     hmString point_class_name;
     err = hmCreateStringViewFromCString(POINT_CLASS_NAME, &point_class_name);
     hmClass* hm_class = HM_NULL;
     err = hmModuleGetClassRefByName(module, &point_class_name, &hm_class);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hm_class != HM_NULL);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&hmClassName(hm_class), POINT_CLASS_NAME));
-    HM_TEST_ASSERT(hmClassID(hm_class) == 1);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&hmClassGetName(hm_class), POINT_CLASS_NAME));
+    HM_TEST_ASSERT(hmClassGetID(hm_class) == 1);
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
