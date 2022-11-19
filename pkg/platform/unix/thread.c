@@ -130,11 +130,6 @@ hmError hmThreadGetName(hmThread* thread, hmString* in_string)
     return hmStringDuplicate(platform_data->allocator, &platform_data->name, (hmString*)in_string);
 }
 
-hmError hmListThreads(struct _hmArray* in_array)
-{
-    return HM_ERROR_NOT_IMPLEMENTED;
-}
-
 hm_nint hmThreadGetProcessorTime(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);

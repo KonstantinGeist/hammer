@@ -62,9 +62,6 @@ hmThreadState hmThreadGetState(hmThread* thread);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmThreadGetName(hmThread* thread, hmString* in_string);
-/* Lists all threads known to the runtime. Depending on the current platform, it can be only the threads created with
-   hmCreateThread, or all threads in the system. Useful for debugging/monitoring. Should be disposed with hmArrayDispose. */
-hmError hmListThreads(struct _hmArray* in_array); /* hmArray<hmThread> */
 hm_nint hmThreadGetProcessorTime(hmThread* thread);
 hmError hmThreadGetExitError(hmThread* thread);
 hmError hmSleep(hm_nint ms);
