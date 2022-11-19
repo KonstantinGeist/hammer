@@ -15,7 +15,7 @@
 #include <core/environment.h>
 #include <threading/thread.h>
 
-static void test_tick_count_growth_monotonically()
+static void test_tick_count_grows_monotonically()
 {
     hm_nint first_tick_count = hmGetTickCount();
     hmError err = hmSleep(100);
@@ -27,5 +27,5 @@ static void test_tick_count_growth_monotonically()
 void test_environment()
 {
     HM_TEST_LOG("Environment...");
-    test_tick_count_growth_monotonically();
+    test_tick_count_grows_monotonically();
 }

@@ -57,7 +57,11 @@ hmError hmCreateThread(
     }
     hmError err = HM_OK;
     hm_bool is_string_duplicated = HM_FALSE;
-    HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, (hmString*)properties.name, &platform_data->name));
+    if (properties.name) {
+        HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, (hmString*)properties.name, &platform_data->name));
+    } else {
+        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString("", &platform_data->name));
+    }
     is_string_duplicated = HM_TRUE;
     hmAtomicStore(&platform_data->ref_count, 2); /* +1 reference for the object itself, +1 reference to auto-dispose when the thread finishes. */
     platform_data->allocator = allocator;
