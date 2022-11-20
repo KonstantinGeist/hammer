@@ -192,7 +192,7 @@ static hmError thread_reports_processor_time_thread_func(void* user_data)
         hmError err = hmSleep(100);
         HM_TEST_ASSERT_OK(err);
     }
-    hm_nint processor_time = hmThreadGetProcessorTime(thread);
+    hm_millis processor_time = hmThreadGetProcessorTime(thread);
     HM_TEST_ASSERT(processor_time > 0);
     return HM_OK;
 }
@@ -250,10 +250,10 @@ static void test_can_create_and_join_many_threads()
 
 static void test_can_sleep()
 {
-    hm_nint old_tick_count = hmGetTickCount();
+    hm_millis old_tick_count = hmGetTickCount();
     hmError err = hmSleep(1300);
     HM_TEST_ASSERT_OK(err);
-    hm_nint time_diff = hmGetTickCount() - old_tick_count;
+    hm_millis time_diff = hmGetTickCount() - old_tick_count;
     HM_TEST_ASSERT(time_diff > 1250 && time_diff < 1600);
 }
 
