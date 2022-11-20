@@ -109,7 +109,7 @@ static void test_mutexes_protect_from_data_corruption()
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
-        err = hmThreadJoin(&threads[i]);
+        err = hmThreadJoin(&threads[i], HM_THREAD_JOIN_MAX_TIMEOUT_MS);
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {

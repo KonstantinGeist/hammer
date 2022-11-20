@@ -55,7 +55,7 @@ static void test_can_start_sleep_and_join_thread()
     hmAllocator allocator;
     hmThread thread;
     create_thread_and_allocator(&thread, &allocator, &can_start_sleep_and_join_thread_func, HM_NULL);
-    hmError err = hmThreadJoin(&thread);
+    hmError err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     hmError exit_error = hmThreadGetExitError(&thread);
     HM_TEST_ASSERT_OK(exit_error);
@@ -64,7 +64,7 @@ static void test_can_start_sleep_and_join_thread()
 
 static hmError returns_error_when_joining_self_thread_func(void* user_data)
 {
-    return hmThreadJoin((hmThread*)user_data);
+    return hmThreadJoin((hmThread*)user_data, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
 }
 
 static void test_returns_error_when_joining_self()
@@ -72,7 +72,7 @@ static void test_returns_error_when_joining_self()
     hmAllocator allocator;
     hmThread thread;
     create_thread_and_allocator(&thread, &allocator, &returns_error_when_joining_self_thread_func, &thread);
-    hmError err = hmThreadJoin(&thread);
+    hmError err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     hmError exit_error = hmThreadGetExitError(&thread);
     HM_TEST_ASSERT(exit_error == HM_ERROR_INVALID_ARGUMENT);
@@ -98,7 +98,7 @@ static void test_threads_can_abort()
     HM_TEST_ASSERT_OK(err);
     err = hmThreadAbort(&thread);
     HM_TEST_ASSERT_OK(err);
-    err = hmThreadJoin(&thread);
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     hmError exit_error = hmThreadGetExitError(&thread);
     HM_TEST_ASSERT_OK(exit_error);
@@ -117,7 +117,7 @@ static void test_can_join_too_late()
     create_thread_and_allocator(&thread, &allocator, &can_join_too_late_thread_func, HM_NULL);
     hmError err = hmSleep(300);
     HM_TEST_ASSERT_OK(err);
-    err = hmThreadJoin(&thread);
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     hmError exit_error = hmThreadGetExitError(&thread);
     HM_TEST_ASSERT_OK(exit_error);
@@ -136,7 +136,7 @@ static void test_threads_have_correct_statuses()
     hmAllocator allocator;
     hmThread thread;
     create_thread_and_allocator(&thread, &allocator, &threads_have_correct_statuses_thread_func, &thread);
-    hmError err = hmThreadJoin(&thread);
+    hmError err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmThreadGetState(&thread) == HM_THREAD_STATE_STOPPED);
     hmError exit_error = hmThreadGetExitError(&thread);
@@ -178,7 +178,7 @@ static void test_can_retrieve_thread_name()
     HM_TEST_ASSERT(hmStringEqualsToCString(&thread_name, TEST_THREAD_NAME));
     err = hmStringDispose(&thread_name);
     HM_TEST_ASSERT_OK(err);
-    err = hmThreadJoin(&thread);
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     dispose_thread_and_allocator(&thread, &allocator);
 }
@@ -204,7 +204,7 @@ static void test_thread_reports_processor_time()
     HM_TEST_ASSERT_OK(err);
     err = hmThreadAbort(&thread);
     HM_TEST_ASSERT_OK(err);
-    err = hmThreadJoin(&thread);
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
     HM_TEST_ASSERT_OK(err);
     dispose_thread_and_allocator(&thread, &allocator);
 }
@@ -235,7 +235,7 @@ static void test_can_create_and_join_many_threads()
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
-        err = hmThreadJoin(&threads[i]);
+        err = hmThreadJoin(&threads[i], HM_THREAD_JOIN_MAX_TIMEOUT_MS);
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {

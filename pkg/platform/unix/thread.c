@@ -16,11 +16,9 @@
 #include <core/string.h>
 #include <core/utils.h>
 #include <collections/array.h>
+#include <platform/unix/common.h>
 
 #include <pthread.h>
-#include <time.h>
-
-#define POSIX_RESULT_OK 0
 
 typedef struct {
     hmAllocator*      allocator;
@@ -38,7 +36,6 @@ volatile
     hm_atomic_bool    is_detached;
 } hmThreadPlatformData;
 
-#define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmThreadGetPlatformData(thread) ((hmThreadPlatformData*)(thread)->platform_data)
 static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_data);
 static void* hmAdaptPosixThreadToHammer(void* arg);
@@ -99,8 +96,11 @@ hmError hmThreadAbort(hmThread* thread)
     return HM_OK;
 }
 
-hmError hmThreadJoin(hmThread* thread)
+hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms)
 {
+    if (timeout_ms < HM_THREAD_JOIN_MIN_TIMEOUT_MS || timeout_ms > HM_THREAD_JOIN_MAX_TIMEOUT_MS) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
     if (pthread_equal(platform_data->posix_thread, pthread_self())) {
         return HM_ERROR_INVALID_ARGUMENT;

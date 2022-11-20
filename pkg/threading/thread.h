@@ -23,7 +23,9 @@ struct _hmArray;
 struct _hmThread;
 
 #define HM_SLEEP_MIN_MS 1
-#define HM_SLEEP_MAX_MS (24*60*60*1000) /* 24 hours must be more than enough */
+#define HM_SLEEP_MAX_MS (60*60*1000) /* 1 hour must be more than enough */
+#define HM_THREAD_JOIN_MIN_TIMEOUT_MS HM_SLEEP_MIN_MS
+#define HM_THREAD_JOIN_MAX_TIMEOUT_MS HM_SLEEP_MAX_MS
 
 typedef hm_atomic_nint hmThreadState;
 #define HM_THREAD_STATE_UNSTARTED       ((hmThreadState)0)
@@ -54,9 +56,11 @@ hmError hmThreadDispose(hmThread* thread);
    The thread should poll for hmThreadGetState() == HM_THREAD_STATE_ABORT_REQUESTED and finish execution on its own
    to respect this function. */
 hmError hmThreadAbort(hmThread* thread);
-/* Blocks the current thread until the specified thread finishes. Returns HM_ERROR_INVALID_ARGUMENT if `thread` refers
-   to the current thread. Can be used together with hmThreadAbort. */
-hmError hmThreadJoin(hmThread* thread);
+/* Blocks the current thread until the specified thread finishes or the specified interval in milliseconds (timeout_ms)
+   elapses. Returns HM_ERROR_INVALID_ARGUMENT if `thread` refers to the current thread. Can be used together
+   with hmThreadAbort.
+   `timeout_ms` must be in the range between HM_THREAD_JOIN_MIN_TIMEOUT_MS and HM_THREAD_JOIN_MAX_TIMEOUT_MS. */
+hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms);
 hmThreadState hmThreadGetState(hmThread* thread);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */

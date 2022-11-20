@@ -19,7 +19,7 @@
 struct _hmAllocator;
 
 #define HM_WAIT_OBJECT_MIN_TIMEOUT_MS 1
-#define HM_WAIT_OBJECT_MAX_TIMEOUT_MS (24*60*60*1000) /* 24 hours must be more than enough */
+#define HM_WAIT_OBJECT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough */
 
 typedef struct {
     struct _hmAllocator* allocator;

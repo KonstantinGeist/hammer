@@ -21,11 +21,11 @@
 
 #include <threading/waitobject.h>
 #include <threading/atomic.h>
+#include <platform/unix/common.h>
 
 #include <core/allocator.h>
 #include <errno.h>
 #include <pthread.h>
-#include <sys/time.h>
 
 typedef struct {
     pthread_mutex_t         mutex;
@@ -33,12 +33,7 @@ typedef struct {
     volatile hm_atomic_nint signaled_state; /* access to be protected with the mutex */
 } hmWaitObjectPlatformData;
 
-#define POSIX_RESULT_OK 0
-
-#define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define hmWaitObjectGetPlatformData(wait_object) ((hmWaitObjectPlatformData*)(wait_object)->platform_data)
-#define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
-
 static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout);
 
 hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
@@ -93,23 +88,11 @@ hmError hmWaitObjectPulse(hmWaitObject* wait_object)
     return HM_OK;
 }
 
-static struct timespec convert_timeout_ms_to_timespec(hm_nint timeout_ms)
-{
-    struct timespec ts;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t nanoseconds = ((uint64_t) tv.tv_sec) * 1000 * 1000 * 1000
-              + (uint64_t)timeout_ms * 1000 * 1000 + ((uint64_t) tv.tv_usec) * 1000;
-    ts.tv_sec = nanoseconds / 1000 / 1000 / 1000;
-    ts.tv_nsec = (nanoseconds - ((uint64_t) ts.tv_sec) * 1000 * 1000 * 1000);
-    return ts;
-}
-
 static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout_ms)
 {
     int result = POSIX_RESULT_OK;
     if (!hmAtomicLoad(&platform_data->signaled_state)) {
-        struct timespec ts = convert_timeout_ms_to_timespec(timeout_ms);
+        struct timespec ts = hmConvertMillisecondsToTimeSpec(timeout_ms);
         do {
             result = pthread_cond_timedwait(&platform_data->cond_variable, &platform_data->mutex, &ts);
         } while (result == POSIX_RESULT_OK && !hmAtomicLoad(&platform_data->signaled_state)); /* a check to protect against spurious wakeups */
