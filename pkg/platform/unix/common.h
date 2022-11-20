@@ -24,6 +24,10 @@
 #define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
 
-struct timespec hmConvertMillisecondsToTimeSpec(hm_nint milliseconds);
+struct timespec hmConvertMillisecondsToTimeSpec(hm_nint ms);
+hm_nint hmConvertTimeSpecToMilliseconds(struct timespec* ts);
+struct timespec hmGetCurrentTimeSpec();
+/* Returns a point in time which equals to now + ms_in_future. */
+struct timespec hmGetFutureTimeSpec(hm_nint ms_in_future);
 
 #endif /* HM_PLATFORM_COMMON_H */

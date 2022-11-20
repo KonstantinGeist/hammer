@@ -13,14 +13,32 @@
 
 #include <platform/unix/common.h>
 
-struct timespec hmConvertMillisecondsToTimeSpec(hm_nint milliseconds)
+#include <time.h>
+
+struct timespec hmConvertMillisecondsToTimeSpec(hm_nint ms)
 {
     struct timespec ts;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t nanoseconds = ((uint64_t) tv.tv_sec) * 1000 * 1000 * 1000
-              + (uint64_t)milliseconds * 1000 * 1000 + ((uint64_t) tv.tv_usec) * 1000;
-    ts.tv_sec = nanoseconds / 1000 / 1000 / 1000;
-    ts.tv_nsec = (nanoseconds - ((uint64_t) ts.tv_sec) * 1000 * 1000 * 1000);
+    ts.tv_sec = (uint64_t)ms / 1000;
+    ts.tv_nsec = ((uint64_t)ms % 1000) * 1000 * 1000;
     return ts;
+}
+
+hm_nint hmConvertTimeSpecToMilliseconds(struct timespec* ts)
+{
+    return (ts->tv_sec * 1000) + (ts->tv_nsec / (1000 * 1000));
+}
+
+struct timespec hmGetCurrentTimeSpec()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts;
+}
+
+struct timespec hmGetFutureTimeSpec(hm_nint ms_in_future)
+{
+    struct timespec ts = hmGetCurrentTimeSpec();
+    hm_nint ms = hmConvertTimeSpecToMilliseconds(&ts);
+    ms += ms_in_future;
+    return hmConvertMillisecondsToTimeSpec(ms);
 }

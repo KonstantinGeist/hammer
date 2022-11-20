@@ -140,7 +140,7 @@ hm_nint hmThreadGetProcessorTime(hmThread* thread)
     if (clock_gettime(cid, &ts) == -1) {
         return 0;
     }
-    return (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+    return hmConvertTimeSpecToMilliseconds(&ts);
 }
 
 hmError hmThreadGetExitError(hmThread* thread)
@@ -154,9 +154,7 @@ hmError hmSleep(hm_nint ms)
     if (ms < HM_SLEEP_MIN_MS || ms > HM_SLEEP_MAX_MS) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    struct timespec ts;
-    ts.tv_sec = (uint64_t)ms / 1000;              /* Seconds. */
-    ts.tv_nsec = ((uint64_t)ms % 1000) * 1000000; /* Milliseconds. */
+    struct timespec ts = hmConvertMillisecondsToTimeSpec(ms);
     nanosleep(&ts, NULL);
     return HM_OK;
 }

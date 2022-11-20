@@ -12,12 +12,10 @@
 // *****************************************************************************
 
 #include <core/environment.h>
-
-#include <time.h>
+#include <platform/unix/common.h>
 
 hm_nint hmGetTickCount()
 {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    struct timespec ts = hmGetCurrentTimeSpec();
+    return hmConvertTimeSpecToMilliseconds(&ts);
 }

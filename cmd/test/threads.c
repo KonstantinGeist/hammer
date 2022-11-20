@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include <core/allocator.h>
+#include <core/environment.h>
 #include <core/string.h>
 #include <threading/thread.h>
 
@@ -246,6 +247,15 @@ static void test_can_create_and_join_many_threads()
     HM_TEST_ASSERT_OK(err);
 }
 
+static void test_can_sleep()
+{
+    hm_nint old_tick_count = hmGetTickCount();
+    hmError err = hmSleep(1300);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint time_diff = hmGetTickCount() - old_tick_count;
+    HM_TEST_ASSERT(time_diff > 1250 && time_diff < 1600);
+}
+
 void test_threads()
 {
     HM_TEST_LOG("Threads...");
@@ -258,4 +268,5 @@ void test_threads()
     test_can_retrieve_thread_name();
     test_thread_reports_processor_time();
     test_can_create_and_join_many_threads();
+    test_can_sleep();
 }
