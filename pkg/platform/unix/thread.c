@@ -34,6 +34,8 @@ volatile
 volatile
     hm_atomic_nint    exit_error; /* actually, hmError */
 volatile
+    hm_atomic_bool    is_abort_requested; /* see hmThreadGetState(..) */
+volatile
     hm_atomic_bool    is_detached;
 } hmThreadPlatformData;
 
@@ -67,6 +69,7 @@ hmError hmCreateThread(
     platform_data->thread_func = thread_func;
     hmAtomicStore(&platform_data->state, HM_THREAD_STATE_UNSTARTED);
     hmAtomicStore(&platform_data->exit_error, HM_OK);
+    hmAtomicStore(&platform_data->is_abort_requested, HM_FALSE);
     hmAtomicStore(&platform_data->is_detached, HM_FALSE);
     in_thread->platform_data = platform_data;
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
@@ -89,11 +92,7 @@ hmError hmThreadDispose(hmThread* thread)
 hmError hmThreadAbort(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    /* It's a bit racy, but quite tolerable: it's possible that a thread will end up in ABORT_REQUESTED state
-       despite actually being already STOPPED if it's being stopped and its abort is requested at the same time. */
-    if (hmAtomicLoad(&platform_data->state) != HM_THREAD_STATE_STOPPED) {
-        hmAtomicStore(&platform_data->state, HM_THREAD_STATE_ABORT_REQUESTED);
-    }
+    hmAtomicStore(&platform_data->is_abort_requested, HM_TRUE); /* See hmThreadGetState(..) */
     return HM_OK;
 }
 
@@ -123,7 +122,17 @@ hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms)
 hmThreadState hmThreadGetState(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return hmAtomicLoad(&platform_data->state);
+    hmThreadState state = hmAtomicLoad(&platform_data->state);
+    hm_atomic_bool is_abort_requested = hmAtomicLoad(&platform_data->is_abort_requested);
+    /* It would be racy to immediately set `state` to HM_THREAD_STATE_ABORT_REQUESTED in hmThreadAbort(..) because in
+       `thread_func` the thread's state can be changed to other values in parallel. A possible outcome: the thread
+       actually stopped, but its state is reported as "abort requested" (because the thread was aborted after it stopped).
+       As a solution, we split the state and the abort request into separate variables which are later merged at runtime
+       when the state is requested in hmThreadGetState(..) */
+    if (is_abort_requested && state != HM_THREAD_STATE_STOPPED) {
+        return HM_THREAD_STATE_ABORT_REQUESTED;
+    }
+    return state;
 }
 
 hmError hmThreadGetName(hmThread* thread, hmString* in_string)
