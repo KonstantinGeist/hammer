@@ -30,7 +30,8 @@ static void test_can_hash_non_empty_array()
 
 void test_hashes()
 {
-    HM_TEST_LOG("Hashes...");
-    test_can_hash_empty_array();
-    test_can_hash_non_empty_array();
+    HM_TEST_SUITE_BEGIN("Hashes");
+        HM_TEST_RUN(test_can_hash_empty_array);
+        HM_TEST_RUN(test_can_hash_non_empty_array);
+    HM_TEST_SUITE_END();
 }

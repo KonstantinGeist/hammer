@@ -23,4 +23,11 @@
 
 #define HM_TEST_LOG(msg) hmLog(msg)
 
+#define HM_TEST_SUITE_BEGIN(msg) hmLog(msg)
+#define HM_TEST_SUITE_END() /* No-op so far. */
+
+#define HM_PRE_STRINGIFY(s) #s
+#define HM_STRINGIFY(s) HM_PRE_STRINGIFY(s)
+#define HM_TEST_RUN(name) hmLog("    " HM_STRINGIFY(name)); name()
+
 #endif /* HM_TEST_H */

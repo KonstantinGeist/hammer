@@ -218,13 +218,14 @@ static void test_can_set_array_item()
 
 void test_arrays()
 {
-    HM_TEST_LOG("Arrays...");
-    test_array_can_create_add_get_dispose_without_item_dispose_func();
-    test_array_can_create_add_get_dispose_with_item_dispose_func();
-    test_returns_error_if_get_out_of_range();
-    test_returns_error_if_set_out_of_range();
-    test_can_iterate_over_raw_array();
-    test_can_expand_array_without_expand_func();
-    test_can_expand_array_with_expand_func();
-    test_can_set_array_item();
+    HM_TEST_SUITE_BEGIN("Arrays");
+        HM_TEST_RUN(test_array_can_create_add_get_dispose_without_item_dispose_func);
+        HM_TEST_RUN(test_array_can_create_add_get_dispose_with_item_dispose_func);
+        HM_TEST_RUN(test_returns_error_if_get_out_of_range);
+        HM_TEST_RUN(test_returns_error_if_set_out_of_range);
+        HM_TEST_RUN(test_can_iterate_over_raw_array);
+        HM_TEST_RUN(test_can_expand_array_without_expand_func);
+        HM_TEST_RUN(test_can_expand_array_with_expand_func);
+        HM_TEST_RUN(test_can_set_array_item);
+    HM_TEST_SUITE_END();
 }

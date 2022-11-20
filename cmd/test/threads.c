@@ -279,16 +279,17 @@ static void test_can_join_with_timeout()
 
 void test_threads()
 {
-    HM_TEST_LOG("Threads...");
-    test_can_start_sleep_and_join_thread();
-    test_returns_error_when_joining_self();
-    test_threads_can_abort();
-    test_can_join_too_late();
-    test_threads_have_correct_statuses();
-    test_can_dispose_thread_before_it_finishes();
-    test_can_retrieve_thread_name();
-    test_thread_reports_processor_time();
-    test_can_create_and_join_many_threads();
-    test_can_sleep();
-    test_can_join_with_timeout();
+    HM_TEST_SUITE_BEGIN("Threads");
+        HM_TEST_RUN(test_can_start_sleep_and_join_thread);
+        HM_TEST_RUN(test_returns_error_when_joining_self);
+        HM_TEST_RUN(test_threads_can_abort);
+        HM_TEST_RUN(test_can_join_too_late);
+        HM_TEST_RUN(test_threads_have_correct_statuses);
+        HM_TEST_RUN(test_can_dispose_thread_before_it_finishes);
+        HM_TEST_RUN(test_can_retrieve_thread_name);
+        HM_TEST_RUN(test_thread_reports_processor_time);
+        HM_TEST_RUN(test_can_create_and_join_many_threads);
+        HM_TEST_RUN(test_can_sleep);
+        HM_TEST_RUN(test_can_join_with_timeout);
+    HM_TEST_SUITE_END();
 }

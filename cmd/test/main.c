@@ -33,9 +33,8 @@ int main()
     test_wait_objects();
     test_threads();
     test_environment();
-    HM_TEST_LOG("**************************************************");
-    HM_TEST_LOG("Tests finished. If you see this message -- ");
-    HM_TEST_LOG("all tests passed. Look below for Valgrind results.");
-    HM_TEST_LOG("**************************************************");
+    HM_TEST_LOG("***************");
+    HM_TEST_LOG("Tests finished.");
+    HM_TEST_LOG("***************");
     return 0;
 }

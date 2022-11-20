@@ -126,7 +126,8 @@ static void test_mutexes_protect_from_data_corruption()
 
 void test_mutexes()
 {
-    HM_TEST_LOG("Mutexes...");
-    test_can_create_lock_unlock_dispose_mutex_in_general();
-    test_mutexes_protect_from_data_corruption();
+    HM_TEST_SUITE_BEGIN("Mutexes");
+        HM_TEST_RUN(test_can_create_lock_unlock_dispose_mutex_in_general);
+        HM_TEST_RUN(test_mutexes_protect_from_data_corruption);
+    HM_TEST_SUITE_END();
 }

@@ -82,7 +82,8 @@ static void test_cannot_load_non_existing_module()
 
 void test_modules()
 {
-    HM_TEST_LOG("Modules...");
-    test_can_load_existing_module();
-    test_cannot_load_non_existing_module();
+    HM_TEST_SUITE_BEGIN("Modules");
+        HM_TEST_RUN(test_can_load_existing_module);
+        HM_TEST_RUN(test_cannot_load_non_existing_module);
+    HM_TEST_SUITE_END();
 }

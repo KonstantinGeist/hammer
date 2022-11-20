@@ -26,6 +26,7 @@ static void test_tick_count_grows_monotonically()
 
 void test_environment()
 {
-    HM_TEST_LOG("Environment...");
-    test_tick_count_grows_monotonically();
+    HM_TEST_SUITE_BEGIN("Environment");
+        HM_TEST_RUN(test_tick_count_grows_monotonically);
+    HM_TEST_SUITE_END();
 }
