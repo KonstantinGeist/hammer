@@ -27,19 +27,19 @@ typedef struct {
                                            Also a pointer guards against moves/copies. */
 } hmWaitObject;
 
-/* Creates a "wait object" which allows to block the current thread until its Pulse() method is called.
+/* Creates a "wait object" which allows to block the current thread until the wait object's Pulse() method is called.
    Useful for building queue consumers to avoid burning the CPU while waiting. */
 hmError hmCreateWaitObject(struct _hmAllocator* allocator, hmWaitObject* in_wait_object);
 hmError hmWaitObjectDispose(hmWaitObject* wait_object);
-/* Blocks the current thread until the wait object receives a signal (gets Pulse() called) or the interval `timeout_ms`
+/* Blocks the current thread until the wait object is "pulsed" (gets Pulse() called) or the interval `timeout_ms`
    (in milliseconds) elapses.
-   Returns HM_OK if the thread was woken up (via Pulse()); returns HM_ERROR_TIMEOUT if the timeout expired.
+   Returns HM_OK if the current thread was woken up via Pulse(); returns HM_ERROR_TIMEOUT if the timeout expired.
    `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
-   HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases.
+   HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases (zero or infinite timeouts).
  */
 hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms);
-/* Sets the state of the object to "signaled", allowing the waiting thread to proceed. Automatically resets
-   to non-signaled once the thread is released. Only one thread at a time is guaranteed to proceed. */
+/* Creates a "pulse", allowing one waiting thread to proceed. Only one thread at a time is guaranteed to proceed.
+   After a wait object is pulsed, any new threads calling hmWaitObjectWait(..) will block again.  */
 hmError hmWaitObjectPulse(hmWaitObject* wait_object);
 
 #endif /* HM_WAIT_OBJECT_H */

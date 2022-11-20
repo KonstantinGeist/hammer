@@ -83,6 +83,8 @@ hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms)
 
 hmError hmWaitObjectPulse(hmWaitObject* wait_object)
 {
+    /* The classic idiom: the state is protected with a mutex + then there's a call to pthread_cond_signal(..) which unblocks
+       pthread_cond_timedwait(..) in hmWaitObjectWaitWithoutLock, allowing a blocked consumer to proceed. */
     hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
     hmAtomicStore(&platform_data->signaled_state, HM_TRUE);
@@ -113,7 +115,7 @@ static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_da
         } while (result == POSIX_RESULT_OK && !hmAtomicLoad(&platform_data->signaled_state)); /* a check to protect against spurious wakeups */
     }
     if (result == POSIX_RESULT_OK) {
-        hmAtomicStore(&platform_data->signaled_state, HM_FALSE);
+        hmAtomicStore(&platform_data->signaled_state, HM_FALSE); /* Resets the state back to "non-signaled". */
     }
     return result == ETIMEDOUT ? HM_ERROR_TIMEOUT : HM_OK;
 }

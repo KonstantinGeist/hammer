@@ -28,7 +28,11 @@ typedef struct {
 hmError hmCreateMutex(struct _hmAllocator* allocator, hmMutex* in_mutex);
 /* It's undefined behavior when a mutex is destroyed while it's locked. */
 hmError hmMutexDispose(hmMutex* mutex);
+/* Begins to own a critical section of code which starts at this call and ends at the next call to hmMutexUnlock(..).
+   If another thread already owns the mutex, the call blocks until the mutex is unlocked. It's allowed for an owner thread
+   to call hmMutexLock/hmMutexUnlock recursively. */
 hmError hmMutexLock(hmMutex* mutex);
+/* Unlocks the mutex: the current thread stops owning the mutex, allowing a different waiting thread to proceed. */
 hmError hmMutexUnlock(hmMutex* mutex);
 
 #endif /* HM_MUTEX_H */

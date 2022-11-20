@@ -151,6 +151,9 @@ hmError hmThreadGetExitError(hmThread* thread)
 
 hmError hmSleep(hm_nint ms)
 {
+    if (ms < HM_SLEEP_MIN_MS || ms > HM_SLEEP_MAX_MS) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     struct timespec ts;
     ts.tv_sec = (uint64_t)ms / 1000;              /* Seconds. */
     ts.tv_nsec = ((uint64_t)ms % 1000) * 1000000; /* Milliseconds. */
@@ -182,7 +185,7 @@ static void* hmAdaptPosixThreadToHammer(void* arg)
        will definitely be 0 only with a call to hmThreadDispose(..) */
     hmError err = hmThreadTryDisposePlatformData(platform_data);
     if (err != HM_OK) {
-        hmLog("hmThreadTryDisposePlatformData(..) failed");
+        hmLog("hmThreadTryDisposePlatformData(..) failed"); /* Nowhere else to report it yet. */
     }
     return 0;
 }

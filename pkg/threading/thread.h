@@ -22,6 +22,9 @@ struct _hmAllocator;
 struct _hmArray;
 struct _hmThread;
 
+#define HM_SLEEP_MIN_MS 1
+#define HM_SLEEP_MAX_MS (24*60*60*1000) /* 24 hours must be more than enough */
+
 typedef hm_atomic_nint hmThreadState;
 #define HM_THREAD_STATE_UNSTARTED       ((hmThreadState)0)
 #define HM_THREAD_STATE_RUNNING         ((hmThreadState)1)
@@ -58,8 +61,12 @@ hmThreadState hmThreadGetState(hmThread* thread);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmThreadGetName(hmThread* thread, hmString* in_string);
+/* Returns the total CPU time for this thread. Useful for debugging CPU load. */
 hm_nint hmThreadGetProcessorTime(hmThread* thread);
+/* Returns the error as returned by hmThreadStartFunc when the thread finishes. */
 hmError hmThreadGetExitError(hmThread* thread);
+/* Blocks the current thread for the specified number of milliseconds. The number of milliseconds must be in the range
+   between HM_SLEEP_MIN_MS and HM_SLEEP_MAX_MS, otherwise HM_ERROR_INVALID_ARGUMENT is returned. */
 hmError hmSleep(hm_nint ms);
 
 #endif /* HM_THREAD_H */
