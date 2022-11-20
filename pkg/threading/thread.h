@@ -60,17 +60,17 @@ hmError hmThreadAbort(hmThread* thread);
    elapses. Can be used together with hmThreadAbort.
    Returns HM_ERROR_INVALID_ARGUMENT if `thread` refers to the current thread. Returns HM_ERROR_TIMEOUT if the timeout expired.
    `timeout_ms` must be in the range between HM_THREAD_JOIN_MIN_TIMEOUT_MS and  HM_THREAD_JOIN_MAX_TIMEOUT_MS. */
-hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms);
+hmError hmThreadJoin(hmThread* thread, hm_millis timeout_ms);
 hmThreadState hmThreadGetState(hmThread* thread);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmThreadGetName(hmThread* thread, hmString* in_string);
 /* Returns the total CPU time for this thread. Useful for debugging CPU load. */
-hm_nint hmThreadGetProcessorTime(hmThread* thread);
+hm_millis hmThreadGetProcessorTime(hmThread* thread);
 /* Returns the error as returned by hmThreadStartFunc when the thread finishes. Returns HM_OK if the thread hasn't finished yet. */
 hmError hmThreadGetExitError(hmThread* thread);
 /* Blocks the current thread for the specified number of milliseconds. The number of milliseconds must be in the range
    between HM_SLEEP_MIN_MS and HM_SLEEP_MAX_MS, otherwise HM_ERROR_INVALID_ARGUMENT is returned. */
-hmError hmSleep(hm_nint ms);
+hmError hmSleep(hm_millis ms);
 
 #endif /* HM_THREAD_H */

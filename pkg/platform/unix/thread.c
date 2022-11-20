@@ -96,7 +96,7 @@ hmError hmThreadAbort(hmThread* thread)
     return HM_OK;
 }
 
-hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms)
+hmError hmThreadJoin(hmThread* thread, hm_millis timeout_ms)
 {
     if (timeout_ms < HM_THREAD_JOIN_MIN_TIMEOUT_MS || timeout_ms > HM_THREAD_JOIN_MAX_TIMEOUT_MS) {
         return HM_ERROR_INVALID_ARGUMENT;
@@ -141,7 +141,7 @@ hmError hmThreadGetName(hmThread* thread, hmString* in_string)
     return hmStringDuplicate(platform_data->allocator, &platform_data->name, (hmString*)in_string);
 }
 
-hm_nint hmThreadGetProcessorTime(hmThread* thread)
+hm_millis hmThreadGetProcessorTime(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
     struct timespec ts;
@@ -161,7 +161,7 @@ hmError hmThreadGetExitError(hmThread* thread)
     return hmAtomicLoad(&platform_data->exit_error);
 }
 
-hmError hmSleep(hm_nint ms)
+hmError hmSleep(hm_millis ms)
 {
     if (ms < HM_SLEEP_MIN_MS || ms > HM_SLEEP_MAX_MS) {
         return HM_ERROR_INVALID_ARGUMENT;

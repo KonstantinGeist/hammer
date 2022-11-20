@@ -24,13 +24,13 @@
 #define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
 #define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
 
-struct timespec hmConvertMillisecondsToTimeSpec(hm_nint ms);
-hm_nint hmConvertTimeSpecToMilliseconds(struct timespec* ts);
+struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms);
+hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts);
 /* Returns the current time as a timespec struct. If is_monotonic is HM_TRUE, returns monotonic time;
    otherwise, returns real time. */
 struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic);
 /* Returns a point in time which equals to now + ms_in_future. If is_monotonic is HM_TRUE, returns monotonic time;
    otherwise, returns real time */
-struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_nint ms_in_future);
+struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future);
 
 #endif /* HM_PLATFORM_COMMON_H */

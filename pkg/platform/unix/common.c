@@ -15,17 +15,17 @@
 
 #include <time.h>
 
-struct timespec hmConvertMillisecondsToTimeSpec(hm_nint ms)
+struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms)
 {
     struct timespec ts;
-    ts.tv_sec = (uint64_t)ms / 1000;
-    ts.tv_nsec = ((uint64_t)ms % 1000) * 1000 * 1000;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000 * 1000;
     return ts;
 }
 
-hm_nint hmConvertTimeSpecToMilliseconds(struct timespec* ts)
+hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts)
 {
-    return (ts->tv_sec * 1000) + (ts->tv_nsec / (1000 * 1000));
+    return (hm_millis)((ts->tv_sec * 1000) + (ts->tv_nsec / (1000 * 1000)));
 }
 
 struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic)
@@ -35,10 +35,10 @@ struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic)
     return ts;
 }
 
-struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_nint ms_in_future)
+struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future)
 {
     struct timespec ts = hmGetCurrentTimeSpec(is_monotonic);
-    hm_nint ms = hmConvertTimeSpecToMilliseconds(&ts);
+    hm_millis ms = hmConvertTimeSpecToMilliseconds(&ts);
     ms += ms_in_future;
     return hmConvertMillisecondsToTimeSpec(ms);
 }

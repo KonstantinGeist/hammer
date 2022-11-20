@@ -34,7 +34,7 @@ typedef struct {
 } hmWaitObjectPlatformData;
 
 #define hmWaitObjectGetPlatformData(wait_object) ((hmWaitObjectPlatformData*)(wait_object)->platform_data)
-static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout);
+static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_millis timeout);
 
 hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
 {
@@ -65,7 +65,7 @@ hmError hmWaitObjectDispose(hmWaitObject* wait_object)
     return err;
 }
 
-hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms)
+hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_millis timeout_ms)
 {
     if (timeout_ms < HM_WAIT_OBJECT_MIN_TIMEOUT_MS || timeout_ms > HM_WAIT_OBJECT_MAX_TIMEOUT_MS) {
         return HM_ERROR_INVALID_ARGUMENT;
@@ -88,7 +88,7 @@ hmError hmWaitObjectPulse(hmWaitObject* wait_object)
     return HM_OK;
 }
 
-static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_nint timeout_ms)
+static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_millis timeout_ms)
 {
     int result = POSIX_RESULT_OK;
     if (!hmAtomicLoad(&platform_data->signaled_state)) {

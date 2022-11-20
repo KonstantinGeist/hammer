@@ -37,7 +37,7 @@ hmError hmWaitObjectDispose(hmWaitObject* wait_object);
    `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
    HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases (zero or infinite timeouts).
  */
-hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_nint timeout_ms);
+hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_millis timeout_ms);
 /* Creates a "pulse", allowing one waiting thread to proceed. Only one thread at a time is guaranteed to proceed.
    After a wait object is pulsed, any new threads calling hmWaitObjectWait(..) will block again.  */
 hmError hmWaitObjectPulse(hmWaitObject* wait_object);
