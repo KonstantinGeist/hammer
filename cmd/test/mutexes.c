@@ -18,6 +18,8 @@
 #include <threading/mutex.h>
 #include <threading/thread.h>
 
+#define TEST_THREAD_JOIN_TIMEOUT (5*1000)
+
 static void create_mutex_and_allocator(hmMutex* mutex, hmAllocator* allocator)
 {
     hmError err = hmCreateSystemAllocator(allocator);
@@ -109,7 +111,7 @@ static void test_mutexes_protect_from_data_corruption()
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
-        err = hmThreadJoin(&threads[i], HM_THREAD_JOIN_MAX_TIMEOUT_MS);
+        err = hmThreadJoin(&threads[i], TEST_THREAD_JOIN_TIMEOUT);
         HM_TEST_ASSERT_OK(err);
     }
     for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
