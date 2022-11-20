@@ -26,8 +26,11 @@
 
 struct timespec hmConvertMillisecondsToTimeSpec(hm_nint ms);
 hm_nint hmConvertTimeSpecToMilliseconds(struct timespec* ts);
-struct timespec hmGetCurrentTimeSpec();
-/* Returns a point in time which equals to now + ms_in_future. */
-struct timespec hmGetFutureTimeSpec(hm_nint ms_in_future);
+/* Returns the current time as a timespec struct. If is_monotonic is HM_TRUE, returns monotonic time;
+   otherwise, returns real time. */
+struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic);
+/* Returns a point in time which equals to now + ms_in_future. If is_monotonic is HM_TRUE, returns monotonic time;
+   otherwise, returns real time */
+struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_nint ms_in_future);
 
 #endif /* HM_PLATFORM_COMMON_H */

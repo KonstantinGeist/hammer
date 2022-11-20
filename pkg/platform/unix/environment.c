@@ -16,6 +16,6 @@
 
 hm_nint hmGetTickCount()
 {
-    struct timespec ts = hmGetCurrentTimeSpec();
+    struct timespec ts = hmGetCurrentTimeSpec(HM_TRUE);
     return hmConvertTimeSpecToMilliseconds(&ts);
 }
