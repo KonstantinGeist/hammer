@@ -257,6 +257,26 @@ static void test_can_sleep()
     HM_TEST_ASSERT(time_diff > 1250 && time_diff < 1600);
 }
 
+static hmError can_join_with_timeout_thread_func(void* user_data)
+{
+    return hmSleep(400);
+}
+
+static void test_can_join_with_timeout()
+{
+    hmAllocator allocator;
+    hmThread thread;
+    create_thread_and_allocator(&thread, &allocator, &can_join_with_timeout_thread_func, HM_NULL);
+    hmError err = hmThreadJoin(&thread, 200);
+    HM_TEST_ASSERT(err == HM_ERROR_TIMEOUT);
+    err = hmThreadDispose(&thread);
+    HM_TEST_ASSERT_OK(err);
+    err = hmSleep(400); /* we need to wait for the thread to finish naturally or else we can get a memory leak report */
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 void test_threads()
 {
     HM_TEST_LOG("Threads...");
@@ -270,4 +290,5 @@ void test_threads()
     test_thread_reports_processor_time();
     test_can_create_and_join_many_threads();
     test_can_sleep();
+    test_can_join_with_timeout();
 }

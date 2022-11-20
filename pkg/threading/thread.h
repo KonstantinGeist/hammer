@@ -67,7 +67,7 @@ hmThreadState hmThreadGetState(hmThread* thread);
 hmError hmThreadGetName(hmThread* thread, hmString* in_string);
 /* Returns the total CPU time for this thread. Useful for debugging CPU load. */
 hm_nint hmThreadGetProcessorTime(hmThread* thread);
-/* Returns the error as returned by hmThreadStartFunc when the thread finishes. */
+/* Returns the error as returned by hmThreadStartFunc when the thread finishes. Returns HM_OK if the thread hasn't finished yet. */
 hmError hmThreadGetExitError(hmThread* thread);
 /* Blocks the current thread for the specified number of milliseconds. The number of milliseconds must be in the range
    between HM_SLEEP_MIN_MS and HM_SLEEP_MAX_MS, otherwise HM_ERROR_INVALID_ARGUMENT is returned. */
