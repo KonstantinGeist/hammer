@@ -18,6 +18,7 @@
 #include <collections/array.h>
 #include <platform/unix/common.h>
 
+#include <errno.h>
 #include <pthread.h>
 
 typedef struct {
@@ -108,7 +109,9 @@ hmError hmThreadJoin(hmThread* thread, hm_nint timeout_ms)
     if (hmAtomicLoad(&platform_data->state) == HM_THREAD_STATE_STOPPED) {
         return HM_OK;
     }
-    hmError err = hmResultToError(pthread_join(platform_data->posix_thread, 0));
+    struct timespec ts = hmGetFutureTimeSpec(timeout_ms);
+    int result = pthread_timedjoin_np(platform_data->posix_thread, HM_NULL, &ts);
+    hmError err = result == ETIMEDOUT ? HM_ERROR_TIMEOUT : hmResultToError(result);
     if (err == HM_OK) {
         /* Makes sure we don't call pthread_detach in the destructor later on, as the thread is already
            detached after a call to pthread_join. */

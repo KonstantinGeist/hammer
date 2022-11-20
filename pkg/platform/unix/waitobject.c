@@ -43,8 +43,8 @@ hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
         return HM_ERROR_OUT_OF_MEMORY;
     }
     hmError err = HM_OK;
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_cond_init(&platform_data->cond_variable, 0)));
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->mutex, 0)));
+    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_cond_init(&platform_data->cond_variable, HM_NULL)));
+    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->mutex, HM_NULL)));
     hmAtomicStore(&platform_data->signaled_state, HM_FALSE);
     in_wait_object->allocator = allocator;
     in_wait_object->platform_data = platform_data;
@@ -100,5 +100,5 @@ static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_da
     if (result == POSIX_RESULT_OK) {
         hmAtomicStore(&platform_data->signaled_state, HM_FALSE); /* Resets the state back to "non-signaled". */
     }
-    return result == ETIMEDOUT ? HM_ERROR_TIMEOUT : HM_OK;
+    return result == ETIMEDOUT ? HM_ERROR_TIMEOUT : hmResultToError(result);
 }
