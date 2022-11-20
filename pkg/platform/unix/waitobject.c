@@ -92,7 +92,7 @@ static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_da
 {
     int result = POSIX_RESULT_OK;
     if (!hmAtomicLoad(&platform_data->signaled_state)) {
-        struct timespec ts = hmGetFutureTimeSpec(HM_TRUE, timeout_ms);
+        struct timespec ts = hmGetFutureTimeSpec(HM_FALSE, timeout_ms);
         do {
             result = pthread_cond_timedwait(&platform_data->cond_variable, &platform_data->mutex, &ts);
         } while (result == POSIX_RESULT_OK && !hmAtomicLoad(&platform_data->signaled_state)); /* a check to protect against spurious wakeups */
