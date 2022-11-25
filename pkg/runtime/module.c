@@ -29,6 +29,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         sizeof(hmModule),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_registry->name_to_module_map
     ));
     HM_OWNED(in_registry->name_to_module_map);
@@ -42,6 +43,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         sizeof(hmModule*),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0,
         &in_registry->module_id_to_module_ref_map
     );
     if (err != HM_OK) {
@@ -131,6 +133,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         sizeof(hmClass),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_module->name_to_class_map
     );
     if (err != HM_OK) {
@@ -147,6 +150,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         sizeof(hmClass*),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0,
         &in_module->class_id_to_class_ref_map
     );
     if (err != HM_OK) {

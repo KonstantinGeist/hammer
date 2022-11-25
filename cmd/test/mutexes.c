@@ -18,7 +18,7 @@
 #include <threading/mutex.h>
 #include <threading/thread.h>
 
-#define TEST_THREAD_JOIN_TIMEOUT (5*1000)
+#define THREAD_JOIN_TIMEOUT (5*1000)
 
 static void create_mutex_and_allocator(hmMutex* mutex, hmAllocator* allocator)
 {
@@ -76,6 +76,7 @@ static hmError mutexes_protect_from_data_corruption_thread_func(void* user_data)
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0,
         &context->hash_map
     );
     HM_TEST_ASSERT_OK(err);
@@ -98,9 +99,9 @@ static void test_mutexes_protect_from_data_corruption()
         &context.mutex
     );
     HM_TEST_ASSERT_OK(err);
-    #define TEST_THREAD_COUNT 20
-    hmThread threads[TEST_THREAD_COUNT];
-    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
+    #define THREAD_COUNT 20
+    hmThread threads[THREAD_COUNT];
+    for (hm_nint i = 0; i < THREAD_COUNT; i++) {
         err = hmCreateThread(
             &context.allocator,
             HM_NULL,
@@ -110,11 +111,11 @@ static void test_mutexes_protect_from_data_corruption()
         );
         HM_TEST_ASSERT_OK(err);
     }
-    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
-        err = hmThreadJoin(&threads[i], TEST_THREAD_JOIN_TIMEOUT);
+    for (hm_nint i = 0; i < THREAD_COUNT; i++) {
+        err = hmThreadJoin(&threads[i], THREAD_JOIN_TIMEOUT);
         HM_TEST_ASSERT_OK(err);
     }
-    for (hm_nint i = 0; i < TEST_THREAD_COUNT; i++) {
+    for (hm_nint i = 0; i < THREAD_COUNT; i++) {
         err = hmThreadDispose(&threads[i]);
         HM_TEST_ASSERT_OK(err);
     }

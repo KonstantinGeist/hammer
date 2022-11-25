@@ -39,6 +39,7 @@ hmError hmCreateHashMap(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )
 {
@@ -60,6 +61,7 @@ hmError hmCreateHashMap(
     in_hashmap->bucket_count = initial_capacity;
     in_hashmap->threshold = (hm_nint)(initial_capacity * load_factor);
     in_hashmap->load_factor = load_factor;
+    in_hashmap->hash_salt = hash_salt;
     return HM_OK;
 }
 
@@ -69,6 +71,7 @@ hmError hmCreateHashMapWithStringKeys(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )
 {
@@ -82,6 +85,7 @@ hmError hmCreateHashMapWithStringKeys(
         value_size,
         initial_capacity,
         load_factor,
+        hash_salt,
         in_hashmap
     );
 }
@@ -92,6 +96,7 @@ hmError hmCreateHashMapWithStringRefKeys(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )
 {
@@ -105,6 +110,7 @@ hmError hmCreateHashMapWithStringRefKeys(
         value_size,
         initial_capacity,
         load_factor,
+        hash_salt,
         in_hashmap
     );
 }
@@ -232,9 +238,9 @@ static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 {
     hm_uint32 hash;
     if (hash_map->hash_func) {
-        hash = hash_map->hash_func(key);
+        hash = hash_map->hash_func(key, hash_map->hash_salt);
     } else {
-        hash = hmHash(key, hash_map->key_size);
+        hash = hmHash(key, hash_map->key_size, hash_map->hash_salt);
     }
     return hash % hash_map->bucket_count;
 }

@@ -12,14 +12,11 @@
 // *****************************************************************************
 
 #include <core/primitives.h>
+#include <core/hash.h>
 
-hm_uint32 hmNintHashFunc(void* key)
+hm_uint32 hmNintHashFunc(void* key, hm_uint32 salt)
 {
-    hm_uint32 x = (hm_uint32)(*((hm_nint*)key));
-    x = ((x >> 16) ^ x) * 0x119de1f3;
-    x = ((x >> 16) ^ x) * 0x119de1f3;
-    x = (x >> 16) ^ x;
-    return x;
+    return hmHash(key, sizeof(hm_nint), salt);
 }
 
 hm_bool hmNintEqualsFunc(void* value1, void* value2)
@@ -29,13 +26,9 @@ hm_bool hmNintEqualsFunc(void* value1, void* value2)
     return a == b;
 }
 
-hm_uint32 hmInt32HashFunc(void* key)
+hm_uint32 hmInt32HashFunc(void* key, hm_uint32 salt)
 {
-    hm_uint32 x = (hm_uint32)(*((hm_int32*)key));
-    x = ((x >> 16) ^ x) * 0x119de1f3;
-    x = ((x >> 16) ^ x) * 0x119de1f3;
-    x = (x >> 16) ^ x;
-    return x;
+    return hmHash(key, sizeof(hm_int32), salt);
 }
 
 hm_bool hmInt32EqualsFunc(void* value1, void* value2)

@@ -16,6 +16,9 @@
 
 #include <core/common.h>
 
-hm_uint32 hmHash(void* bytes, hm_nint size);
+/* Hashes a byte buffer by mixing it with a predefined salt (to fight against hash DoS attacks).
+   The salt should be stable for the duration of the process (subprocess) but different across different
+   process (subprocess) runs. */
+hm_uint32 hmHash(void* bytes, hm_nint size, hm_uint32 salt);
 
 #endif /* HM_HASH_H */

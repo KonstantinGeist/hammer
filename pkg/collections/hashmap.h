@@ -23,7 +23,7 @@
 struct _hmAllocator;
 struct _hmHashMapEntry;
 
-typedef hm_uint32(*hmHashMapHashFunc)(void* key);
+typedef hm_uint32(*hmHashMapHashFunc)(void* key, hm_uint32 salt);
 typedef hm_bool(*hmHashMapEqualsFunc)(void* value1, void* value2);
 
 typedef struct {
@@ -39,6 +39,7 @@ typedef struct {
     hm_nint                    bucket_count;
     hm_float                   threshold;
     hm_float                   load_factor;
+    hm_uint32                  hash_salt;
 } hmHashMap;
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
@@ -46,6 +47,7 @@ typedef struct {
    Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY.
    key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
    hash_func and equals_func can be null (in that case, bitwise comparisons are made).
+   hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for mode details.
    WARNING The default, bitwise comparison-based hashing is unsafe with structs because the compiler can
    add padding with uninitialized garbage. */
 hmError hmCreateHashMap(
@@ -58,6 +60,7 @@ hmError hmCreateHashMap(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 );
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are strings (one of the most common cases). */
@@ -67,6 +70,7 @@ hmError hmCreateHashMapWithStringKeys(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 );
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are string references (one of the most common cases). */
@@ -76,6 +80,7 @@ hmError hmCreateHashMapWithStringRefKeys(
     hm_nint              value_size,
     hm_nint              initial_capacity,
     hm_float             load_factor,
+    hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 );
 hmError hmHashMapDispose(hmHashMap* hash_map);

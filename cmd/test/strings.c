@@ -17,6 +17,7 @@
 
 #define STRING_CONTENT "Hello, World!"
 #define DIFFERENT_STRING_CONTENT "different string content"
+#define HASH_SALT 34545
 
 static void test_can_create_string()
 {
@@ -97,8 +98,8 @@ static void test_can_hash_string()
     hmString string;
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
-    hm_uint32 hash = hmStringHash(&string);
-    HM_TEST_ASSERT(hash == 847757641); // precomputed
+    hm_uint32 hash = hmStringHash(&string, HASH_SALT);
+    HM_TEST_ASSERT(hash == 1485836977); // precomputed
 }
 
 static void test_can_hash_empty_string()
@@ -106,8 +107,8 @@ static void test_can_hash_empty_string()
     hmString string;
     hmError err = hmCreateStringViewFromCString("", &string);
     HM_TEST_ASSERT_OK(err);
-    hm_uint32 hash = hmStringHash(&string);
-    HM_TEST_ASSERT(hash == 0);
+    hm_uint32 hash = hmStringHash(&string, HASH_SALT);
+    HM_TEST_ASSERT(hash == 34545); // precomputed
 }
 
 void test_strings()

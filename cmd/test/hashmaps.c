@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #define ITERATION_COUNT 1000
+#define HASH_SALT 666
 
 typedef struct {
     int x, y;
@@ -46,6 +47,7 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HASH_SALT,
         hash_map
     );
     HM_TEST_ASSERT_OK(err);
@@ -65,6 +67,7 @@ static void create_point_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HASH_SALT,
         hash_map
     );
     HM_TEST_ASSERT_OK(err);
@@ -80,6 +83,7 @@ static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* ha
         sizeof(hmString),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HASH_SALT,
         hash_map
     );
     HM_TEST_ASSERT_OK(err);
