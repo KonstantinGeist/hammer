@@ -14,8 +14,19 @@
 #include <core/environment.h>
 #include <platform/unix/common.h>
 
+#include <unistd.h>
+
 hm_nint hmGetTickCount()
 {
     struct timespec ts = hmGetCurrentTimeSpec(HM_TRUE);
     return hmConvertTimeSpecToMilliseconds(&ts);
+}
+
+hm_uint32 hmGetProcessorCount()
+{
+    /* Technically non-standard, but will simply return 1 processor if no such
+       name is found. Or it just won't compile on such a system. */
+    long result = sysconf(_SC_NPROCESSORS_ONLN);
+    /* Assume 1 processor if the call to sysconf wasn't successful. */
+    return result < 1 ? 1 : result;
 }
