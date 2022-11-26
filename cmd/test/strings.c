@@ -99,7 +99,7 @@ static void test_can_hash_string()
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
     hm_uint32 hash = hmStringHash(&string, HASH_SALT);
-    HM_TEST_ASSERT(hash == 1485836977); // precomputed
+    HM_TEST_ASSERT(hash == 1485836977); /* precomputed */
 }
 
 static void test_can_hash_empty_string()
@@ -108,7 +108,7 @@ static void test_can_hash_empty_string()
     hmError err = hmCreateStringViewFromCString("", &string);
     HM_TEST_ASSERT_OK(err);
     hm_uint32 hash = hmStringHash(&string, HASH_SALT);
-    HM_TEST_ASSERT(hash == 34545); // precomputed
+    HM_TEST_ASSERT(hash == 34545); /* precomputed */
 }
 
 void test_strings()

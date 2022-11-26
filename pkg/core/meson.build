@@ -3,6 +3,7 @@ core_sources = files(
     'error.c',
     'hash.c',
     'primitives.c',
+    'random.c',
     'string.c',
     'utils.c'
 )

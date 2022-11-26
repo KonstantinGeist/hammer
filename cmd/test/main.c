@@ -29,10 +29,12 @@ int main()
     test_hashes();
     test_errors();
     test_queues();
+    test_environment();
+    test_random();
+    /* Tests which rely on timing should come last for the faster tests to fail earlier. */
     test_mutexes();
     test_wait_objects();
     test_threads();
-    test_environment();
     HM_TEST_LOG("***************");
     HM_TEST_LOG("Tests finished.");
     HM_TEST_LOG("***************");

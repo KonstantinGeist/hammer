@@ -45,6 +45,8 @@ typedef uint8_t hm_bool;
 typedef double hm_float;
 
 #define HM_UINT32_MAX UINT32_MAX
+#define HM_INT32_MIN INT32_MIN
+#define HM_INT32_MAX INT32_MAX
 
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
    Return function-specific data as the last function argument passed by reference. */

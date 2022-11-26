@@ -9,6 +9,7 @@ test_sources = files(
     'modules.c',
     'mutexes.c',
     'queues.c',
+    'random.c',
     'readers.c',
     'strings.c',
     'utils.c',

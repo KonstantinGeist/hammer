@@ -20,14 +20,14 @@ static void test_can_hash_empty_array()
 {
     char bytes[1];
     hm_uint32 hash = hmHash(&bytes[0], 0, HASH_SALT);
-    HM_TEST_ASSERT(hash == 13); // precomputed
+    HM_TEST_ASSERT(hash == 13); /* precomputed */
 }
 
 static void test_can_hash_non_empty_array()
 {
     char bytes[8] = {'0', '1', '2', '3', '4', '5', '6', '7'};
     hm_uint32 hash = hmHash(&bytes[0], sizeof(char)*8, HASH_SALT);
-    HM_TEST_ASSERT(hash == 1793922114); // precomputed
+    HM_TEST_ASSERT(hash == 1793922114); /* precomputed */
 }
 
 void test_hashes()

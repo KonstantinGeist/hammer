@@ -11,18 +11,16 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_utils();
-void test_hashmaps();
-void test_hashes();
-void test_errors();
-void test_queues();
-void test_mutexes();
-void test_wait_objects();
-void test_threads();
-void test_environment();
-void test_random();
+#include <core/environment.h>
+
+#include <sys/random.h>
+
+hm_int32 hmGenerateSeed()
+{
+    hm_int32 ret_value = 0;
+    ssize_t result = getrandom(&ret_value, sizeof(ret_value), 0);
+    if (result == -1 || ret_value == 0) { /* fall back on the current time if /dev/urandom is not available */
+        ret_value = hmGetTickCount();
+    }
+    return ret_value;
+}
