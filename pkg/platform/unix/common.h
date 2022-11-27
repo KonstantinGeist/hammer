@@ -31,6 +31,6 @@ hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts);
 struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic);
 /* Returns a point in time which equals to now + ms_in_future. If is_monotonic is HM_TRUE, returns monotonic time;
    otherwise, returns real time */
-struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future);
+hmError hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future, struct timespec* in_timespec);
 
 #endif /* HM_PLATFORM_COMMON_H */

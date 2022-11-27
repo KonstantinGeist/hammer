@@ -30,7 +30,7 @@
 /* A readable constant for null pointers. */
 #define HM_NULL ((void*)0)
 
-/* Platform-specific integer size. */
+/* Platform-specific integer size, can also be cast to/from pointers. */
 typedef uintptr_t hm_nint;
 typedef uint8_t hm_uint8;
 typedef uint32_t hm_uint32;
@@ -48,6 +48,7 @@ typedef double hm_float64;
 #define HM_INT32_MIN INT32_MIN
 #define HM_INT32_MAX INT32_MAX
 #define HM_NINT_MAX SIZE_MAX
+#define HM_MILLIS_MAX UINT32_MAX
 
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
    Return function-specific data as the last function argument passed by reference. */

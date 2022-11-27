@@ -12,6 +12,7 @@
 // *****************************************************************************
 
 #include <platform/unix/common.h>
+#include <core/math.h>
 
 #include <time.h>
 
@@ -35,10 +36,12 @@ struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic)
     return ts;
 }
 
-struct timespec hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future)
+hmError hmGetFutureTimeSpec(hm_bool is_monotonic, hm_millis ms_in_future, struct timespec* in_timespec)
 {
     struct timespec ts = hmGetCurrentTimeSpec(is_monotonic);
     hm_millis ms = hmConvertTimeSpecToMilliseconds(&ts);
-    ms += ms_in_future;
-    return hmConvertMillisecondsToTimeSpec(ms);
+    hm_millis new_ms = 0;
+    HM_TRY(hmAddMillis(ms, ms_in_future, &new_ms));
+    *in_timespec = hmConvertMillisecondsToTimeSpec(new_ms);
+    return HM_OK;
 }

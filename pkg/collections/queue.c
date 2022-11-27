@@ -71,7 +71,9 @@ hmError hmQueueEnqueue(hmQueue* queue, void* value)
     }
     hm_nint new_count = 0;
     HM_TRY(hmAddNint(queue->count, 1, &new_count));
-    memcpy(queue->items + queue->item_size * queue->write_index, value, queue->item_size);
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->write_index, &item_address));
+    memcpy((char*)item_address, value, queue->item_size);
     queue->write_index = hmQueueIncrementIndex(queue, queue->write_index);
     queue->count = new_count;
     return HM_OK;
@@ -82,7 +84,9 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
     if (!queue->count) {
         return HM_ERROR_INVALID_STATE;
     }
-    memcpy(in_value, queue->items + queue->item_size * queue->read_index, queue->item_size);
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->read_index, &item_address));
+    memcpy(in_value, (char*)item_address, queue->item_size);
     queue->read_index = hmQueueIncrementIndex(queue, queue->read_index);
     queue->count--;
     return HM_OK;
@@ -91,7 +95,9 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
 static hmError hmQueueDoubleQueue(hmQueue* queue)
 {
     hm_nint new_capacity = queue->capacity * HM_QUEUE_GROWTH_FACTOR;
-    char* new_items = (char*)hmAlloc(queue->allocator, queue->item_size * new_capacity);
+    hm_nint items_capacity = 0;
+    HM_TRY(hmMulNint(queue->item_size, new_capacity, &items_capacity));
+    char* new_items = (char*)hmAlloc(queue->allocator, items_capacity);
     if (!new_items) {
         return HM_ERROR_OUT_OF_MEMORY;
     }

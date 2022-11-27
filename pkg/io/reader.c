@@ -57,7 +57,9 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
     if (offset_with_sz > data->size) {
         bytes_read = data->size - data->offset;
     }
-    memcpy(buf, data->base + data->offset, bytes_read);
+    hm_nint base_with_offset = 0;
+    HM_TRY(hmAddNint((hm_nint)data->base, data->offset, &base_with_offset));
+    memcpy(buf, (const char*)base_with_offset, bytes_read);
     data->offset = offset_with_sz;
     *out_bytes_read = bytes_read;
     return HM_OK;

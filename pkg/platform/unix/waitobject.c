@@ -21,6 +21,7 @@
 
 #include <threading/waitobject.h>
 #include <threading/atomic.h>
+#include <core/math.h>
 #include <platform/unix/common.h>
 
 #include <core/allocator.h>
@@ -92,7 +93,8 @@ static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_da
 {
     int result = POSIX_RESULT_OK;
     if (!hmAtomicLoad(&platform_data->signaled_state)) {
-        struct timespec ts = hmGetFutureTimeSpec(HM_FALSE, timeout_ms);
+        struct timespec ts;
+        HM_TRY(hmGetFutureTimeSpec(HM_FALSE, timeout_ms, &ts));
         do {
             result = pthread_cond_timedwait(&platform_data->cond_variable, &platform_data->mutex, &ts);
         } while (result == POSIX_RESULT_OK && !hmAtomicLoad(&platform_data->signaled_state)); /* a check to protect against spurious wakeups */

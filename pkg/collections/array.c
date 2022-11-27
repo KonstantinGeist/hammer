@@ -56,7 +56,9 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
 {
     hm_nint new_count = 0;
     HM_TRY(hmAddNint(array->count, 1, &new_count));
-    memcpy(array->items + array->count * array->item_size, in_value, array->item_size);
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint((hm_nint)array->items, array->count, array->item_size, &item_address));
+    memcpy((char*)item_address, in_value, array->item_size);
     array->count = new_count;
     if (array->count >= array->capacity) {
         hm_nint new_capacity = array->capacity * 2;
@@ -80,7 +82,9 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value)
     if (index >= array->count) {
         return HM_ERROR_OUT_OF_RANGE;
     }
-    memcpy(in_value, array->items + index * array->item_size, array->item_size);
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
+    memcpy(in_value, (char*)item_address, array->item_size);
     return HM_OK;
 }
 
@@ -89,7 +93,9 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
     if (index >= array->count) {
         return HM_ERROR_OUT_OF_RANGE;
     }
-    memcpy(array->items + index * array->item_size, in_value, array->item_size);
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
+    memcpy((char*)item_address, in_value, array->item_size);
     return HM_OK;
 }
 
@@ -116,14 +122,23 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         array->capacity = new_capacity;
     }
     if (array_expand_func) {
-        char* item = array->items+array->count * array->item_size;
+        hm_nint item_address = 0;
+        HM_TRY(hmAddMulNint((hm_nint)array->items, array->count, array->item_size, &item_address));
         for (hm_nint i = 0; i < count; i++) {
+            hm_nint array_count_with_i = 0;
+            HM_TRY(hmAddNint(array->count, i, &array_count_with_i));
             // NOTE: no need to deallocate array->items on error
-            HM_TRY(array_expand_func(array, array->count + i, item, user_data));
-            item += array->item_size;
+            HM_TRY(array_expand_func(array, array_count_with_i, (char*)item_address, user_data));
+            hm_nint new_item_address = 0;
+            HM_TRY(hmAddNint(item_address, array->item_size, &new_item_address));
+            item_address = new_item_address;
         }
     } else {
-        memset(array->items+array->count * array->item_size, 0, array->item_size * count);
+        hm_nint item_address = 0;
+        HM_TRY(hmAddMulNint((hm_nint)array->items, array->count, array->item_size, &item_address));
+        hm_nint items_size = 0;
+        HM_TRY(hmMulNint(array->item_size, count, &items_size));
+        memset((char*)item_address, 0, items_size);
     }
     array->count = new_count;
     return HM_OK;

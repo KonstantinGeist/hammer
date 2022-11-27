@@ -18,5 +18,12 @@
 
 /* A safe addition operation: returns HM_ERROR_OVERFLOW on overflow. */
 hmError hmAddNint(hm_nint a, hm_nint b, hm_nint* result);
+/* A safe multiplication operation: returns HM_ERROR_OVERFLOW on overflow. */
+hmError hmMulNint(hm_nint a, hm_nint b, hm_nint* result);
+/* A safe addition+multiplication operation: returns HM_ERROR_OVERFLOW on overflow.
+   Useful for calculating element addresses inside an array: base + index * size */
+hmError hmAddMulNint(hm_nint a, hm_nint b, hm_nint c, hm_nint* result);
+/* See hmAddNint(..) */
+hmError hmAddMillis(hm_millis a, hm_millis b, hm_millis* result);
 
 #endif /* HM_MATH_H */
