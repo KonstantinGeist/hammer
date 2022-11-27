@@ -47,6 +47,7 @@ typedef double hm_float64;
 #define HM_UINT32_MAX UINT32_MAX
 #define HM_INT32_MIN INT32_MIN
 #define HM_INT32_MAX INT32_MAX
+#define HM_NINT_MAX SIZE_MAX
 
 /* Almost all functions are expected to return an error value. If no error happened, HM_OK should be returned.
    Return function-specific data as the last function argument passed by reference. */
