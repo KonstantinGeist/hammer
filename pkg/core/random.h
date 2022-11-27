@@ -28,8 +28,6 @@ hmError hmRandomDispose(hmRandom* random);
 hm_float64 hmRandomGetNextFloat(hmRandom* random);
 /* Returns a new random int number currently in the range [0..HM_INT32_MAX) */
 hm_int32 hmRandomGetNextInt(hmRandom* random);
-/* Creates a new random int number in the range [bound1, bound2]. */
-hm_int32 hmRandomGetNextIntWithinRange(hmRandom* random, hm_int32 bound1, hm_int32 bound2);
 /* Creates a seed by drawing from the platform's entropy source to seed random number generators.
    If the platform's entropy source is unavailable, returns current time. */
 hm_int32 hmGenerateSeed();

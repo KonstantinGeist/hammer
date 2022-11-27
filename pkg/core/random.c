@@ -18,11 +18,9 @@
 
 #define MSEED 161803398
 
-static hm_int32 hmRandomSample(hmRandom* random);
-
 hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random)
 {
-    hm_int32 seed_array[56];
+    hm_int32* seed_array = &in_random->seed_array[0];
     hm_int32 mj, mk;
     hm_int32 subtraction = (seed == HM_INT32_MIN) ? HM_INT32_MAX : abs(seed);
     mj = MSEED - subtraction;
@@ -45,7 +43,6 @@ hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random)
             }
         }
     }
-    memcpy(&in_random->seed_array[0], &seed_array[0], sizeof(seed_array));
     in_random->inext = 0;
     in_random->inextp = 31;
     return HM_OK;
@@ -59,26 +56,11 @@ hmError hmRandomDispose(hmRandom* random)
 
 hm_float64 hmRandomGetNextFloat(hmRandom* random)
 {
-    hm_float64 ret_value = hmRandomSample(random);
+    hm_float64 ret_value = (hm_float64)hmRandomGetNextInt(random);
     return ret_value * (1.0 / HM_INT32_MAX);
 }
 
 hm_int32 hmRandomGetNextInt(hmRandom* random)
-{
-    return hmRandomSample(random);
-}
-
-hm_int32 hmRandomGetNextIntWithinRange(hmRandom* random, hm_int32 bound1, hm_int32 bound2)
-{
-    hm_int32 diff = abs(bound2 - bound1); /* FIXME can break if the diff is larger than HM_INT32_MAX */
-    hm_int32 min = bound1 < bound2 ? bound1 : bound2;
-    if (diff <= 1) {
-        return min;
-    }
-    return (hm_int32)(hmRandomGetNextFloat(random) * diff) + min;
-}
-
-static hm_int32 hmRandomSample(hmRandom* random)
 {
     if (++random->inext >= 56) {
         random->inext = 1;

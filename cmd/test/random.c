@@ -37,22 +37,7 @@ static void test_random_generates_int_sequence()
     HM_TEST_ASSERT(random_values[9] == 1329609269);
 }
 
-static void test_random_generates_int_sequence_within_range()
-{
-    #define BOUND1 10
-    #define BOUND2 20
-    hmRandom random;
-    hmError err = hmCreateRandom(666, &random);
-    HM_TEST_ASSERT_OK(err);
-    for (hm_nint i = 0; i < 1000; i++) {
-        hm_int32 random_int = hmRandomGetNextIntWithinRange(&random, BOUND2, BOUND1);
-        HM_TEST_ASSERT(random_int >= BOUND1 && random_int <= BOUND2);
-    }
-    err = hmRandomDispose(&random);
-    HM_TEST_ASSERT_OK(err);
-}
-
-static void test_random_generates_float_sequence_within_range()
+static void test_random_generates_float_sequence()
 {
     hmRandom random;
     hmError err = hmCreateRandom(666, &random);
@@ -75,8 +60,7 @@ void test_random()
 {
     HM_TEST_SUITE_BEGIN("Random");
         HM_TEST_RUN(test_random_generates_int_sequence);
-        HM_TEST_RUN(test_random_generates_int_sequence_within_range);
-        HM_TEST_RUN(test_random_generates_float_sequence_within_range);
+        HM_TEST_RUN(test_random_generates_float_sequence);
         HM_TEST_RUN(test_can_generate_seed);
     HM_TEST_SUITE_END();
 }
