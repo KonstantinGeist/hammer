@@ -17,10 +17,10 @@
 
 static void test_tick_count_grows_monotonically()
 {
-    hm_nint first_tick_count = hmGetTickCount();
+    hm_millis first_tick_count = hmGetTickCount();
     hmError err = hmSleep(100);
     HM_TEST_ASSERT_OK(err);
-    hm_nint second_tick_count = hmGetTickCount();
+    hm_millis second_tick_count = hmGetTickCount();
     HM_TEST_ASSERT(second_tick_count > first_tick_count);
 }
 

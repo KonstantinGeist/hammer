@@ -17,7 +17,7 @@
 #include <core/common.h>
 
 /* Gets the number of milliseconds elapsed since a platform-dependent epoch. */
-hm_nint hmGetTickCount();
+hm_millis hmGetTickCount();
 /* Returns the number of processors available in the current environment.
    May return 1 if it's not possible to detect the number of processors. */
 hm_nint hmGetProcessorCount();

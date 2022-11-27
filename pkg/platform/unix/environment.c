@@ -16,7 +16,7 @@
 
 #include <unistd.h>
 
-hm_nint hmGetTickCount()
+hm_millis hmGetTickCount()
 {
     struct timespec ts = hmGetCurrentTimeSpec(HM_TRUE);
     return hmConvertTimeSpecToMilliseconds(&ts);
