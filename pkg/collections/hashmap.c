@@ -38,7 +38,7 @@ hmError hmCreateHashMap(
     hm_nint              key_size,
     hm_nint              value_size,
     hm_nint              initial_capacity,
-    hm_float             load_factor,
+    hm_float64           load_factor,
     hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )
@@ -70,7 +70,7 @@ hmError hmCreateHashMapWithStringKeys(
     hmDisposeFunc        value_dispose_func,
     hm_nint              value_size,
     hm_nint              initial_capacity,
-    hm_float             load_factor,
+    hm_float64           load_factor,
     hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )
@@ -95,7 +95,7 @@ hmError hmCreateHashMapWithStringRefKeys(
     hmDisposeFunc        value_dispose_func,
     hm_nint              value_size,
     hm_nint              initial_capacity,
-    hm_float             load_factor,
+    hm_float64           load_factor,
     hm_uint32            hash_salt,
     hmHashMap*           in_hashmap
 )

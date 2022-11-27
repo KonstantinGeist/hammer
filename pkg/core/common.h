@@ -42,7 +42,7 @@ typedef uint8_t hm_bool;
 #define HM_TRUE ((hm_bool)1)
 #define HM_FALSE ((hm_bool)0)
 
-typedef double hm_float;
+typedef double hm_float64;
 
 #define HM_UINT32_MAX UINT32_MAX
 #define HM_INT32_MIN INT32_MIN

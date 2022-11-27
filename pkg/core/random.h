@@ -25,7 +25,7 @@ typedef struct {
 hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random);
 hmError hmRandomDispose(hmRandom* random);
 /* Returns a new random float number in the range [0..1) */
-hm_float hmRandomGetNextFloat(hmRandom* random);
+hm_float64 hmRandomGetNextFloat(hmRandom* random);
 /* Returns a new random int number currently in the range [0..HM_INT32_MAX) */
 hm_int32 hmRandomGetNextInt(hmRandom* random);
 /* Creates a new random int number in the range [bound1, bound2]. */

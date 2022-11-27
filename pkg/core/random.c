@@ -57,9 +57,9 @@ hmError hmRandomDispose(hmRandom* random)
     return HM_OK;
 }
 
-hm_float hmRandomGetNextFloat(hmRandom* random)
+hm_float64 hmRandomGetNextFloat(hmRandom* random)
 {
-    hm_float ret_value = hmRandomSample(random);
+    hm_float64 ret_value = hmRandomSample(random);
     return ret_value * (1.0 / HM_INT32_MAX);
 }
 
