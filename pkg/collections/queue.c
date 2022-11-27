@@ -13,10 +13,12 @@
 
 #include <collections/queue.h>
 #include <core/allocator.h>
+#include <core/math.h>
 
 #define HM_QUEUE_GROWTH_FACTOR 2
 
 static hmError hmQueueDoubleQueue(hmQueue* queue);
+/* No hmAddNint because even with wrap-arounds, it will fit in the buffer due to the modulo operator. */
 #define hmQueueIncrementIndex(queue, index) (((index) + 1) % (queue)->capacity)
 
 hmError hmCreateQueue(
@@ -67,9 +69,11 @@ hmError hmQueueEnqueue(hmQueue* queue, void* value)
         }
         HM_TRY(hmQueueDoubleQueue(queue));
     }
+    hm_nint new_count = 0;
+    HM_TRY(hmAddNint(queue->count, 1, &new_count));
     memcpy(queue->items + queue->item_size * queue->write_index, value, queue->item_size);
     queue->write_index = hmQueueIncrementIndex(queue, queue->write_index);
-    queue->count++;
+    queue->count = new_count;
     return HM_OK;
 }
 

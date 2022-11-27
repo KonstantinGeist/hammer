@@ -25,6 +25,11 @@ There are several conventions to follow:
 * Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
 * Static functions should come after public functions.
 * All objects are thread-unsafe and move-only by default, unless stated otherwise.
+* All integer operations (addition, multiplication, subtraction, division) must be done with safe math functions as
+  described in <core/math.h>, to avoid overflows/underflows. An exception to the rule is iteration variables (as they are bounded).
+  Sometimes logic can guarantee a value will never practically overflow -- in that case, a comment must be written to
+  explain why no safe math function is used.
+* Priorities: safety > simplicity > performance.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

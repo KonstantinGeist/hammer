@@ -13,6 +13,7 @@
 
 #include <collections/array.h>
 #include <core/allocator.h>
+#include <core/math.h>
 
 hmError hmCreateArray(
     struct _hmAllocator* allocator,
@@ -53,10 +54,12 @@ hmError hmArrayDispose(hmArray* array)
 
 hmError hmArrayAdd(hmArray* array, void* in_value)
 {
+    hm_nint new_count = 0;
+    HM_TRY(hmAddNint(array->count, 1, &new_count));
     memcpy(array->items + array->count * array->item_size, in_value, array->item_size);
-    array->count++;
+    array->count = new_count;
     if (array->count >= array->capacity) {
-        hm_nint new_capacity = array->capacity*2;
+        hm_nint new_capacity = array->capacity * 2;
         char* new_items = hmRealloc(
             array->allocator,
             array->items,
@@ -95,9 +98,11 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
     if (!count) {
         return HM_OK;
     }
-    hm_nint new_count = array->count+count;
+    hm_nint new_count = 0;
+    HM_TRY(hmAddNint(array->count, count, &new_count));
     if (new_count > array->capacity) {
-        hm_nint new_capacity = array->capacity + count;
+        hm_nint new_capacity = 0;
+        HM_TRY(hmAddNint(array->capacity, count, &new_capacity));
         char* new_items = hmRealloc(
             array->allocator,
             array->items,

@@ -14,6 +14,7 @@
 #include <collections/hashmap.h>
 #include <core/allocator.h>
 #include <core/hash.h>
+#include <core/math.h>
 #include <core/string.h>
 
 typedef struct _hmHashMapEntry {
@@ -154,8 +155,11 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
         memcpy(value_dest, value, hash_map->value_size);
         return HM_OK;
     }
+    hm_nint new_count = 0; /* preventively tries to increase the count before allocating, to check for overflow */
+    HM_TRY(hmAddNint(hash_map->count, 1, &new_count));
     hmHashMapEntry* new_entry = hmAlloc(
         hash_map->allocator,
+        /* no hmAddNint because key_size and value_size are not attacker-controlled and can't be practically too large */
         sizeof(hmHashMapEntry) - 1 + hash_map->key_size + hash_map->value_size // -1 for "char[1] payload"
     );
     if (!new_entry) {
@@ -167,7 +171,7 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     memcpy(value_dest, value, hash_map->value_size);
     new_entry->next = hash_map->buckets[bucket_index];
     hash_map->buckets[bucket_index] = new_entry;
-    hash_map->count++;
+    hash_map->count = new_count;
     return HM_OK;
 }
 
@@ -276,7 +280,7 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;
     hm_nint old_bucket_count = hash_map->bucket_count;
-    hm_nint new_bucket_count = old_bucket_count * 2 + 1;
+    hm_nint new_bucket_count = old_bucket_count * 2;
     hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*) * new_bucket_count);
     if (!new_buckets) {
         return HM_ERROR_OUT_OF_MEMORY;

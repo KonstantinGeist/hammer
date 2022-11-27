@@ -31,6 +31,7 @@ int main()
     test_queues();
     test_environment();
     test_random();
+    test_math();
     /* Tests which rely on timing should come last for the faster tests to fail earlier. */
     test_mutexes();
     test_wait_objects();

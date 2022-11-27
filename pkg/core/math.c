@@ -11,19 +11,13 @@
 //
 // *****************************************************************************
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_utils();
-void test_hashmaps();
-void test_hashes();
-void test_errors();
-void test_queues();
-void test_mutexes();
-void test_wait_objects();
-void test_threads();
-void test_environment();
-void test_random();
-void test_math();
+#include <core/math.h>
+
+hmError hmAddNint(hm_nint a, hm_nint b, hm_nint* result)
+{
+    if (b > HM_NINT_MAX - a) {
+        return HM_ERROR_OVERFLOW;
+    }
+    *result = a + b;
+    return HM_OK;
+}

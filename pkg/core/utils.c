@@ -12,6 +12,7 @@
 // *****************************************************************************
 
 #include <core/utils.h>
+#include <core/math.h>
 
 #include <stdio.h>
 
@@ -20,10 +21,21 @@
 
 hm_nint hmAlignSize(hm_nint sz)
 {
-    return (sz + HM_ALLOC_SIZE_ALIGNMENT - 1) & (-HM_ALLOC_SIZE_ALIGNMENT);
+    hm_nint sz_with_alignment = sz;
+    hmError err = hmAddNint(sz, HM_ALLOC_SIZE_ALIGNMENT - 1, &sz_with_alignment);
+    hmPanicIf(err != HM_OK, "overflow in hmAlignSize(..)"); /* mentioned in the function's docs */
+    return sz_with_alignment & (-HM_ALLOC_SIZE_ALIGNMENT);
 }
 
 void hmLog(const char* msg)
 {
     printf("%s\n", msg);
+}
+
+void hmPanicIf(hm_bool condition, const char* description)
+{
+    if (condition) {
+        printf("panic: %s\n", description);
+        exit(1);
+    }
 }

@@ -16,9 +16,12 @@
 
 #include <core/common.h>
 
+/* Aligns the size up to the value most suited for Hammer's allocators.
+   WARNING Checks for overflow must be made before calling this function,
+   because it panics on overflow. */
 hm_nint hmAlignSize(hm_nint sz);
-
 /* Useful for logging when there's no other way to report an error. */
 void hmLog(const char* msg);
+void hmPanicIf(hm_bool condition, const char* description);
 
 #endif /* HM_UTILS_H */

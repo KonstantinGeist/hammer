@@ -13,6 +13,7 @@
 
 #include <io/reader.h>
 #include <core/allocator.h>
+#include <core/math.h>
 
 hmError hmReaderRead(hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read)
 {
@@ -51,11 +52,13 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
     }
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
     hm_nint bytes_read = sz;
-    if (data->offset + sz > data->size) {
+    hm_nint offset_with_sz = 0;
+    HM_TRY(hmAddNint(data->offset, sz, &offset_with_sz));
+    if (offset_with_sz > data->size) {
         bytes_read = data->size - data->offset;
     }
-    memcpy(buf, data->base+data->offset, bytes_read);
-    data->offset += sz;
+    memcpy(buf, data->base + data->offset, bytes_read);
+    data->offset = offset_with_sz;
     *out_bytes_read = bytes_read;
     return HM_OK;
 }

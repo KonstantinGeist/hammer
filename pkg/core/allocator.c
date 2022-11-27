@@ -12,6 +12,7 @@
 // *****************************************************************************
 
 #include <core/allocator.h>
+#include <core/math.h>
 #include <core/utils.h>
 
 void* hmAlloc(hmAllocator* allocator, hm_nint sz)
@@ -114,23 +115,36 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         if (!result) {
             return HM_NULL;
         }
+        hm_nint new_large_object_count = 0;
+        hmError err = hmAddNint(data->large_object_count, 1, &new_large_object_count);
+        if (err != HM_OK) {
+            hmFree(data->base_allocator, result);
+            return HM_NULL;
+        }
         data->large_objects = hmRealloc(
             data->base_allocator,
             data->large_objects,
             sizeof(char*) * data->large_object_count,
-            sizeof(char*) * (data->large_object_count+1)
+            sizeof(char*) * new_large_object_count
         );
         if (!data->large_objects) {
             hmFree(data->base_allocator, result);
             return HM_NULL;
         }
         data->large_objects[data->large_object_count] = result;
-        data->large_object_count++;
+        data->large_object_count = new_large_object_count;
         return result;
     }
     sz = hmAlignSize(sz);
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
-    if (!cur_segment || cur_segment->index + sz > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE) {
+    hm_nint new_index = 0;
+    if (cur_segment) {
+        hmError err = hmAddNint(cur_segment->index, sz, &new_index);
+        if (err != HM_OK) {
+            return HM_NULL;
+        }
+    }
+    if (!cur_segment || new_index > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE) {
         hm_nint full_segment_size = sizeof(hmBumpPointerAllocatorSegment) + HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE - 1;
         hmBumpPointerAllocatorSegment* new_segment = hmAlloc(data->base_allocator, full_segment_size);
         if (!new_segment) {
@@ -142,7 +156,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         data->cur_segment = cur_segment;
     }
     void* result = &cur_segment->data[0] + cur_segment->index;
-    cur_segment->index += sz;
+    cur_segment->index = new_index;
     return result;
 }
 

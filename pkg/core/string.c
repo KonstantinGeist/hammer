@@ -14,6 +14,7 @@
 #include <core/string.h>
 #include <core/allocator.h>
 #include <core/hash.h>
+#include <core/math.h>
 
 #define HM_EMPTY_STRING_HASH HM_UINT32_MAX
 #define HM_EMPTY_STRING_LENGTH HM_NINT_MAX
@@ -24,11 +25,13 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hm_nint length = strlen(content);
-    char* content_copy = hmAlloc(allocator, length + 1); // including null terminator
+    hm_nint length_with_null = 0;
+    HM_TRY(hmAddNint(length, 1, &length_with_null));
+    char* content_copy = hmAlloc(allocator, length_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    memcpy(content_copy, content, length + 1); // including null terminator
+    memcpy(content_copy, content, length_with_null);
     in_string->content = content_copy;
     in_string->allocator = allocator;
     in_string->length = length;
@@ -82,7 +85,7 @@ hm_uint32 hmStringHash(hmString* string, hm_uint32 salt)
     hm_uint32 hash = hmHash(string->content, hmStringGetLength(string), salt);
     // hash should never be HM_EMPTY_STRING_HASH because it signifies "no hash computed"
     if (hash == HM_EMPTY_STRING_HASH) {
-        hash++;
+        hash = 0;
     }
     string->hash = hash;
     return string->hash;

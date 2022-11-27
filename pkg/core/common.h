@@ -31,7 +31,7 @@
 #define HM_NULL ((void*)0)
 
 /* Platform-specific integer size. */
-typedef size_t hm_nint;
+typedef uintptr_t hm_nint;
 typedef uint8_t hm_uint8;
 typedef uint32_t hm_uint32;
 typedef int32_t hm_int32;
@@ -65,6 +65,8 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_LIMIT_EXCEEDED     ((hmError)8) /* A certain limit was exceeded. */
 #define HM_ERROR_TIMEOUT            ((hmError)9) /* An operation timed out. */
 #define HM_ERROR_NOT_IMPLEMENTED    ((hmError)10) /* Operation is not implemented for this platform. */
+#define HM_ERROR_OVERFLOW           ((hmError)11) /* Overflow happened. */
+#define HM_ERROR_UNDERFLOW          ((hmError)12) /* Underflow happened. */
 
 /* Allows to combine several errors into one. Usually useful when a new error occurs while processing another error. */
 hmError hmCombineErrors(hmError older, hmError newer);
