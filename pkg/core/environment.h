@@ -18,7 +18,8 @@
 
 /* Gets the number of milliseconds elapsed since a platform-dependent epoch. */
 hm_nint hmGetTickCount();
-/* Returns the number of CPU's (processors) available in the current environment. */
-hm_uint32 hmGetProcessorCount();
+/* Returns the number of processors available in the current environment.
+   May return 1 if it's not possible to detect the number of processors. */
+hm_nint hmGetProcessorCount();
 
 #endif /* HM_ENVIRONMENT_H */

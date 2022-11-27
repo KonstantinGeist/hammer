@@ -38,7 +38,8 @@ hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmSt
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
-/* Hashes a string. For `salt`, see hmHash(..) */
+/* Hashes a string. For `salt`, see hmHash(..)
+   Once calculated, the result is cached inside the string. */
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
 #define hmStringGetLength(string) (string)->length
 #define hmStringGetRaw(string) ((const char*)(string)->content)

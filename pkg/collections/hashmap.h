@@ -47,7 +47,7 @@ typedef struct {
    Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY.
    key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
    hash_func and equals_func can be null (in that case, bitwise comparisons are made).
-   hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for mode details.
+   hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for more details.
    WARNING The default, bitwise comparison-based hashing is unsafe with structs because the compiler can
    add padding with uninitialized garbage. */
 hmError hmCreateHashMap(

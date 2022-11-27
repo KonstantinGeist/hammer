@@ -22,11 +22,15 @@ hm_nint hmGetTickCount()
     return hmConvertTimeSpecToMilliseconds(&ts);
 }
 
-hm_uint32 hmGetProcessorCount()
+hm_nint hmGetProcessorCount()
 {
-    /* Technically non-standard, but will simply return 1 processor if no such
-       name is found. Or it just won't compile on such a system. */
+#ifdef _SC_NPROCESSORS_ONLN
+    /* Technically non-standard, but we'll simply return 1 processor if no such
+       name is found. */
     long result = sysconf(_SC_NPROCESSORS_ONLN);
     /* Assume 1 processor if the call to sysconf wasn't successful. */
-    return result < 1 ? 1 : result;
+    return result < 1 ? 1 : (hm_nint)result;
+#else
+    return 1;
+#endif /* _SC_NPROCESSORS_ONLN */
 }

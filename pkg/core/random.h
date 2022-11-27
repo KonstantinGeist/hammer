@@ -21,7 +21,7 @@ typedef struct {
     hm_int32 inext, inextp;
 } hmRandom;
 
-/* Creates a random number generator based on `seed`. The seed can be generated with hmGeneratedSeed() */
+/* Creates a random number generator based on `seed`. The seed can be generated with hmGenerateSeed() */
 hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random);
 hmError hmRandomDispose(hmRandom* random);
 /* Returns a new random float number in the range [0..1) */
@@ -31,7 +31,7 @@ hm_int32 hmRandomGetNextInt(hmRandom* random);
 /* Creates a new random int number in the range [bound1, bound2]. */
 hm_int32 hmRandomGetNextIntWithinRange(hmRandom* random, hm_int32 bound1, hm_int32 bound2);
 /* Creates a seed by drawing from the platform's entropy source to seed random number generators.
-   If the platform's entry source is unavailable, returns current time. */
+   If the platform's entropy source is unavailable, returns current time. */
 hm_int32 hmGenerateSeed();
 
 #endif /* HM_RANDOM_H */

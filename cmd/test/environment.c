@@ -26,7 +26,7 @@ static void test_tick_count_grows_monotonically()
 
 static void test_can_get_processor_count()
 {
-    hm_uint32 processor_count = hmGetProcessorCount();
+    hm_nint processor_count = hmGetProcessorCount();
     HM_TEST_ASSERT(processor_count > 0);
 }
 

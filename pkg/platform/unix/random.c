@@ -19,7 +19,7 @@ hm_int32 hmGenerateSeed()
 {
     hm_int32 ret_value = 0;
     ssize_t result = getrandom(&ret_value, sizeof(ret_value), 0);
-    if (result == -1 || ret_value == 0) { /* fall back on the current time if /dev/urandom is not available */
+    if (result == -1) { /* fall back on the current time if /dev/urandom is not available */
         ret_value = hmGetTickCount();
     }
     return ret_value;

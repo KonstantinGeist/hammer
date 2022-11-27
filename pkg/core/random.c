@@ -14,7 +14,7 @@
 #include <core/random.h>
 #include <core/environment.h>
 
-/* Based on Numerical Recipes in C (2nd Ed.) and Random.cs from mono/CoreCLR. */
+/* Based on Numerical Recipes in C (2nd Ed.) and Random.cs from mono/CoreCLR (MIT license). */
 
 #define MSEED 161803398
 

@@ -18,7 +18,8 @@
 
 /* Hashes a byte buffer by mixing it with a predefined salt (to fight against hash DoS attacks).
    The salt should be stable for the duration of the process (subprocess) but different across different
-   process (subprocess) runs. */
+   process (subprocess) runs.
+   Returns uint32 (not native int) to make hashing more predictable across platforms. */
 hm_uint32 hmHash(void* bytes, hm_nint size, hm_uint32 salt);
 
 #endif /* HM_HASH_H */
