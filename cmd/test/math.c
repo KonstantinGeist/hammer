@@ -38,9 +38,77 @@ static void test_detects_nint_overflow_when_adding()
     HM_TEST_ASSERT(result == HM_NINT_MAX);
 }
 
+static void test_detects_nint_overflow_when_adding_3_nints()
+{
+    hm_nint result = 0;
+    hmError err = hmAddNint3(2, 3, 4, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 9);
+    err = hmAddNint3(HM_NINT_MAX - 10, 2, 2, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_NINT_MAX - 6);
+    err = hmAddNint3(HM_NINT_MAX - 10, 2, 9, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddNint3(HM_NINT_MAX - 10, 9, 2, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddNint3(9, HM_NINT_MAX - 10, 2, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddNint3(9, 2, HM_NINT_MAX - 10, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddNint3(2, HM_NINT_MAX - 10, 2, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_NINT_MAX - 6);
+    err = hmAddNint3(2, 2, HM_NINT_MAX - 10, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_NINT_MAX - 6);
+}
+
+static void test_detects_nint_overflow_when_multiplying()
+{
+    hm_nint result = 0;
+    hmError err = hmMulNint(2, 3, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 6);
+    err = hmMulNint(HM_NINT_MAX - 1, 2, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmMulNint(HM_NINT_MAX - 1, 0, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 0);
+    err = hmMulNint(0, HM_NINT_MAX - 1, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 0);
+    err = hmMulNint(HM_NINT_MAX, HM_NINT_MAX, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmMulNint(HM_NINT_MAX/2, 3, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+}
+
+static void test_detects_nint_overflow_when_adding_and_multiplying()
+{
+    hm_nint result = 0;
+    hmError err = hmAddMulNint(2, 3, 4, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 14);
+    err = hmAddMulNint(HM_NINT_MAX - 1, 3, 4, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMulNint(0, HM_NINT_MAX, 4, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMulNint(4, 1, HM_NINT_MAX - 2, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMulNint(4, 0, HM_NINT_MAX - 2, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 4);
+    err = hmAddMulNint(7, HM_NINT_MAX - 2, 0, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 7);
+}
+
 void test_math()
 {
     HM_TEST_SUITE_BEGIN("Math");
         HM_TEST_RUN(test_detects_nint_overflow_when_adding);
+        HM_TEST_RUN(test_detects_nint_overflow_when_multiplying);
+        HM_TEST_RUN(test_detects_nint_overflow_when_adding_3_nints);
+        HM_TEST_RUN(test_detects_nint_overflow_when_adding_and_multiplying);
     HM_TEST_SUITE_END();
 }
