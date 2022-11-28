@@ -115,8 +115,9 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         if (!result) {
             return HM_NULL;
         }
-        hm_nint new_large_object_count = 0;
+        hm_nint new_large_object_count = 0, new_large_objects_size = 0;
         hmError err = hmAddNint(data->large_object_count, 1, &new_large_object_count);
+        err = hmCombineErrors(err, hmMulNint(sizeof(char*), new_large_object_count, &new_large_objects_size));
         if (err != HM_OK) {
             hmFree(data->base_allocator, result);
             return HM_NULL;
@@ -124,8 +125,8 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         data->large_objects = hmRealloc(
             data->base_allocator,
             data->large_objects,
-            sizeof(char*) * data->large_object_count,
-            sizeof(char*) * new_large_object_count
+            sizeof(char*) * data->large_object_count, /* no safe math operations because it's an old value which was already prevalidated */
+            new_large_objects_size
         );
         if (!data->large_objects) {
             hmFree(data->base_allocator, result);
