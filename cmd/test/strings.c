@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include "common.h"
 #include <core/allocator.h>
@@ -42,7 +42,7 @@ static void test_can_create_string_view()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
     HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
-    err = hmStringDispose(&string); // not necessary for views; just checking it doesn't crash
+    err = hmStringDispose(&string); /* not necessary for views; just checking it doesn't crash */
     HM_TEST_ASSERT_OK(err);
 }
 

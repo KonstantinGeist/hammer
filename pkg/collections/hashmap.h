@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #ifndef HM_HASHMAP_H
 #define HM_HASHMAP_H
@@ -31,8 +31,8 @@ typedef struct {
     struct _hmHashMapEntry**   buckets;  /* A list of buckets which contain linked lists of entries of size key_size+value_size. */
     hmHashMapHashFunc          hash_func;
     hmHashMapEqualsFunc        equals_func;
-    hmDisposeFunc              key_dispose_func;   // can be HM_NULL
-    hmDisposeFunc              value_dispose_func; // can be HM_NULL
+    hmDisposeFunc              key_dispose_func;   /* can be HM_NULL */
+    hmDisposeFunc              value_dispose_func; /* can be HM_NULL */
     hm_nint                    key_size;
     hm_nint                    value_size;
     hm_nint                    count;

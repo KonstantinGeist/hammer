@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <runtime/module.h>
 #include <core/allocator.h>
@@ -25,7 +25,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
 {
     HM_TRY(hmCreateHashMapWithStringKeys(
         allocator,
-        &hmModuleDisposeFunc, // value_dispose_func
+        &hmModuleDisposeFunc, /* value_dispose_func */
         sizeof(hmModule),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -37,8 +37,8 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         allocator,
         &hmInt32HashFunc,
         &hmInt32EqualsFunc,
-        HM_NULL,            // key_dispose_func
-        HM_NULL,            // value_dispose_func,
+        HM_NULL,            /* key_dispose_func */
+        HM_NULL,            /* value_dispose_func */
         sizeof(hm_int32),
         sizeof(hmModule*),
         HM_DEFAULT_HASHMAP_CAPACITY,
@@ -129,7 +129,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     HM_OWNED(in_module->name);
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
-        &hmClassDisposeFunc, // value_dispose_func
+        &hmClassDisposeFunc, /* value_dispose_func */
         sizeof(hmClass),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -144,8 +144,8 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         allocator,
         &hmInt32HashFunc,
         &hmInt32EqualsFunc,
-        HM_NULL,            // key_dispose_func
-        HM_NULL,            // value_dispose_func,
+        HM_NULL,            /* key_dispose_func */
+        HM_NULL,            /* value_dispose_func */
         sizeof(hm_int32),
         sizeof(hmClass*),
         HM_DEFAULT_HASHMAP_CAPACITY,

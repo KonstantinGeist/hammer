@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <core/allocator.h>
 #include <core/math.h>
@@ -69,7 +69,7 @@ static void hmSystemAllocator_free(hmAllocator* allocator, void* mem)
 
 static hmError hmSystemAllocator_dispose(hmAllocator* allocator)
 {
-    // Do nothing (everything's managed by the OS).
+    /* Do nothing (everything's managed by the OS). */
     return HM_OK;
 }
 
@@ -89,7 +89,7 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
 /*    BumpPointerAllocator.    */
 /* *************************** */
 
-#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (256*1024) // 256KB
+#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (256*1024) /* 256KB */
 #define HM_LARGE_OBJECT_SIZE_THRESHOLD (HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE/2)
 
 typedef struct _hmBumpPointerAllocatorSegment {
@@ -103,14 +103,14 @@ typedef struct {
     hmBumpPointerAllocatorSegment* cur_segment;
 
     hmAllocator* base_allocator;
-    void**       large_objects; // for objects larger than HM_LARGE_OBJECT_SIZE_THRESHOLD
+    void**       large_objects; /* for objects larger than HM_LARGE_OBJECT_SIZE_THRESHOLD */
     hm_nint      large_object_count;
 } hmBumpPointerAllocatorData;
 
 static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
     hmBumpPointerAllocatorData* data = (hmBumpPointerAllocatorData*)allocator->data;
-    if (sz > HM_LARGE_OBJECT_SIZE_THRESHOLD) { // too large to fit in a segment
+    if (sz > HM_LARGE_OBJECT_SIZE_THRESHOLD) { /* too large to fit in a segment */
         void* result = hmAlloc(data->base_allocator, sz);
         if (!result) {
             return HM_NULL;
@@ -162,7 +162,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 
 static void hmBumpPointerAllocator_free(hmAllocator* allocator, void* mem)
 {
-    // Do nothing.
+    /* Do nothing. */
 }
 
 static hmError hmBumpPointerAllocator_dispose(hmAllocator* allocator)

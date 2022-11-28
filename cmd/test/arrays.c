@@ -1,22 +1,22 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include "common.h"
 #include <core/allocator.h>
 #include <collections/array.h>
 
 #define ARRAY_CAPACITY     4
-#define ARRAY_EXPAND_COUNT 100 // big enough to also test reallocation
+#define ARRAY_EXPAND_COUNT 100 /* big enough to also test reallocation */
 
 typedef struct {
     hm_nint x;
@@ -46,7 +46,7 @@ static void test_array_can_create_add_get_dispose_without_item_dispose_func()
     hmAllocator allocator;
     hmArray array;
     create_array_and_allocator(&array, &allocator, HM_NULL);
-    for (hm_nint i = 0; i < ARRAY_CAPACITY+5; i++) { // note: also checks reallocations
+    for (hm_nint i = 0; i < ARRAY_CAPACITY+5; i++) { /* note: also checks reallocations */
         testItem test_item;
         test_item.x = i*10;
         test_item.y = i*20;
@@ -74,7 +74,7 @@ static void test_array_can_create_add_get_dispose_with_item_dispose_func()
     hmArray array;
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     hm_nint item_dispose_sum_control = 0;
-    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { // note: also checks reallocations
+    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: also checks reallocations */
         testItem test_item;
         test_item.x = i*10;
         test_item.y = i*20;

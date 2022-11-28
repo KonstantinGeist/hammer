@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include "common.h"
 #include <collections/hashmap.h>
@@ -41,8 +41,8 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
         allocator,
         &hmNintHashFunc,
         &hmNintEqualsFunc,
-        HM_NULL, // key_dispose_func
-        HM_NULL, // value_dispose_func
+        HM_NULL, /* key_dispose_func */
+        HM_NULL, /* value_dispose_func */
         sizeof(hm_nint),
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
@@ -59,10 +59,10 @@ static void create_point_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator
     HM_TEST_ASSERT_OK(err);
     err = hmCreateHashMap(
         allocator,
-        HM_NULL, // hash_func
-        HM_NULL, // equals_func
-        HM_NULL, // key_dispose_func
-        HM_NULL, // value_dispose_func
+        HM_NULL, /* hash_func */
+        HM_NULL, /* equals_func */
+        HM_NULL, /* key_dispose_func */
+        HM_NULL, /* value_dispose_func */
         sizeof(Point),
         sizeof(hm_nint),
         HM_DEFAULT_HASHMAP_CAPACITY,
@@ -79,7 +79,7 @@ static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* ha
     HM_TEST_ASSERT_OK(err);
     err = hmCreateHashMapWithStringKeys(
         allocator,
-        &hmStringDisposeFunc, // value_dispose_func
+        &hmStringDisposeFunc, /* value_dispose_func */
         sizeof(hmString),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -110,7 +110,7 @@ static void test_can_put_and_get_integers_from_hash_map()
     hmAllocator allocator;
     hmHashMap hash_map;
     create_integer_hash_map_and_allocator(&hash_map, &allocator);
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // also tests rehashing
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* also tests rehashing */
         hm_nint value = i*2;
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK(err);
@@ -132,7 +132,7 @@ static void test_can_remove_integers_from_hash_map()
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK(err);
     }
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // removes all non-odd elements
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
         if (i % 2 == 0) {
             hm_bool removed;
             hmError err = hmHashMapRemove(&hash_map, &i, &removed);
@@ -192,7 +192,7 @@ static void test_hash_map_reports_correct_count()
         HM_TEST_ASSERT_OK(err);
     }
     HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == ITERATION_COUNT);
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // removes all non-odd elements
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
         if (i % 2 == 0) {
             hm_bool removed;
             hmError err = hmHashMapRemove(&hash_map, &i, &removed);
@@ -216,7 +216,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
         hmError err = hmHashMapPut(&hash_map, &str_key, &str_value);
         HM_TEST_ASSERT_OK(err);
     }
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // removes all non-odd elements
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
         if (i % 2 == 0) {
             hmString str_key;
             create_string_from_nint(&allocator, i, &str_key);
@@ -249,7 +249,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_without_hash_equal
     hmAllocator allocator;
     hmHashMap hash_map;
     create_point_hash_map_and_allocator(&hash_map, &allocator);
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { // also tests rehashing
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* also tests rehashing */
         Point value;
         value.x = i*20;
         value.y = i*30;

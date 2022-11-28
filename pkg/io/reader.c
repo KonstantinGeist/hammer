@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <io/reader.h>
 #include <core/allocator.h>
@@ -48,7 +48,7 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
     }
     if (!sz) {
         *out_bytes_read = 0;
-        return HM_OK; // do nothing because we were told to read 0 bytes
+        return HM_OK; /* do nothing because we were told to read 0 bytes */
     }
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
     hm_nint bytes_read = sz;

@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <core/string.h>
 #include <core/allocator.h>
@@ -83,7 +83,7 @@ hm_uint32 hmStringHash(hmString* string, hm_uint32 salt)
         return string->hash;
     }
     hm_uint32 hash = hmHash(string->content, hmStringGetLength(string), salt);
-    // hash should never be HM_EMPTY_STRING_HASH because it signifies "no hash computed"
+    /* Hash should never be HM_EMPTY_STRING_HASH because it signifies "no hash computed". */
     if (hash == HM_EMPTY_STRING_HASH) {
         hash = 0;
     }

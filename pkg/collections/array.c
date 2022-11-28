@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <collections/array.h>
 #include <core/allocator.h>
@@ -127,7 +127,7 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         for (hm_nint i = 0; i < count; i++) {
             hm_nint array_count_with_i = 0;
             HM_TRY(hmAddNint(array->count, i, &array_count_with_i));
-            // NOTE: no need to deallocate array->items on error
+            /* NOTE: no need to deallocate array->items on error */
             HM_TRY(array_expand_func(array, array_count_with_i, (char*)item_address, user_data));
             hm_nint new_item_address = 0;
             HM_TRY(hmAddNint(item_address, array->item_size, &new_item_address));

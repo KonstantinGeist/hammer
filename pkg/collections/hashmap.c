@@ -1,15 +1,15 @@
-// *****************************************************************************
-//
-//  Copyright (c) Konstantin Geist. All rights reserved.
-//
-//  The use and distribution terms for this software are contained in the file
-//  named License.txt, which can be found in the root of this distribution.
-//  By using this software in any fashion, you are agreeing to be bound by the
-//  terms of this license.
-//
-//  You must not remove this notice, or any other, from this software.
-//
-// *****************************************************************************
+/* *****************************************************************************
+*
+*   Copyright (c) Konstantin Geist. All rights reserved.
+*
+*   The use and distribution terms for this software are contained in the file
+*   named License.txt, which can be found in the root of this distribution.
+*   By using this software in any fashion, you are agreeing to be bound by the
+*   terms of this license.
+*
+*   You must not remove this notice, or any other, from this software.
+*
+* ******************************************************************************/
 
 #include <collections/hashmap.h>
 #include <core/allocator.h>
@@ -19,7 +19,7 @@
 
 typedef struct _hmHashMapEntry {
     struct _hmHashMapEntry* next;
-    char                    payload[1]; // the size afterwards depends on key_size+value_size
+    char                    payload[1]; /* the size afterwards depends on key_size+value_size */
 } hmHashMapEntry;
 
 #define hmHashMapEntryGetKey(hashmap, entry) (&((entry)->payload[0]))
@@ -80,7 +80,7 @@ hmError hmCreateHashMapWithStringKeys(
         allocator,
         &hmStringHashFunc,
         &hmStringEqualsFunc,
-        &hmStringDisposeFunc, // key_dispose_func
+        &hmStringDisposeFunc, /* key_dispose_func */
         value_dispose_func,
         sizeof(hmString),
         value_size,
@@ -160,7 +160,7 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     hmHashMapEntry* new_entry = hmAlloc(
         hash_map->allocator,
         /* no hmAddNint because key_size and value_size are not attacker-controlled and can't be practically too large */
-        sizeof(hmHashMapEntry) - 1 + hash_map->key_size + hash_map->value_size // -1 for "char[1] payload"
+        sizeof(hmHashMapEntry) - 1 + hash_map->key_size + hash_map->value_size /* -1 for "char[1] payload" */
     );
     if (!new_entry) {
         return HM_ERROR_OUT_OF_MEMORY;
