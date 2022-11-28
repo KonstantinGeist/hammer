@@ -43,7 +43,7 @@ typedef struct {
 } hmHashMap;
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
-   Load factor should be between 0.5 and 1.0 (preferred value is HM_DEFAULT_HASHMAP_LOAD_FACTOR).
+   Load factor should be in the range [0.5, 1.0] (preferred value is HM_DEFAULT_HASHMAP_LOAD_FACTOR).
    Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY.
    key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
    hash_func and equals_func can be null (in that case, bitwise comparisons are made).

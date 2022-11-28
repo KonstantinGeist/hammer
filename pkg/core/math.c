@@ -22,6 +22,13 @@ hmError hmAddNint(hm_nint a, hm_nint b, hm_nint* result)
     return HM_OK;
 }
 
+hmError hmAddNint3(hm_nint a, hm_nint b, hm_nint c, hm_nint* result)
+{
+    hm_nint add_result = 0;
+    HM_TRY(hmAddNint(a, b, &add_result));
+    return hmAddNint(add_result, c, result);
+}
+
 hmError hmMulNint(hm_nint a, hm_nint b, hm_nint* result)
 {
     if (a == 0 || b == 0) {

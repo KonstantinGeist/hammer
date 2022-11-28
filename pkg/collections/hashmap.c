@@ -44,10 +44,12 @@ hmError hmCreateHashMap(
     hmHashMap*           in_hashmap
 )
 {
-    if (!initial_capacity || load_factor <= 0.5 || load_factor > 1.0) {
+    if (!initial_capacity || load_factor < 0.5 || load_factor > 1.0) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    in_hashmap->buckets = hmAllocZeroInitialized(allocator, sizeof(hmHashMapEntry*) * initial_capacity);
+    hm_nint buckets_size = 0;
+    HM_TRY(hmMulNint(sizeof(hmHashMapEntry*), initial_capacity, &buckets_size));
+    in_hashmap->buckets = hmAllocZeroInitialized(allocator, buckets_size);
     if (!in_hashmap->buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -60,6 +62,7 @@ hmError hmCreateHashMap(
     in_hashmap->value_size = value_size;
     in_hashmap->count = 0;
     in_hashmap->bucket_count = initial_capacity;
+    /* No safe math operations here, because load_factor is in the range [0.5, 1.0]. */
     in_hashmap->threshold = (hm_nint)(initial_capacity * load_factor);
     in_hashmap->load_factor = load_factor;
     in_hashmap->hash_salt = hash_salt;
@@ -155,12 +158,13 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
         memcpy(value_dest, value, hash_map->value_size);
         return HM_OK;
     }
-    hm_nint new_count = 0; /* preventively tries to increase the count before allocating, to check for overflow */
+    hm_nint new_count = 0;
     HM_TRY(hmAddNint(hash_map->count, 1, &new_count));
+    hm_nint entry_size = 0;
+    HM_TRY(hmAddNint3(sizeof(hmHashMapEntry) - 1, hash_map->key_size, hash_map->value_size, &entry_size)); /* -1 for "char[1] payload" */
     hmHashMapEntry* new_entry = hmAlloc(
         hash_map->allocator,
-        /* no hmAddNint because key_size and value_size are not attacker-controlled and can't be practically too large */
-        sizeof(hmHashMapEntry) - 1 + hash_map->key_size + hash_map->value_size /* -1 for "char[1] payload" */
+        entry_size
     );
     if (!new_entry) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -280,14 +284,17 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
 {
     hmHashMapEntry** old_buckets = hash_map->buckets;
     hm_nint old_bucket_count = hash_map->bucket_count;
-    hm_nint new_bucket_count = old_bucket_count * 2;
-    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, sizeof(hmHashMapEntry*) * new_bucket_count);
+    hm_nint new_bucket_count = 0;
+    HM_TRY(hmMulNint(old_bucket_count, 2, &new_bucket_count));
+    hm_nint new_buckets_size = 0;
+    HM_TRY(hmMulNint(sizeof(hmHashMapEntry*), new_bucket_count, &new_buckets_size));
+    hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, new_buckets_size);
     if (!new_buckets) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
     hash_map->buckets = new_buckets;
     hash_map->bucket_count = new_bucket_count;
-    hash_map->threshold = (int)(new_bucket_count * hash_map->load_factor);
+    hash_map->threshold = (int)(new_bucket_count * hash_map->load_factor); /* no safe math operations because load_factor is in the range [0.5, 1.0] */
     for (hm_nint i = 0; i < old_bucket_count; i++) {
         hmHashMapEntry* old_entry = old_buckets[i];
         while (old_entry) {
