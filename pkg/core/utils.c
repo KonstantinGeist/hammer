@@ -21,7 +21,7 @@
 
 hm_nint hmAlignSize(hm_nint sz)
 {
-    hm_nint sz_with_alignment = sz;
+    hm_nint sz_with_alignment = 0;
     hmError err = hmAddNint(sz, HM_ALLOC_SIZE_ALIGNMENT - 1, &sz_with_alignment);
     hmPanicIf(err != HM_OK, "overflow in hmAlignSize(..)"); /* mentioned in the function's docs */
     return sz_with_alignment & (-HM_ALLOC_SIZE_ALIGNMENT);
