@@ -17,6 +17,8 @@
 #include <core/math.h>
 #include <core/string.h>
 
+#define HM_HASHMAP_GROWTH_FACTOR 2
+
 typedef struct _hmHashMapEntry {
     struct _hmHashMapEntry* next;
     char                    payload[1]; /* the size afterwards depends on key_size+value_size */
@@ -285,7 +287,7 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
     hmHashMapEntry** old_buckets = hash_map->buckets;
     hm_nint old_bucket_count = hash_map->bucket_count;
     hm_nint new_bucket_count = 0;
-    HM_TRY(hmMulNint(old_bucket_count, 2, &new_bucket_count));
+    HM_TRY(hmMulNint(old_bucket_count, HM_HASHMAP_GROWTH_FACTOR, &new_bucket_count));
     hm_nint new_buckets_size = 0;
     HM_TRY(hmMulNint(sizeof(hmHashMapEntry*), new_bucket_count, &new_buckets_size));
     hmHashMapEntry** new_buckets = hmAllocZeroInitialized(hash_map->allocator, new_buckets_size);

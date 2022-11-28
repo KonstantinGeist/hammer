@@ -15,6 +15,8 @@
 #include <core/allocator.h>
 #include <core/math.h>
 
+#define HM_ARRAY_GROWTH_FACTOR 2
+
 hmError hmCreateArray(
     struct _hmAllocator* allocator,
     hm_nint item_size,
@@ -61,7 +63,7 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
     HM_TRY(hmAddNint(array->count, 1, &new_count));
     if (new_count >= array->capacity) {
         hm_nint new_capacity = 0;
-        HM_TRY(hmMulNint(array->capacity, 2, &new_capacity));
+        HM_TRY(hmMulNint(array->capacity, HM_ARRAY_GROWTH_FACTOR, &new_capacity));
         hm_nint new_items_capacity = 0;
         HM_TRY(hmMulNint(array->item_size, new_capacity, &new_items_capacity));
         char* new_items = hmRealloc(

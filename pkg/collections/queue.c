@@ -33,7 +33,9 @@ hmError hmCreateQueue(
     if (!item_size || !initial_capacity) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    char* items = (char*)hmAlloc(allocator, item_size * initial_capacity);
+    hm_nint items_size = 0;
+    HM_TRY(hmMulNint(item_size, initial_capacity, &items_size));
+    char* items = (char*)hmAlloc(allocator, items_size);
     if (!items) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -54,6 +56,7 @@ hmError hmQueueDispose(hmQueue* queue)
     hmError err = HM_OK;
     if (queue->item_dispose_func) {
         for(hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
+            /* No safe math operations here because it was prevalidated before. */
             err = hmCombineErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
         }
     }
@@ -94,15 +97,23 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
 
 static hmError hmQueueDoubleQueue(hmQueue* queue)
 {
-    hm_nint new_capacity = queue->capacity * HM_QUEUE_GROWTH_FACTOR;
-    hm_nint items_capacity = 0;
-    HM_TRY(hmMulNint(queue->item_size, new_capacity, &items_capacity));
-    char* new_items = (char*)hmAlloc(queue->allocator, items_capacity);
+    hm_nint new_capacity = 0;
+    HM_TRY(hmMulNint(queue->capacity, HM_QUEUE_GROWTH_FACTOR, &new_capacity));
+    hm_nint new_items_size = 0;
+    HM_TRY(hmMulNint(queue->item_size, new_capacity, &new_items_size));
+    char* new_items = (char*)hmAlloc(queue->allocator, new_items_size);
     if (!new_items) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
     for (hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
-        memcpy(new_items + i * queue->item_size, queue->items + queue->read_index * queue->item_size, queue->item_size);
+        hm_nint old_items_address = 0, new_items_address = 0;
+        hmError err = hmAddMulNint((hm_nint)queue->items, queue->read_index, queue->item_size, &old_items_address);
+        err = hmCombineErrors(err, hmAddMulNint((hm_nint)new_items, i, queue->item_size, &new_items_address));
+        if (err != HM_OK) {
+            hmFree(queue->allocator, new_items);
+            return err;
+        }
+        memcpy((char*)new_items_address, (const char*)old_items_address, queue->item_size);
     }
     hmFree(queue->allocator, queue->items);
     queue->items = new_items;
