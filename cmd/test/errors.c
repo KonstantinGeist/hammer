@@ -28,6 +28,6 @@ static void test_can_combine_errors()
 void test_errors()
 {
     HM_TEST_SUITE_BEGIN("Errors");
-        HM_TEST_RUN(test_can_combine_errors);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_combine_errors);
     HM_TEST_SUITE_END();
 }

@@ -33,7 +33,7 @@ static void test_can_get_processor_count()
 void test_environment()
 {
     HM_TEST_SUITE_BEGIN("Environment");
-        HM_TEST_RUN(test_tick_count_grows_monotonically);
-        HM_TEST_RUN(test_can_get_processor_count);
+        HM_TEST_RUN_WITHOUT_OOM(test_tick_count_grows_monotonically);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_get_processor_count);
     HM_TEST_SUITE_END();
 }

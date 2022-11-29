@@ -106,9 +106,9 @@ static void test_detects_nint_overflow_when_adding_and_multiplying()
 void test_math()
 {
     HM_TEST_SUITE_BEGIN("Math");
-        HM_TEST_RUN(test_detects_nint_overflow_when_adding);
-        HM_TEST_RUN(test_detects_nint_overflow_when_multiplying);
-        HM_TEST_RUN(test_detects_nint_overflow_when_adding_3_nints);
-        HM_TEST_RUN(test_detects_nint_overflow_when_adding_and_multiplying);
+        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding);
+        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_multiplying);
+        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints);
+        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying);
     HM_TEST_SUITE_END();
 }

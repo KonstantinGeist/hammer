@@ -12,7 +12,6 @@
 * ******************************************************************************/
 
 #include "common.h"
-#include <core/allocator.h>
 #include <core/string.h>
 
 #define STRING_CONTENT "Hello, World!"
@@ -114,12 +113,12 @@ static void test_can_hash_empty_string()
 void test_strings()
 {
     HM_TEST_SUITE_BEGIN("Strings");
-        HM_TEST_RUN(test_can_create_string);
-        HM_TEST_RUN(test_can_create_string_view);
-        HM_TEST_RUN(test_can_duplicate_string);
-        HM_TEST_RUN(test_can_compare_string_to_c_string);
-        HM_TEST_RUN(test_can_compare_strings);
-        HM_TEST_RUN(test_can_hash_string);
-        HM_TEST_RUN(test_can_hash_empty_string);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_create_string);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_create_string_view);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_duplicate_string);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_string_to_c_string);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_strings);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_string);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_empty_string);
     HM_TEST_SUITE_END();
 }

@@ -12,7 +12,6 @@
 * ******************************************************************************/
 
 #include "common.h"
-#include <core/allocator.h>
 #include <threading/thread.h>
 #include <threading/waitobject.h>
 
@@ -116,7 +115,7 @@ static void test_can_wait_and_pulse_with_wait_objects()
 void test_wait_objects()
 {
     HM_TEST_SUITE_BEGIN("WaitObjects");
-        HM_TEST_RUN(test_wait_object_can_timeout);
-        HM_TEST_RUN(test_can_wait_and_pulse_with_wait_objects);
+        HM_TEST_RUN_WITHOUT_OOM(test_wait_object_can_timeout);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_wait_and_pulse_with_wait_objects);
     HM_TEST_SUITE_END();
 }

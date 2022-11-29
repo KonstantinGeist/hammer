@@ -60,8 +60,14 @@ hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* i
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
 /* Returns the number of allocations. UNSAFE: it may crash if the underlying allocator is not a StatsAllocator. */
 hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator);
+void hmStatsAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
 /* Creates a special allocator for tests which fails exactly at the N-th allocation. Useful for testing
    how the system recovers from allocation failures. */
 hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_number, hmAllocator* in_allocator);
+/* Returns if the OOM condition is being simulated. UNSAFE: it may crash if the underlying allocator is not an OOMAllocator. */
+hm_nint hmOOMAllocatorIsOutOfMEmory(hmAllocator* allocator);
+/* Can be used to stop tracking the allocation count for areas of code where OOM should not be injected.
+   UNSAFE: it may crash if the underlying allocator is not an OOMAllocator. */
+void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
 
 #endif /* HM_ALLOCATOR_H */

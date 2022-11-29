@@ -210,13 +210,17 @@ hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* i
 typedef struct {
     hmAllocator* base_allocator;
     hm_nint      total_alloc_count;
+    hm_bool      is_tracking;
 } hmStatsAllocatorData;
 
 static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
     hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
     void* result = hmAlloc(data->base_allocator, sz);
-    hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count); /* in case of a overflow, total_alloc_count will simply stop updating */
+    if (data->is_tracking) {
+        /* in case of a overflow, total_alloc_count will simply stop updating */
+        hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
+    }
     return result;
 }
 
@@ -234,12 +238,6 @@ static hmError hmStatsAllocator_dispose(hmAllocator* allocator)
     return hmAllocatorDispose(base_allocator);
 }
 
-hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator)
-{
-    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
-    return data->total_alloc_count;
-}
-
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator)
 {
     if (!base_allocator || !in_allocator) {
@@ -251,11 +249,24 @@ hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allo
     }
     data->base_allocator = base_allocator;
     data->total_alloc_count = 0;
+    data->is_tracking = HM_TRUE;
     in_allocator->alloc = &hmStatsAllocator_alloc;
     in_allocator->free = &hmStatsAllocator_free;
     in_allocator->dispose = &hmStatsAllocator_dispose;
     in_allocator->data = data;
     return HM_OK;
+}
+
+hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    return data->total_alloc_count;
+}
+
+void hmStatsAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    data->is_tracking = value;
 }
 
 /* ********************** */
@@ -266,16 +277,20 @@ typedef struct {
     hmAllocator* base_allocator;
     hm_nint      total_alloc_count;
     hm_nint      failed_alloc_number;
+    hm_bool      is_tracking;
 } hmOOMAllocatorData;
 
 static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
     hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
-    if (data->total_alloc_count >= data->failed_alloc_number) {
+    if (data->is_tracking && data->total_alloc_count >= data->failed_alloc_number) {
         return HM_NULL;
     }
     void* result = hmAlloc(data->base_allocator, sz);
-    hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count); /* in case of a overflow, total_alloc_count will simply stop updating */
+    if (data->is_tracking) {
+        /* in case of a overflow, total_alloc_count will simply stop updating */
+        hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
+    }
     return result;
 }
 
@@ -305,9 +320,22 @@ hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_n
     data->base_allocator = base_allocator;
     data->total_alloc_count = 0;
     data->failed_alloc_number = failed_alloc_number;
+    data->is_tracking = HM_TRUE;
     in_allocator->alloc = &hmOOMAllocator_alloc;
     in_allocator->free = &hmOOMAllocator_free;
     in_allocator->dispose = &hmOOMAllocator_dispose;
     in_allocator->data = data;
     return HM_OK;
+}
+
+hm_nint hmOOMAllocatorIsOutOfMEmory(hmAllocator* allocator)
+{
+    hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
+    return data->total_alloc_count >= data->failed_alloc_number;
+}
+
+void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value)
+{
+    hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
+    data->is_tracking = value;
 }

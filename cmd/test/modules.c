@@ -12,7 +12,6 @@
 * ******************************************************************************/
 
 #include "common.h"
-#include <core/allocator.h>
 #include <runtime/module.h>
 #include <core/string.h>
 
@@ -83,7 +82,7 @@ static void test_cannot_load_non_existing_module()
 void test_modules()
 {
     HM_TEST_SUITE_BEGIN("Modules");
-        HM_TEST_RUN(test_can_load_existing_module);
-        HM_TEST_RUN(test_cannot_load_non_existing_module);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_load_existing_module);
+        HM_TEST_RUN_WITHOUT_OOM(test_cannot_load_non_existing_module);
     HM_TEST_SUITE_END();
 }

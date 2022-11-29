@@ -12,7 +12,6 @@
 * ******************************************************************************/
 
 #include "common.h"
-#include <core/allocator.h>
 #include <io/reader.h>
 
 #define READ_BUF_SIZE 5
@@ -107,10 +106,10 @@ static void test_memory_reader_ignores_zero_size_requests()
 void test_readers()
 {
     HM_TEST_SUITE_BEGIN("Readers");
-        HM_TEST_RUN(test_memory_reader_can_create_read_close);
-        HM_TEST_RUN(test_memory_can_create_seek_read_close);
-        HM_TEST_RUN(test_memory_reader_cant_seek_past_buffer);
-        HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer);
-        HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests);
+        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_can_create_read_close);
+        HM_TEST_RUN_WITHOUT_OOM(test_memory_can_create_seek_read_close);
+        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_cant_seek_past_buffer);
+        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_truncates_buffer_if_read_past_buffer);
+        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_ignores_zero_size_requests);
     HM_TEST_SUITE_END();
 }

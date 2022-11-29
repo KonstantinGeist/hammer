@@ -145,11 +145,11 @@ static void test_oom_allocator_returns_out_of_memory()
 void test_allocators()
 {
     HM_TEST_SUITE_BEGIN("Allocators");
-        HM_TEST_RUN(test_can_alloc_realloc_and_free_from_system_allocator);
-        HM_TEST_RUN(test_can_alloc_realloc_and_free_from_bump_pointer_allocator);
-        HM_TEST_RUN(test_realloc_accepts_smaller_size);
-        HM_TEST_RUN(test_bump_pointer_allocator_works_with_large_objects);
-        HM_TEST_RUN(test_stats_allocator_keeps_track_of_alloc_count);
-        HM_TEST_RUN(test_oom_allocator_returns_out_of_memory);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator);
+        HM_TEST_RUN_WITHOUT_OOM(test_realloc_accepts_smaller_size);
+        HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_allocator_works_with_large_objects);
+        HM_TEST_RUN_WITHOUT_OOM(test_stats_allocator_keeps_track_of_alloc_count);
+        HM_TEST_RUN_WITHOUT_OOM(test_oom_allocator_returns_out_of_memory);
     HM_TEST_SUITE_END();
 }
