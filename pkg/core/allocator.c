@@ -202,3 +202,112 @@ hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* i
     in_allocator->data = data;
     return HM_OK;
 }
+
+/* *********************** */
+/*      StatsAllocator.   */
+/* *********************** */
+
+typedef struct {
+    hmAllocator* base_allocator;
+    hm_nint      total_alloc_count;
+} hmStatsAllocatorData;
+
+static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    void* result = hmAlloc(data->base_allocator, sz);
+    hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count); /* in case of a overflow, total_alloc_count will simply stop updating */
+    return result;
+}
+
+static void hmStatsAllocator_free(hmAllocator* allocator, void* mem)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    hmFree(data->base_allocator, mem);
+}
+
+static hmError hmStatsAllocator_dispose(hmAllocator* allocator)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    hmAllocator* base_allocator = data->base_allocator;
+    hmFree(base_allocator, data);
+    return hmAllocatorDispose(base_allocator);
+}
+
+hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator)
+{
+    hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
+    return data->total_alloc_count;
+}
+
+hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator)
+{
+    if (!base_allocator || !in_allocator) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hmStatsAllocatorData* data = hmAlloc(base_allocator, sizeof(hmStatsAllocatorData));
+    if (!data) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    data->base_allocator = base_allocator;
+    data->total_alloc_count = 0;
+    in_allocator->alloc = &hmStatsAllocator_alloc;
+    in_allocator->free = &hmStatsAllocator_free;
+    in_allocator->dispose = &hmStatsAllocator_dispose;
+    in_allocator->data = data;
+    return HM_OK;
+}
+
+/* ********************** */
+/*      OOMAllocator.    */
+/* ********************* */
+
+typedef struct {
+    hmAllocator* base_allocator;
+    hm_nint      total_alloc_count;
+    hm_nint      failed_alloc_number;
+} hmOOMAllocatorData;
+
+static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+{
+    hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
+    if (data->total_alloc_count >= data->failed_alloc_number) {
+        return HM_NULL;
+    }
+    void* result = hmAlloc(data->base_allocator, sz);
+    hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count); /* in case of a overflow, total_alloc_count will simply stop updating */
+    return result;
+}
+
+static void hmOOMAllocator_free(hmAllocator* allocator, void* mem)
+{
+    hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
+    hmFree(data->base_allocator, mem);
+}
+
+static hmError hmOOMAllocator_dispose(hmAllocator* allocator)
+{
+    hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
+    hmAllocator* base_allocator = data->base_allocator;
+    hmFree(base_allocator, data);
+    return hmAllocatorDispose(base_allocator);
+}
+
+hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_number, hmAllocator* in_allocator)
+{
+    if (!base_allocator || !in_allocator) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hmOOMAllocatorData* data = hmAlloc(base_allocator, sizeof(hmOOMAllocatorData));
+    if (!data) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    data->base_allocator = base_allocator;
+    data->total_alloc_count = 0;
+    data->failed_alloc_number = failed_alloc_number;
+    in_allocator->alloc = &hmOOMAllocator_alloc;
+    in_allocator->free = &hmOOMAllocator_free;
+    in_allocator->dispose = &hmOOMAllocator_dispose;
+    in_allocator->data = data;
+    return HM_OK;
+}

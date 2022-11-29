@@ -56,5 +56,12 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
    are no-ops. Useful for static objects which are allocated together and deleted at once (for example, class
    metadata. Note that this allocator is not thread-safe and shouldn't be used with hmThread. */
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
+/* Creates an allocator which wraps another allocator and additionally keeps track of statistics. */
+hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
+/* Returns the number of allocations. UNSAFE: it may crash if the underlying allocator is not a StatsAllocator. */
+hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator);
+/* Creates a special allocator for tests which fails exactly at the N-th allocation. Useful for testing
+   how the system recovers from allocation failures. */
+hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_number, hmAllocator* in_allocator);
 
 #endif /* HM_ALLOCATOR_H */

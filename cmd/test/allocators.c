@@ -104,6 +104,44 @@ static void test_bump_pointer_allocator_works_with_large_objects()
     dispose_allocator(&system_allocator);
 }
 
+static void test_stats_allocator_keeps_track_of_alloc_count()
+{
+    hmAllocator system_allocator;
+    hmAllocator stats_allocator;
+    hmError err = hmCreateSystemAllocator(&system_allocator);
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateStatsAllocator(&system_allocator, &stats_allocator);
+    HM_TEST_ASSERT_OK(err);
+    void* obj1 = hmAlloc(&stats_allocator, sizeof(hm_nint));
+    hm_nint alloc_count = hmStatsAllocatorGetTotalCount(&stats_allocator);
+    HM_TEST_ASSERT(alloc_count == 1);
+    void* obj2 = hmAlloc(&stats_allocator, sizeof(hm_uint8));
+    alloc_count = hmStatsAllocatorGetTotalCount(&stats_allocator);
+    HM_TEST_ASSERT(alloc_count == 2);
+    hmFree(&stats_allocator, obj1);
+    hmFree(&stats_allocator, obj2);
+    dispose_allocator(&stats_allocator);
+    dispose_allocator(&system_allocator);
+}
+
+static void test_oom_allocator_returns_out_of_memory()
+{
+    hmAllocator system_allocator;
+    hmAllocator oom_allocator;
+    hmError err = hmCreateSystemAllocator(&system_allocator);
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateOOMAllocator(&system_allocator, 1, &oom_allocator);
+    HM_TEST_ASSERT_OK(err);
+    void* obj1 = hmAlloc(&oom_allocator, sizeof(hm_nint));
+    HM_TEST_ASSERT(obj1 != HM_NULL);
+    void* obj2 = hmAlloc(&oom_allocator, sizeof(hm_uint8));
+    HM_TEST_ASSERT(obj2 == HM_NULL);
+    hmFree(&oom_allocator, obj1);
+    hmFree(&oom_allocator, obj2);
+    dispose_allocator(&oom_allocator);
+    dispose_allocator(&system_allocator);
+}
+
 void test_allocators()
 {
     HM_TEST_SUITE_BEGIN("Allocators");
@@ -111,5 +149,7 @@ void test_allocators()
         HM_TEST_RUN(test_can_alloc_realloc_and_free_from_bump_pointer_allocator);
         HM_TEST_RUN(test_realloc_accepts_smaller_size);
         HM_TEST_RUN(test_bump_pointer_allocator_works_with_large_objects);
+        HM_TEST_RUN(test_stats_allocator_keeps_track_of_alloc_count);
+        HM_TEST_RUN(test_oom_allocator_returns_out_of_memory);
     HM_TEST_SUITE_END();
 }
