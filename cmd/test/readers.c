@@ -19,18 +19,18 @@
 
 static void create_memory_reader_and_allocator(hmReader* reader, hmAllocator* allocator)
 {
-    hmError err = hmCreateSystemAllocator(allocator);
+    HM_TEST_INIT_ALLOC(allocator);
+    HM_TEST_TRACK_OOM(allocator, HM_FALSE);
+    hmError err = hmCreateMemoryReader(allocator, MEMORY_BUF_STRING, strlen(MEMORY_BUF_STRING), reader);
     HM_TEST_ASSERT_OK(err);
-    err = hmCreateMemoryReader(allocator, MEMORY_BUF_STRING, strlen(MEMORY_BUF_STRING), reader);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
 
 static void dispose_memory_reader_and_allocator(hmReader* reader, hmAllocator* allocator)
 {
     hmError err = hmReaderClose(reader);
     HM_TEST_ASSERT_OK(err);
-    err = hmAllocatorDispose(allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(allocator);
 }
 
 static void test_memory_reader_can_create_read_close()
@@ -41,9 +41,10 @@ static void test_memory_reader_can_create_read_close()
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
     HM_TEST_ASSERT(memcmp(read_buf, "Hello", READ_BUF_SIZE) == 0);
+HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
@@ -55,11 +56,12 @@ static void test_memory_can_create_seek_read_close()
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 3);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
     HM_TEST_ASSERT(memcmp(read_buf, "lo, W", READ_BUF_SIZE) == 0);
+HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
@@ -81,11 +83,12 @@ static void test_memory_reader_truncates_buffer_if_read_past_buffer()
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 8);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE-1);
     HM_TEST_ASSERT(memcmp(read_buf, "orld", READ_BUF_SIZE-1) == 0);
+HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
@@ -97,19 +100,20 @@ static void test_memory_reader_ignores_zero_size_requests()
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderRead(&reader, &read_buf[0], 0, &bytes_read);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == 0);
     HM_TEST_ASSERT(read_buf[0] == '\0');
+HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
 void test_readers()
 {
     HM_TEST_SUITE_BEGIN("Readers");
-        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_can_create_read_close);
-        HM_TEST_RUN_WITHOUT_OOM(test_memory_can_create_seek_read_close);
-        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_cant_seek_past_buffer);
-        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_truncates_buffer_if_read_past_buffer);
-        HM_TEST_RUN_WITHOUT_OOM(test_memory_reader_ignores_zero_size_requests);
+        HM_TEST_RUN(test_memory_reader_can_create_read_close);
+        HM_TEST_RUN(test_memory_can_create_seek_read_close);
+        HM_TEST_RUN(test_memory_reader_cant_seek_past_buffer);
+        HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer);
+        HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests);
     HM_TEST_SUITE_END();
 }
