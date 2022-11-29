@@ -21,17 +21,18 @@
 static void test_can_create_string()
 {
     hmAllocator allocator;
-    hmError err = hmCreateSystemAllocator(&allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
     hmString string;
-    err = hmCreateStringFromCString(&allocator, STRING_CONTENT, &string);
+    hmError err = hmCreateStringFromCString(&allocator, STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
     HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
-    err = hmAllocatorDispose(&allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+HM_TEST_ON_FINALIZE
+    HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
 static void test_can_create_string_view()
@@ -48,20 +49,21 @@ static void test_can_create_string_view()
 static void test_can_duplicate_string()
 {
     hmAllocator allocator;
-    hmError err = hmCreateSystemAllocator(&allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
     hmString string;
-    err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmString duplicate;
     err = hmStringDuplicate(&allocator, &string, &duplicate);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringGetLength(&string) == hmStringGetLength(&duplicate));
     HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), hmStringGetRaw(&duplicate)) == 0);
     err = hmStringDispose(&duplicate);
-    HM_TEST_ASSERT_OK(err);
-    err = hmAllocatorDispose(&allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+HM_TEST_ON_FINALIZE
+    HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
 static void test_can_compare_string_to_c_string()
@@ -113,12 +115,12 @@ static void test_can_hash_empty_string()
 void test_strings()
 {
     HM_TEST_SUITE_BEGIN("Strings");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_create_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_create_string_view);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_duplicate_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_string_to_c_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_strings);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_empty_string);
+        HM_TEST_RUN(test_can_create_string);
+        HM_TEST_RUN(test_can_create_string_view);
+        HM_TEST_RUN(test_can_duplicate_string);
+        HM_TEST_RUN(test_can_compare_string_to_c_string);
+        HM_TEST_RUN(test_can_compare_strings);
+        HM_TEST_RUN(test_can_hash_string);
+        HM_TEST_RUN(test_can_hash_empty_string);
     HM_TEST_SUITE_END();
 }
