@@ -18,9 +18,9 @@ static hm_nint item_dispose_sum = 0;
 
 static void create_integer_queue_and_allocator(hm_bool is_bounded, hmQueue* queue, hmAllocator* allocator)
 {
-    hmError err = hmCreateSystemAllocator(allocator);
-    HM_TEST_ASSERT_OK(err);
-    err = hmCreateQueue(
+    HM_TEST_INIT_ALLOC(allocator);
+    HM_TEST_TRACK_OOM(allocator, HM_FALSE);
+    hmError err = hmCreateQueue(
         allocator,
         sizeof(hm_nint),
         HM_DEFAULT_QUEUE_CAPACITY,
@@ -29,14 +29,14 @@ static void create_integer_queue_and_allocator(hm_bool is_bounded, hmQueue* queu
         queue
     );
     HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
 
 static void dispose_queue_and_allocator(hmQueue* queue, hmAllocator* allocator)
 {
     hmError err = hmQueueDispose(queue);
     HM_TEST_ASSERT_OK(err);
-    err = hmAllocatorDispose(allocator);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(allocator);
 }
 
 static void test_can_create_and_dispose_empty_queue()
@@ -59,7 +59,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
     for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == i + 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
@@ -68,7 +68,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
     for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY/2; i++) {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
         hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i - 1);
@@ -79,14 +79,14 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
     {
         hm_nint value = HM_QUEUE_ITEM_VALUE;
         hmError err = hmQueueEnqueue(&queue, &value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
     }
     for (hm_nint i = HM_DEFAULT_QUEUE_CAPACITY/2; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
         hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i);
@@ -96,11 +96,12 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
     {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == HM_QUEUE_ITEM_VALUE);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_TRUE);
     }
+HM_TEST_ON_FINALIZE
     dispose_queue_and_allocator(&queue, &allocator);
 }
 
@@ -113,7 +114,7 @@ static void test_can_enqueue_and_dequeue_from_queue_beyond_capacity()
     for (hm_nint i = 0; i < HM_QUEUE_COUNT_BEYOND_CAPACITY; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == i + 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
@@ -122,13 +123,14 @@ static void test_can_enqueue_and_dequeue_from_queue_beyond_capacity()
     for (hm_nint i = 0; i < HM_QUEUE_COUNT_BEYOND_CAPACITY; i++) {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
         hm_nint count = hmQueueGetCount(&queue);
         HM_TEST_ASSERT(count == HM_QUEUE_COUNT_BEYOND_CAPACITY - i - 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == ((i < HM_QUEUE_COUNT_BEYOND_CAPACITY - 1) ? HM_FALSE : HM_TRUE));
     }
+HM_TEST_ON_FINALIZE
     dispose_queue_and_allocator(&queue, &allocator);
 }
 
@@ -154,9 +156,9 @@ static void test_queue_disposes_items_on_disposal()
 {
     hmQueue queue;
     hmAllocator allocator;
-    hmError err = hmCreateSystemAllocator(&allocator);
-    HM_TEST_ASSERT_OK(err);
-    err = hmCreateQueue(
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmError err = hmCreateQueue(
         &allocator,
         sizeof(hm_nint),
         HM_DEFAULT_QUEUE_CAPACITY,
@@ -165,15 +167,20 @@ static void test_queue_disposes_items_on_disposal()
         &queue
     );
     HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hm_nint item_dispose_sum_control = 0;
+    item_dispose_sum = 0;
     for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
-        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
         item_dispose_sum_control += value;
     }
+HM_TEST_ON_FINALIZE
     dispose_queue_and_allocator(&queue, &allocator);
-    HM_TEST_ASSERT(item_dispose_sum_control == item_dispose_sum);
+    if (!HM_TEST_IS_OOM()) {
+        HM_TEST_ASSERT(item_dispose_sum_control == item_dispose_sum);
+    }
 }
 
 static void test_returns_limit_exceeded_when_queue_is_full()
@@ -185,22 +192,23 @@ static void test_returns_limit_exceeded_when_queue_is_full()
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
         if (i < HM_DEFAULT_QUEUE_CAPACITY) {
-            HM_TEST_ASSERT_OK(err);
+            HM_TEST_ASSERT_OK_OR_OOM(err);
         } else {
             HM_TEST_ASSERT(err == HM_ERROR_LIMIT_EXCEEDED);
         }
     }
+HM_TEST_ON_FINALIZE
     dispose_queue_and_allocator(&queue, &allocator);
 }
 
 void test_queues()
 {
     HM_TEST_SUITE_BEGIN("Queues");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_create_and_dispose_empty_queue);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_enqueue_and_dequeue_from_queue_within_initial_capacity);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_enqueue_and_dequeue_from_queue_beyond_capacity);
-        HM_TEST_RUN_WITHOUT_OOM(test_returns_error_when_dequeing_from_empty_queue);
-        HM_TEST_RUN_WITHOUT_OOM(test_queue_disposes_items_on_disposal);
-        HM_TEST_RUN_WITHOUT_OOM(test_returns_limit_exceeded_when_queue_is_full);
+        HM_TEST_RUN(test_can_create_and_dispose_empty_queue);
+        HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_within_initial_capacity);
+        HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_beyond_capacity);
+        HM_TEST_RUN(test_returns_error_when_dequeing_from_empty_queue);
+        HM_TEST_RUN(test_queue_disposes_items_on_disposal);
+        HM_TEST_RUN(test_returns_limit_exceeded_when_queue_is_full);
     HM_TEST_SUITE_END();
 }
