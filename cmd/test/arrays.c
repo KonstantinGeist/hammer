@@ -29,8 +29,8 @@ static void create_array_and_allocator(hmArray* array, hmAllocator* allocator, h
     HM_TEST_INIT_ALLOC(allocator);
     HM_TEST_TRACK_OOM(allocator, HM_FALSE);
     hmError err = hmCreateArray(allocator, sizeof(testItem), ARRAY_CAPACITY, item_dispose_func, array);
-    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
     HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
 
 static void dispose_array_and_allocator(hmArray* array, hmAllocator* allocator)
