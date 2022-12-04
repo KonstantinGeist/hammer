@@ -103,6 +103,30 @@ static void test_detects_nint_overflow_when_adding_and_multiplying()
     HM_TEST_ASSERT(result == 7);
 }
 
+static void test_detects_millis_overflow_when_adding()
+{
+    hm_millis result = 0;
+    hmError err = hmAddMillis(HM_MILLIS_MAX - 10, 20, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMillis(20, 30, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 50);
+    err = hmAddMillis(0, 10, &result);
+    HM_TEST_ASSERT(result == 10);
+    err = hmAddMillis(10, 0, &result);
+    HM_TEST_ASSERT(result == 10);
+    err = hmAddMillis(HM_MILLIS_MAX, 5, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMillis(HM_MILLIS_MAX, HM_MILLIS_MAX, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
+    err = hmAddMillis(HM_MILLIS_MAX, 0, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_MILLIS_MAX);
+    err = hmAddMillis(0, HM_MILLIS_MAX, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_MILLIS_MAX);
+}
+
 void test_math()
 {
     HM_TEST_SUITE_BEGIN("Math");
@@ -110,5 +134,6 @@ void test_math()
         HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_multiplying);
         HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints);
         HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying);
+        HM_TEST_RUN_WITHOUT_OOM(test_detects_millis_overflow_when_adding);
     HM_TEST_SUITE_END();
 }
