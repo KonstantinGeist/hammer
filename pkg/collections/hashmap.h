@@ -17,7 +17,7 @@
 #include <core/common.h>
 #include <collections/array.h>
 
-#define HM_DEFAULT_HASHMAP_CAPACITY 17
+#define HM_DEFAULT_HASHMAP_CAPACITY 16
 #define HM_DEFAULT_HASHMAP_LOAD_FACTOR 0.75
 
 struct _hmAllocator;

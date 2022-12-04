@@ -25,7 +25,7 @@ hm_int32 hmGenerateSeed()
            To make it more unpredictable, the current time is additionally hashed. */
         hm_millis tick_count = hmGetTickCount();
         hm_uint32 tick_count_hash = hmHash(&tick_count, sizeof(tick_count), (hm_uint32)tick_count);
-        ret_value = *((hm_int32*)(&tick_count_hash)); /* type-punning to convert int32 to uint32 bitwise */
+        ret_value = *((hm_int32*)(&tick_count_hash)); /* type-punning to convert uint32 to int32 bitwise */
     }
     return ret_value;
 }

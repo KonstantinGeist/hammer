@@ -218,7 +218,7 @@ static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
     void* result = hmAlloc(data->base_allocator, sz);
     if (data->is_tracking) {
-        /* in case of a overflow, total_alloc_count will simply stop updating */
+        /* in case of an overflow, total_alloc_count will simply stop updating */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
     }
     return result;
@@ -288,7 +288,7 @@ static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     }
     void* result = hmAlloc(data->base_allocator, sz);
     if (data->is_tracking) {
-        /* in case of a overflow, total_alloc_count will simply stop updating */
+        /* in case of an overflow, total_alloc_count will simply stop updating */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
     }
     return result;
