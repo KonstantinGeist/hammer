@@ -29,7 +29,7 @@ hm_float64 hmRandomGetNextFloat(hmRandom* random);
 /* Returns a new random int number currently in the range [0..HM_INT32_MAX) */
 hm_int32 hmRandomGetNextInt(hmRandom* random);
 /* Creates a seed by drawing from the platform's entropy source to seed random number generators.
-   If the platform's entropy source is unavailable, returns current time. */
+   The function may block for a while (for a few milliseconds) to make sure the entropy pool is ready. */
 hm_int32 hmGenerateSeed();
 
 #endif /* HM_RANDOM_H */
