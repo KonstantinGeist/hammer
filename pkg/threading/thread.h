@@ -41,11 +41,12 @@ typedef struct _hmThread {
                              from its variable's lifetime (for example, a thread is still running, but hmThreadDispose was called). */
 } hmThread;
 
-/* Creates and starts a new thread. The allocator must be thread-safe, as it will allocate/deallocate on different threads. */
+/* Creates and starts a new thread. The allocator must be thread-safe, as it will allocate/deallocate on different threads.
+   `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
+   using a thread-safe allocator; can be HM_NULL. */
 hmError hmCreateThread(
     struct _hmAllocator* allocator,
-    hmString*            name,        /* The name of the thread, for debugging purposes. The string will be duplicated because
-                                         we must ensure it's allocated using a thread-safe allocator. Can be HM_NULL */
+    hmString*            name,
     hmThreadStartFunc    thread_func,
     void*                user_data,
     hmThread*            in_thread

@@ -139,7 +139,7 @@ static void test_wait_object_remains_signalled_when_pulsed_without_waiters()
         &thread
     );
     HM_TEST_ASSERT_OK(err);
-    /* Immediately pulses it while the thread is not waiting (see hmSleep(300) in pulsed_without_waiters_thread_func(..)). */
+    /* Immediately pulses it while the thread is not waiting (see hmSleep(...) in pulsed_without_waiters_thread_func(..)). */
     err = hmWaitObjectPulse(&context.wait_object);
     HM_TEST_ASSERT_OK(err);
     err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
