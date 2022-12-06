@@ -4,7 +4,7 @@ project('hammer', 'c',
     default_options: ['c_std=c11']
 )
 
-add_global_arguments(['-Werror', '-Wall', '-pedantic'], language: 'c')
+add_global_arguments(['-Werror', '-pedantic'], language: 'c')
 
 inc = [include_directories('pkg')]
 

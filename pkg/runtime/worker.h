@@ -29,7 +29,7 @@ typedef struct {
    The allocator should be thread-safe, as it will allocate/deallocate on different threads.
    The work queue can be made bounded. If it's bounded, the queue will never grow (see also hmWorkerEnqueueItem(..)).
    `item_dispose_func` specifies how items are disposed when they're removed from the queue after being processed. The
-   function should be thread-safe, because it will be accessed on different threads.
+   function should be thread-safe, because it will be accessed on different threads. Can be HM_NULL.
    `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
    using a thread-safe allocator; can be HM_NULL.
    `worker_func` specifies the processing function. Note that any unexpected errors will immediately stop the worker.

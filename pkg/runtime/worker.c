@@ -45,6 +45,9 @@ hmError hmCreateWorker(
     hmWorker* in_worker
 )
 {
+    if (!worker_func) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmWorkerData* data = (hmWorkerData*)hmAlloc(allocator, sizeof(hmWorkerData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -151,7 +154,9 @@ static hmError hmWorkerThreadFunc(void* user_data)
         void* work_item = HM_NULL;
         while ((err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
             err = data->worker_func(work_item);
-            HM_TRY(hmCombineErrors(err, data->item_dispose_func(work_item)));
+            if (data->item_dispose_func) {
+                HM_TRY(hmCombineErrors(err, data->item_dispose_func(work_item)));
+            }
         }
         if (err == HM_ERROR_INVALID_STATE) { /* No more work items in the queue. */
             continue;

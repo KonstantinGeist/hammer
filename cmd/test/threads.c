@@ -53,8 +53,8 @@ static hmError can_start_sleep_and_join_thread_func(void* user_data)
 
 static void test_can_start_sleep_and_join_thread()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &can_start_sleep_and_join_thread_func, HM_NULL);
     hmError err = hmThreadJoin(&thread, THREAD_JOIN_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
@@ -70,8 +70,8 @@ static hmError returns_error_when_joining_self_thread_func(void* user_data)
 
 static void test_returns_error_when_joining_self()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &returns_error_when_joining_self_thread_func, &thread);
     hmError err = hmThreadJoin(&thread, THREAD_JOIN_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
@@ -92,8 +92,8 @@ static hmError threads_can_abort_thread_func(void* user_data)
 
 static void test_threads_can_abort()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &threads_can_abort_thread_func, &thread);
     hmError err = hmSleep(200);
     HM_TEST_ASSERT_OK(err);
@@ -113,8 +113,8 @@ static hmError can_join_too_late_thread_func(void* user_data)
 
 static void test_can_join_too_late()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &can_join_too_late_thread_func, HM_NULL);
     hmError err = hmSleep(300);
     HM_TEST_ASSERT_OK(err);
@@ -134,8 +134,8 @@ static hmError threads_have_correct_statuses_thread_func(void* user_data)
 
 static void test_threads_have_correct_statuses()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &threads_have_correct_statuses_thread_func, &thread);
     hmError err = hmThreadJoin(&thread, THREAD_JOIN_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
@@ -152,8 +152,8 @@ static hmError can_dispose_thread_before_it_finishes_thread_func(void* user_data
 
 static void test_can_dispose_thread_before_it_finishes()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &can_dispose_thread_before_it_finishes_thread_func, HM_NULL);
     hmError err = hmThreadDispose(&thread); /* Dispose immediately while the thread is running (sleeps for 200 ms). */
     HM_TEST_ASSERT_OK(err);
@@ -170,8 +170,8 @@ static hmError can_retrieve_thread_name_thread_func(void* user_data)
 
 static void test_can_retrieve_thread_name()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &can_retrieve_thread_name_thread_func, HM_NULL);
     hmString thread_name;
     hmError err = hmThreadGetName(&thread, &thread_name);
@@ -198,8 +198,8 @@ static hmError thread_reports_processor_time_thread_func(void* user_data)
 
 static void test_thread_reports_processor_time()
 {
-    hmAllocator allocator;
     hmThread thread;
+    hmAllocator allocator;
     create_thread_and_allocator(&thread, &allocator, &thread_reports_processor_time_thread_func, &thread);
     hmError err = hmSleep(300);
     HM_TEST_ASSERT_OK(err);

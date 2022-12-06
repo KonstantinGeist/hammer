@@ -36,6 +36,7 @@ int main()
     test_mutexes();
     test_wait_objects();
     test_threads();
+    test_workers();
     HM_TEST_LOG("***************");
     HM_TEST_LOG("Tests finished.");
     HM_TEST_LOG("***************");

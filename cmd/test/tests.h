@@ -27,3 +27,4 @@ void test_threads();
 void test_environment();
 void test_random();
 void test_math();
+void test_workers();
