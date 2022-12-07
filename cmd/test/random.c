@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include <core/random.h>
+#include <collections/hashmap.h>
 
 static void test_random_generates_int_sequence()
 {
@@ -50,10 +51,42 @@ static void test_random_generates_float_sequence()
     HM_TEST_ASSERT_OK(err);
 }
 
+/* How we actually test seed generation: we generate N seeds and see if there are any duplicates.
+   Duplicates are possible but we assume that no more frequent than M.
+   There's a still a chance that the tests may fail if there are more than M duplicates by chance alone,
+   but it's very unlikely to happen. This test is useful to root out very obvious/serious problems with seed generation. */
 static void test_can_generate_seed()
 {
-    hmGenerateSeed();
-    /* Nothing to do, just a test the function works. */
+    #define SEED_N 10
+    #define SEED_M 1
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmHashMap hash_map;
+    err = hmCreateHashMap(
+        &allocator,
+        HM_NULL, /* hash_func */
+        HM_NULL, /* equals_func */
+        HM_NULL, /* key_dispose_func */
+        HM_NULL, /* value_dispose_func */
+        sizeof(hm_nint),
+        sizeof(hm_nint),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0,
+        &hash_map
+    );
+    HM_TEST_ASSERT_OK(err);
+    for (hm_nint i = 0; i < SEED_N; i++) {
+        err = hmHashMapPut(&hash_map, &i, &i);
+        HM_TEST_ASSERT_OK(err);
+    }
+    /* If there are duplicates, the hash map will report fewer elements. */
+    HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) >= SEED_N - SEED_M);
+    err = hmHashMapDispose(&hash_map);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
 }
 
 void test_random()
