@@ -69,8 +69,8 @@ static void test_can_generate_seed()
         HM_NULL, /* equals_func */
         HM_NULL, /* key_dispose_func */
         HM_NULL, /* value_dispose_func */
-        sizeof(hm_nint),
-        sizeof(hm_nint),
+        sizeof(hm_int32),
+        sizeof(hm_int32),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
         0,
@@ -78,7 +78,8 @@ static void test_can_generate_seed()
     );
     HM_TEST_ASSERT_OK(err);
     for (hm_nint i = 0; i < SEED_N; i++) {
-        err = hmHashMapPut(&hash_map, &i, &i);
+        hm_int32 seed = hmGenerateSeed();
+        err = hmHashMapPut(&hash_map, &seed, &seed);
         HM_TEST_ASSERT_OK(err);
     }
     /* If there are duplicates, the hash map will report fewer elements. */

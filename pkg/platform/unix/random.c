@@ -15,6 +15,8 @@
 #include <core/hash.h>
 #include <threading/thread.h>
 
+#include <unistd.h>
+
 #if defined __GLIBC__ && defined __linux__
     #if __GLIBC__ > 2 || __GLIBC_MINOR__ > 24
         #define HM_SUPPORTS_GET_RANDOM
@@ -32,10 +34,12 @@ hm_int32 hmGenerateSeed()
     ssize_t result = getrandom(&ret_value, sizeof(ret_value), 0);
     if (result == -1) {
 #endif
-        /* Falls back on the current time if /dev/urandom is not available.
-           To make it more unpredictable, the current time is additionally hashed. */
+        /* Falls back to the current time if /dev/urandom is not available.
+           To make it more unpredictable, the current time is additionally hashed with the current process ID as the salt. */
         hm_millis tick_count = hmGetTickCount();
-        hm_uint32 tick_count_hash = hmHash(&tick_count, sizeof(tick_count), (hm_uint32)tick_count);
+        pid_t process_id = getpid();
+        hm_uint32 process_id_hash = hmHash(&process_id, sizeof(process_id), (hm_uint32)tick_count);
+        hm_uint32 tick_count_hash = hmHash(&tick_count, sizeof(tick_count), process_id_hash);
         ret_value = *((hm_int32*)(&tick_count_hash)); /* type-punning to convert uint32 to int32 bitwise */
         /* Makes it more likely that each new seed is different. Otherwise, if hmGenerateSeed was called repeatedly,
            it would be possible to generate same seeds when based on the current tick count. */
