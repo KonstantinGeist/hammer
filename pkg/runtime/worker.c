@@ -77,13 +77,13 @@ hmError hmCreateWorker(
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (mutex_initialized) {
-            err = hmCombineErrors(err, hmMutexDispose(&data->queue_mutex));
+            err = hmMergeErrors(err, hmMutexDispose(&data->queue_mutex));
         }
         if (wait_object_initialized) {
-            err = hmCombineErrors(err, hmWaitObjectDispose(&data->wait_object));
+            err = hmMergeErrors(err, hmWaitObjectDispose(&data->wait_object));
         }
         if (queue_initialized) {
-            err = hmCombineErrors(err, hmQueueDispose(&data->queue));
+            err = hmMergeErrors(err, hmQueueDispose(&data->queue));
         }
         hmFree(allocator, data);
     }
@@ -97,9 +97,9 @@ hmError hmWorkerDispose(hmWorker* worker)
         return HM_ERROR_INVALID_STATE;
     }
     hmError err = hmThreadDispose(&data->thread);
-    err = hmCombineErrors(err, hmMutexDispose(&data->queue_mutex));
-    err = hmCombineErrors(err, hmWaitObjectDispose(&data->wait_object));
-    err = hmCombineErrors(err, hmQueueDispose(&data->queue));
+    err = hmMergeErrors(err, hmMutexDispose(&data->queue_mutex));
+    err = hmMergeErrors(err, hmWaitObjectDispose(&data->wait_object));
+    err = hmMergeErrors(err, hmQueueDispose(&data->queue));
     hmFree(data->allocator, data);
     return err;
 }
@@ -124,7 +124,7 @@ hmError hmWorkerEnqueueItem(hmWorker* worker, void* work_item)
     hmWorkerData* data = worker->data;
     HM_TRY(hmMutexLock(&data->queue_mutex));
     hmError err = hmQueueEnqueue(&data->queue, work_item);
-    HM_TRY(hmCombineErrors(err, hmMutexUnlock(&data->queue_mutex)));
+    HM_TRY(hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex)));
     return hmWaitObjectPulse(&data->wait_object);
 }
 
@@ -137,7 +137,7 @@ static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void** out_work_item)
 {
     HM_TRY(hmMutexLock(&data->queue_mutex));
     hmError err = hmQueueDequeue(&data->queue, out_work_item);
-    return hmCombineErrors(err, hmMutexUnlock(&data->queue_mutex));
+    return hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex));
 }
 
 static hmError hmWorkerThreadFunc(void* user_data)
@@ -155,15 +155,14 @@ static hmError hmWorkerThreadFunc(void* user_data)
         while ((err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
             err = data->worker_func(work_item);
             if (data->item_dispose_func) {
-                HM_TRY(hmCombineErrors(err, data->item_dispose_func(work_item)));
+                err = hmMergeErrors(err, data->item_dispose_func(work_item));
             }
+            HM_TRY(err);
         }
         if (err == HM_ERROR_INVALID_STATE) { /* No more work items in the queue. */
             continue;
         }
-        if (err != HM_OK) {
-            return err;
-        }
+        HM_TRY(err);
     }
     return HM_OK;
 }

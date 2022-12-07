@@ -69,8 +69,8 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_OVERFLOW           ((hmError)11) /* Overflow happened. */
 #define HM_ERROR_UNDERFLOW          ((hmError)12) /* Underflow happened. */
 
-/* Allows to combine several errors into one. Usually useful when a new error occurs while processing another error. */
-hmError hmCombineErrors(hmError older, hmError newer);
+/* Allows to merge several errors into one. Usually useful when a new error occurs while processing another error. */
+hmError hmMergeErrors(hmError older, hmError newer);
 
 /* A generic function which is able to dispose of an object. Used in containers to automatically delete items
    on container destruction. */
@@ -78,7 +78,7 @@ typedef hmError (*hmDisposeFunc)(void* object);
 
 /* A handy macro which checks the error as returned by the given expression and immediately returns if it's not HM_OK. */
 #define HM_TRY(expr) { hmError try_err = expr; if (try_err != HM_OK) return try_err; }
-#define HM_TRY_OR_FINALIZE(err, expr) err = hmCombineErrors(err, expr); if (err != HM_OK) goto finalize
+#define HM_TRY_OR_FINALIZE(err, expr) err = hmMergeErrors(err, expr); if (err != HM_OK) goto finalize
 #define HM_ON_FINALIZE finalize:
 #define HM_FINALIZE goto finalize
 

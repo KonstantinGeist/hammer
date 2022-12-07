@@ -130,11 +130,11 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         while (entry) {
             if (hash_map->key_dispose_func) {
                 void* key = hmHashMapEntryGetKey(hash_map, entry);
-                err = hmCombineErrors(err, hash_map->key_dispose_func(key));
+                err = hmMergeErrors(err, hash_map->key_dispose_func(key));
             }
             if (hash_map->value_dispose_func) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                err = hmCombineErrors(err, hash_map->value_dispose_func(value));
+                err = hmMergeErrors(err, hash_map->value_dispose_func(value));
             }
             next_entry = entry->next;
             hmFree(hash_map->allocator, entry);

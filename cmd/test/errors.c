@@ -13,21 +13,21 @@
 
 #include "common.h"
 
-static void test_can_combine_errors()
+static void test_can_merge_errors()
 {
-    hmError err = hmCombineErrors(HM_OK, HM_ERROR_OUT_OF_MEMORY);
+    hmError err = hmMergeErrors(HM_OK, HM_ERROR_OUT_OF_MEMORY);
     HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
-    err = hmCombineErrors(HM_ERROR_OUT_OF_MEMORY, HM_OK);
+    err = hmMergeErrors(HM_ERROR_OUT_OF_MEMORY, HM_OK);
     HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
-    err = hmCombineErrors(HM_OK, HM_OK);
+    err = hmMergeErrors(HM_OK, HM_OK);
     HM_TEST_ASSERT(err == HM_OK);
-    err = hmCombineErrors(HM_ERROR_OUT_OF_MEMORY, HM_ERROR_NOT_FOUND);
+    err = hmMergeErrors(HM_ERROR_OUT_OF_MEMORY, HM_ERROR_NOT_FOUND);
     HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
 }
 
 void test_errors()
 {
     HM_TEST_SUITE_BEGIN("Errors");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_combine_errors);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_merge_errors);
     HM_TEST_SUITE_END();
 }

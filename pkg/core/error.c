@@ -13,7 +13,7 @@
 
 #include <core/common.h>
 
-hmError hmCombineErrors(hmError older, hmError newer)
+hmError hmMergeErrors(hmError older, hmError newer)
 {
     if (newer == HM_OK) { /* normal case: `newer` is actually an OK status so we show the `older` error instead */
         return older;

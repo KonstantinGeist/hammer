@@ -57,7 +57,7 @@ hmError hmQueueDispose(hmQueue* queue)
     if (queue->item_dispose_func) {
         for(hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
             /* No safe math operations here because it was prevalidated before. */
-            err = hmCombineErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
+            err = hmMergeErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
         }
     }
     hmFree(queue->allocator, queue->items);
@@ -108,7 +108,7 @@ static hmError hmQueueDoubleQueue(hmQueue* queue)
     for (hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
         hm_nint old_items_address = 0, new_items_address = 0;
         hmError err = hmAddMulNint((hm_nint)queue->items, queue->read_index, queue->item_size, &old_items_address);
-        err = hmCombineErrors(err, hmAddMulNint((hm_nint)new_items, i, queue->item_size, &new_items_address));
+        err = hmMergeErrors(err, hmAddMulNint((hm_nint)new_items, i, queue->item_size, &new_items_address));
         if (err != HM_OK) {
             hmFree(queue->allocator, new_items);
             return err;

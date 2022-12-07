@@ -117,7 +117,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         }
         hm_nint new_large_object_count = 0, new_large_objects_size = 0;
         hmError err = hmAddNint(data->large_object_count, 1, &new_large_object_count);
-        err = hmCombineErrors(err, hmMulNint(sizeof(char*), new_large_object_count, &new_large_objects_size));
+        err = hmMergeErrors(err, hmMulNint(sizeof(char*), new_large_object_count, &new_large_objects_size));
         if (err != HM_OK) {
             hmFree(data->base_allocator, result);
             return HM_NULL;

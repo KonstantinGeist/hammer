@@ -48,7 +48,7 @@ hmError hmArrayDispose(hmArray* array)
     if (array->item_dispose_func) {
         char* item = array->items;
         for (hm_nint i = 0; i < array->count; i++) {
-            err = hmCombineErrors(err, array->item_dispose_func(item));
+            err = hmMergeErrors(err, array->item_dispose_func(item));
             /* No hmAddNint because if we were able to add this many elements, it must have been valid. */
             item += array->item_size;
         }

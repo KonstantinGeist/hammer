@@ -60,8 +60,8 @@ hmError hmWaitObjectDispose(hmWaitObject* wait_object)
 {
     hmError err = HM_OK;
     hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
-    err = hmCombineErrors(err, hmResultToError(pthread_cond_destroy(&platform_data->cond_variable)));
-    err = hmCombineErrors(err, hmResultToError(pthread_mutex_destroy(&platform_data->mutex)));
+    err = hmMergeErrors(err, hmResultToError(pthread_cond_destroy(&platform_data->cond_variable)));
+    err = hmMergeErrors(err, hmResultToError(pthread_mutex_destroy(&platform_data->mutex)));
     hmFree(wait_object->allocator, platform_data);
     return err;
 }
@@ -74,7 +74,7 @@ hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_millis timeout_ms)
     hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
     hmError err = hmWaitObjectWaitWithoutLock(platform_data, timeout_ms);
-    return hmCombineErrors(err, hmResultToError(pthread_mutex_unlock(&platform_data->mutex))); /* always unlock */
+    return hmMergeErrors(err, hmResultToError(pthread_mutex_unlock(&platform_data->mutex))); /* always unlock */
 }
 
 hmError hmWaitObjectPulse(hmWaitObject* wait_object)

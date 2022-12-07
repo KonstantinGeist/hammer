@@ -34,10 +34,10 @@ hmError hmEnumMetadataInImage(
         return HM_ERROR_NOT_FOUND;
     }
     err = hmEnumModulesInImage(db, enum_modules_func, user_data);
-    err = hmCombineErrors(err, hmEnumClassesInImage(db, enum_classes_func, user_data));
+    err = hmMergeErrors(err, hmEnumClassesInImage(db, enum_classes_func, user_data));
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
+        err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
     }
     return err;
 }
@@ -75,7 +75,7 @@ hmError hmEnumMetadataInImage(
 HM_ON_FINALIZE \
     sqlite_err = sqlite3_finalize(stmt); \
     if (sqlite_err != SQLITE_OK) { \
-        err = hmCombineErrors(err, HM_ERROR_PLATFORM_DEPENDENT); \
+        err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT); \
     } \
     return err;
 

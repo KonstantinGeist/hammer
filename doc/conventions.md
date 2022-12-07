@@ -20,7 +20,7 @@ There are several conventions to follow:
   translation unit for possible inlining.
 * By default, ownership belongs to whoever created an object. Never try to dispose of objects you do not own.
   If you take a reference to an object you do not own, pay attention to its lifetime to avoid using disposed objects.
-* Try disposing of objects in destructors to the maximum, combining various potential errors with hmCombineErrors.
+* Try disposing of objects in destructors to the maximum, combining various potential errors with hmMergeErrors.
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
 * Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
 * Static functions should come after public functions.

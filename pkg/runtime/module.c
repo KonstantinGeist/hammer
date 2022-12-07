@@ -47,7 +47,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         &in_registry->module_id_to_module_ref_map
     );
     if (err != HM_OK) {
-        return hmCombineErrors(err, hmHashMapDispose(&in_registry->name_to_module_map));
+        return hmMergeErrors(err, hmHashMapDispose(&in_registry->name_to_module_map));
     }
     in_registry->allocator = allocator;
     HM_UNOWNED(in_registry->name_to_module_map)
@@ -57,7 +57,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 {
     hmError err = hmHashMapDispose(&registry->name_to_module_map);
-    return hmCombineErrors(err, hmHashMapDispose(&registry->module_id_to_module_ref_map));
+    return hmMergeErrors(err, hmHashMapDispose(&registry->module_id_to_module_ref_map));
 }
 
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
@@ -89,8 +89,8 @@ hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** ou
 static hmError hmModuleDispose(hmModule* module)
 {
     hmError err = hmStringDispose(&module->name);
-    err = hmCombineErrors(err, hmHashMapDispose(&module->name_to_class_map));
-    return hmCombineErrors(err, hmHashMapDispose(&module->class_id_to_class_ref_map));
+    err = hmMergeErrors(err, hmHashMapDispose(&module->name_to_class_map));
+    return hmMergeErrors(err, hmHashMapDispose(&module->class_id_to_class_ref_map));
 }
 
 static hmError hmModuleDisposeFunc(void* object)
@@ -137,7 +137,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         &in_module->name_to_class_map
     );
     if (err != HM_OK) {
-        return hmCombineErrors(err, hmStringDispose(&in_module->name));
+        return hmMergeErrors(err, hmStringDispose(&in_module->name));
     }
     HM_MOVED(in_module->name, in_module);
     err = hmCreateHashMap(
@@ -154,8 +154,8 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
         &in_module->class_id_to_class_ref_map
     );
     if (err != HM_OK) {
-        err = hmCombineErrors(err, hmStringDispose(&in_module->name));
-        return hmCombineErrors(err, hmHashMapDispose(&in_module->name_to_class_map));
+        err = hmMergeErrors(err, hmStringDispose(&in_module->name));
+        return hmMergeErrors(err, hmHashMapDispose(&in_module->name_to_class_map));
     }
     in_module->module_id = module_id;
     return HM_OK;
@@ -177,11 +177,11 @@ static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_module_owned) {
-            err = hmCombineErrors(err, hmStringDispose(name));
-            err = hmCombineErrors(err, hmModuleDispose(module));
+            err = hmMergeErrors(err, hmStringDispose(name));
+            err = hmMergeErrors(err, hmModuleDispose(module));
         } else {
-            err = hmCombineErrors(err, hmHashMapRemove(&registry->name_to_module_map, name, HM_NULL));
-            err = hmCombineErrors(err, hmHashMapRemove(&registry->module_id_to_module_ref_map, &module_id, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->name_to_module_map, name, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->module_id_to_module_ref_map, &module_id, HM_NULL));
         }
     }
     return err;
@@ -205,7 +205,7 @@ static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void
     hmString name;
     hmError err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
-        return hmCombineErrors(err, hmModuleDispose(&module));
+        return hmMergeErrors(err, hmModuleDispose(&module));
     }
     HM_MOVED(module, hmModuleRegistryStoreModule);
     HM_MOVED(name, hmModuleRegistryStoreModule);
@@ -250,11 +250,11 @@ static hmError hmModuleStoreClass(hmModule* module, hm_int32 class_id, hmString*
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_class_owned) {
-            err = hmCombineErrors(err, hmStringDispose(name));
-            err = hmCombineErrors(err, hmClassDispose(hm_class));
+            err = hmMergeErrors(err, hmStringDispose(name));
+            err = hmMergeErrors(err, hmClassDispose(hm_class));
         } else {
-            err = hmCombineErrors(err, hmHashMapRemove(&module->name_to_class_map, name, HM_NULL));
-            err = hmCombineErrors(err, hmHashMapRemove(&module->class_id_to_class_ref_map, &class_id, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&module->name_to_class_map, name, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&module->class_id_to_class_ref_map, &class_id, HM_NULL));
         }
     }
     return err;
@@ -275,7 +275,7 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     hmString name;
     err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
-        return hmCombineErrors(err, hmClassDispose(&hm_class));
+        return hmMergeErrors(err, hmClassDispose(&hm_class));
     }
     HM_MOVED(hm_class, hmModuleStoreClass);
     HM_MOVED(name, hmModuleStoreClass);

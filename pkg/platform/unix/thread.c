@@ -76,7 +76,7 @@ hmError hmCreateThread(
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (is_string_duplicated) {
-            err = hmCombineErrors(err, hmStringDispose(&platform_data->name));
+            err = hmMergeErrors(err, hmStringDispose(&platform_data->name));
         }
         hmFree(allocator, platform_data);
     }
@@ -177,9 +177,9 @@ static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_dat
     hm_nint new_ref_count = hmAtomicDecrement(&platform_data->ref_count);
     hmError err = HM_OK;
     if (new_ref_count == 0) {
-        err = hmCombineErrors(err, hmStringDispose(&platform_data->name));
+        err = hmMergeErrors(err, hmStringDispose(&platform_data->name));
         if (!hmAtomicLoad(&platform_data->is_detached)) {
-            err = hmCombineErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
+            err = hmMergeErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
         }
         hmFree(platform_data->allocator, platform_data);
     }
