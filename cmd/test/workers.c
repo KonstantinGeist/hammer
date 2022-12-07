@@ -12,7 +12,7 @@
 * ******************************************************************************/
 
 #include "common.h"
-#include <runtime/worker.h>
+#include <threading/worker.h>
 
 #define WORKER_NAME "TestWorker"
 #define DEFAULT_WORKER_QUEUE_SIZE 16

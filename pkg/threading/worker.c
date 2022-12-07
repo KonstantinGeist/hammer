@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include <runtime/worker.h>
+#include <threading/worker.h>
 
 #include <core/allocator.h>
 #include <collections/queue.h>
