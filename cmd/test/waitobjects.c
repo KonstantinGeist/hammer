@@ -127,7 +127,6 @@ static void test_wait_object_remains_signalled_when_pulsed_without_waiters()
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
     shared_thread_context context;
-    hmAtomicStore(&context.result, 0);
     err = hmCreateWaitObject(&allocator, &context.wait_object);
     HM_TEST_ASSERT_OK(err);
     hmThread thread;
