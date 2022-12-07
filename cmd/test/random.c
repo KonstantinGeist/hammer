@@ -44,7 +44,7 @@ static void test_random_generates_float_sequence()
     hmError err = hmCreateRandom(666, &random);
     HM_TEST_ASSERT_OK(err);
     for (hm_nint i = 0; i < 1000; i++) {
-        hm_int32 random_int = hmRandomGetNextFloat(&random);
+        hm_float64 random_int = hmRandomGetNextFloat(&random);
         HM_TEST_ASSERT(random_int >= 0.0 && random_int <= 1.0);
     }
     err = hmRandomDispose(&random);
