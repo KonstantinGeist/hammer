@@ -24,13 +24,15 @@
 #define HM_WORKER_THREAD_WAIT_TIMEOUT_MS 4000
 
 typedef struct _hmWorkerData {
-    hmAllocator*  allocator;
-    hmThread      thread;
-    hmQueue       queue;
-    hmWaitObject  wait_object;
-    hmMutex       queue_mutex;
-    hmDisposeFunc item_dispose_func;
-    hmWorkerFunc  worker_func;
+    hmAllocator*   allocator;
+    hmThread       thread;
+    hmQueue        queue;
+    hmWaitObject   wait_object;
+    hmMutex        queue_mutex;
+    hmDisposeFunc  item_dispose_func;
+    hmWorkerFunc   worker_func;
+volatile
+    hm_atomic_bool drain_queue;
 } hmWorkerData;
 
 static hmError hmWorkerThreadFunc(void* user_data);
@@ -73,6 +75,7 @@ hmError hmCreateWorker(
     data->allocator = allocator;
     data->item_dispose_func = item_dispose_func;
     data->worker_func = worker_func;
+    hmAtomicStore(&data->drain_queue, HM_FALSE);
     in_worker->data = data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
@@ -104,11 +107,12 @@ hmError hmWorkerDispose(hmWorker* worker)
     return err;
 }
 
-hmError hmWorkerStop(hmWorker* worker)
+hmError hmWorkerStop(hmWorker* worker, hm_bool drain_queue)
 {
     hmWorkerData* data = worker->data;
+    hmAtomicStore(&data->drain_queue, HM_TRUE);
     HM_TRY(hmThreadAbort(&data->thread));
-    return hmWaitObjectPulse(&data->wait_object); /* Wakes up the worker to make it abort quicker. */
+    return hmWaitObjectPulse(&data->wait_object); /* Wakes up the worker to make it abort quicker (without waiting for the timeout). */
 }
 
 hmError hmWorkerWait(hmWorker* worker)
@@ -140,19 +144,27 @@ static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void** out_work_item)
     return hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex));
 }
 
+static hm_bool hmWorkerShouldRun(hmWorkerData* data)
+{
+    return hmThreadGetState(&data->thread) != HM_THREAD_STATE_ABORT_REQUESTED;
+}
+
+static hm_bool hmWorkerShouldDrainQueue(hmWorkerData* data)
+{
+    return hmWorkerShouldRun(data) || hmAtomicLoad(&data->drain_queue) == HM_TRUE;
+}
+
 static hmError hmWorkerThreadFunc(void* user_data)
 {
     hmWorkerData* data = (hmWorkerData*)user_data;
-    while (hmThreadGetState(&data->thread) != HM_THREAD_STATE_ABORT_REQUESTED) {
+    do {
         hmError err = hmWaitObjectWait(&data->wait_object, HM_WORKER_THREAD_WAIT_TIMEOUT_MS);
         if (err == HM_ERROR_TIMEOUT) {
             continue;
         }
-        if (err != HM_OK) {
-            return err;
-        }
+        HM_TRY(err);
         void* work_item = HM_NULL;
-        while ((err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
+        while (hmWorkerShouldDrainQueue(data) && (err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
             err = data->worker_func(work_item);
             if (data->item_dispose_func) {
                 err = hmMergeErrors(err, data->item_dispose_func(work_item));
@@ -163,6 +175,6 @@ static hmError hmWorkerThreadFunc(void* user_data)
             continue;
         }
         HM_TRY(err);
-    }
+    } while (hmWorkerShouldRun(data));
     return HM_OK;
 }

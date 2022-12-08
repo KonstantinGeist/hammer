@@ -62,7 +62,7 @@ static void test_can_start_stop_wait_worker_and_get_name()
     hmWorker worker;
     hmAllocator allocator;
     create_worker_and_allocator_simple(&worker, &allocator, &can_start_stop_wait_worker_and_get_name_worker_func);
-    hmError err = hmWorkerStop(&worker);
+    hmError err = hmWorkerStop(&worker, HM_FALSE);
     HM_TEST_ASSERT_OK(err);
     err = hmWorkerWait(&worker);
     HM_TEST_ASSERT_OK(err);
@@ -115,8 +115,7 @@ static void test_can_process_work_items_fast_with_dispose_func()
         hmError err = hmWorkerEnqueueItem(&worker, arg);
         HM_TEST_ASSERT_OK(err);
     }
-    hmSleep(300); /* Sleeps to make sure all work items are processed. */
-    hmError err = hmWorkerStop(&worker);
+    hmError err = hmWorkerStop(&worker, HM_TRUE);
     HM_TEST_ASSERT_OK(err);
     err = hmWorkerWait(&worker);
     HM_TEST_ASSERT_OK(err);

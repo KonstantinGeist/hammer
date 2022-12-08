@@ -46,8 +46,10 @@ hmError hmCreateWorker(
 /* Before disposing of the worker, it should be stopped and awaited with hmWorkerStop(..) and hmWorkerWait(..)
    Returns HM_ERROR_INVALID_STATE if the worker isn't fully stopped. */
 hmError hmWorkerDispose(hmWorker* worker);
-/* Tells the worker to stop gracefully. The worker will finish processing the current item and stop. */
-hmError hmWorkerStop(hmWorker* worker);
+/* Tells the worker to stop gracefully.
+   If `drain_queue` is set to HM_TRUE, the worker makes sure all work items currently enqueued are processed, before stopping.
+   Otherwise, the worker will finish processing only the current item and stop immediately. */
+hmError hmWorkerStop(hmWorker* worker, hm_bool drain_queue);
 /* Blocks the current thread until the worker completely shuts down (after being told to do so via hmWorkerStop(..)).
    It's the only safe way to gracefully terminate a worker. Usually useful when the whole runtime terminates.
    If the worker fails to respond in a certain reasonable time limit, the whole runtime can be shut down without waiting for
