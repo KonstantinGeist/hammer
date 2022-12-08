@@ -13,9 +13,14 @@
 
 #include "common.h"
 #include <threading/worker.h>
+#include <threading/thread.h>
+
+/* These tests rely on some timing, so sporadically they can fail on busy machines. */
 
 #define WORKER_NAME "TestWorker"
 #define DEFAULT_WORKER_QUEUE_SIZE 16
+
+static hm_nint processed_count = 0;
 
 static void create_worker_and_allocator(
     hmWorker* worker,
@@ -70,9 +75,59 @@ static void test_can_start_stop_wait_worker_and_get_name()
     dispose_worker_and_allocator(&worker, &allocator);
 }
 
+typedef struct {
+    hmAllocator* allocator;
+    hm_nint      value;
+} integer_work_item;
+
+static hmError integer_work_item_dispose_func(void* obj)
+{
+    integer_work_item* work_item = (integer_work_item*)obj;
+    hmFree(work_item->allocator, work_item);
+    return HM_OK;
+}
+
+static hmError can_process_work_items_fast_with_dispose_func_worker_func(void* work_item)
+{
+    integer_work_item* item = (integer_work_item*)work_item;
+    processed_count += item->value;
+    return HM_OK;
+}
+
+static void test_can_process_work_items_fast_with_dispose_func()
+{
+    hmWorker worker;
+    hmAllocator allocator;
+    create_worker_and_allocator(
+        &worker,
+        &allocator,
+        can_process_work_items_fast_with_dispose_func_worker_func,
+        &integer_work_item_dispose_func,
+        HM_FALSE,
+        DEFAULT_WORKER_QUEUE_SIZE
+    );
+    processed_count = 0;
+    for (hm_nint i = 0; i <= 1000; i++) {
+        integer_work_item* arg = hmAlloc(&allocator, sizeof(integer_work_item));
+        HM_TEST_ASSERT(arg);
+        arg->allocator = &allocator;
+        arg->value = i;
+        hmError err = hmWorkerEnqueueItem(&worker, arg);
+        HM_TEST_ASSERT_OK(err);
+    }
+    hmSleep(300); /* Sleeps to make sure all work items are processed. */
+    hmError err = hmWorkerStop(&worker);
+    HM_TEST_ASSERT_OK(err);
+    err = hmWorkerWait(&worker);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(processed_count == 500500);
+    dispose_worker_and_allocator(&worker, &allocator);
+}
+
 void test_workers()
 {
     HM_TEST_SUITE_BEGIN("Workers");
         HM_TEST_RUN_WITHOUT_OOM(test_can_start_stop_wait_worker_and_get_name);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_process_work_items_fast_with_dispose_func);
     HM_TEST_SUITE_END();
 }

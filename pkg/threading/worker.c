@@ -123,7 +123,7 @@ hmError hmWorkerEnqueueItem(hmWorker* worker, void* work_item)
     }
     hmWorkerData* data = worker->data;
     HM_TRY(hmMutexLock(&data->queue_mutex));
-    hmError err = hmQueueEnqueue(&data->queue, work_item);
+    hmError err = hmQueueEnqueue(&data->queue, &work_item);
     HM_TRY(hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex)));
     return hmWaitObjectPulse(&data->wait_object);
 }
