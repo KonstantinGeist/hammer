@@ -47,16 +47,16 @@ hmError hmCreateWorker(
    Returns HM_ERROR_INVALID_STATE if the worker isn't fully stopped. */
 hmError hmWorkerDispose(hmWorker* worker);
 /* Tells the worker to stop gracefully.
-   If `drain_queue` is set to HM_TRUE, the worker makes sure all work items currently enqueued are processed, before stopping.
+   If `should_drain_queue` is set to HM_TRUE, the worker makes sure all work items currently enqueued are processed, before stopping.
    Otherwise, the worker will finish processing only the current item and stop immediately. */
-hmError hmWorkerStop(hmWorker* worker, hm_bool drain_queue);
+hmError hmWorkerStop(hmWorker* worker, hm_bool should_drain_queue);
 /* Blocks the current thread until the worker completely shuts down (after being told to do so via hmWorkerStop(..)).
    It's the only safe way to gracefully terminate a worker. Usually useful when the whole runtime terminates.
-   If the worker fails to respond in a certain reasonable time limit, the whole runtime can be shut down without waiting for
-   it (for example, if the worker is hanging) -- in that case, the function returns HM_ERROR_TIMEOUT.
+   If the worker fails to respond in a time limit defined by `timeout_ms`, the function returns HM_ERROR_TIMEOUT.
+   For additional constraints, see hmThreadJoin(..)
    hmWorkerStop(..) is separated from hmWorkerWait(..) so that it was possible to initiate shutdown of several workers
    in parallel without waiting one by one. */
-hmError hmWorkerWait(hmWorker* worker);
+hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms);
 /* Enqueues a new item to be processed by the worker some time in the future on its dedicated thread when it has
    the resources to do so. If the worker's queue is bounded and it's full, returns HM_ERROR_LIMIT_EXCEEDED.
    `work_item` cannot be HM_NULL; also, the value should be thread-safe, because it will be accessed on different threads.

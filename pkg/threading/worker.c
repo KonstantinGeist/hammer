@@ -19,8 +19,8 @@
 #include <threading/thread.h>
 #include <threading/waitobject.h>
 
-#define HM_WORKER_WAIT_TIMEOUT_MS 5000
-/* Smaller than HM_WORKER_WAIT_TIMEOUT_MS, to finish faster than hmWorkerWait's timeout. */
+/* A reasonable timeout just in case something is wrong with our WaitObject implementation and the whole thing hangs --
+   if we want to stop the worker, it will eventually reactivate and stop in any case. */
 #define HM_WORKER_THREAD_WAIT_TIMEOUT_MS 4000
 
 typedef struct _hmWorkerData {
@@ -32,7 +32,8 @@ typedef struct _hmWorkerData {
     hmDisposeFunc  item_dispose_func;
     hmWorkerFunc   worker_func;
 volatile
-    hm_atomic_bool drain_queue;
+    hm_atomic_bool should_drain_queue;
+    hm_bool        is_draining_queue;
 } hmWorkerData;
 
 static hmError hmWorkerThreadFunc(void* user_data);
@@ -75,7 +76,8 @@ hmError hmCreateWorker(
     data->allocator = allocator;
     data->item_dispose_func = item_dispose_func;
     data->worker_func = worker_func;
-    hmAtomicStore(&data->drain_queue, HM_FALSE);
+    hmAtomicStore(&data->should_drain_queue, HM_FALSE);
+    data->is_draining_queue = HM_FALSE;
     in_worker->data = data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
@@ -107,17 +109,17 @@ hmError hmWorkerDispose(hmWorker* worker)
     return err;
 }
 
-hmError hmWorkerStop(hmWorker* worker, hm_bool drain_queue)
+hmError hmWorkerStop(hmWorker* worker, hm_bool should_drain_queue)
 {
     hmWorkerData* data = worker->data;
-    hmAtomicStore(&data->drain_queue, HM_TRUE);
+    hmAtomicStore(&data->should_drain_queue, should_drain_queue);
     HM_TRY(hmThreadAbort(&data->thread));
     return hmWaitObjectPulse(&data->wait_object); /* Wakes up the worker to make it abort quicker (without waiting for the timeout). */
 }
 
-hmError hmWorkerWait(hmWorker* worker)
+hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms)
 {
-    return hmThreadJoin(&worker->data->thread, HM_WORKER_WAIT_TIMEOUT_MS);
+    return hmThreadJoin(&worker->data->thread, timeout_ms);
 }
 
 hmError hmWorkerEnqueueItem(hmWorker* worker, void* work_item)
@@ -151,30 +153,50 @@ static hm_bool hmWorkerShouldRun(hmWorkerData* data)
 
 static hm_bool hmWorkerShouldDrainQueue(hmWorkerData* data)
 {
-    return hmWorkerShouldRun(data) || hmAtomicLoad(&data->drain_queue) == HM_TRUE;
+    return hmAtomicLoad(&data->should_drain_queue) == HM_TRUE;
+}
+
+static hm_bool hmWorkerShouldProcessQueue(hmWorkerData* data)
+{
+    return data->is_draining_queue || hmThreadGetState(&data->thread) != HM_THREAD_STATE_ABORT_REQUESTED;
+}
+
+static hmError hmWorkerWaitForNewItems(hmWorkerData* data)
+{
+    hmError err = hmWaitObjectWait(&data->wait_object, HM_WORKER_THREAD_WAIT_TIMEOUT_MS);
+    return err == HM_ERROR_TIMEOUT ? HM_OK : err; /* It's OK if we time out here. */
+}
+
+static hmError hmWorkerProcessNewItems(hmWorkerData* data)
+{
+    hmError err = HM_OK;
+    void* work_item = HM_NULL;
+    while (hmWorkerShouldProcessQueue(data) && (err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
+        err = data->worker_func(work_item);
+        if (data->item_dispose_func) {
+            err = hmMergeErrors(err, data->item_dispose_func(work_item));
+        }
+        HM_TRY(err);
+    }
+    /* HM_ERROR_INVALID_STATE means there's no more work items in the queue. */
+    return err == HM_ERROR_INVALID_STATE ? HM_OK : err;
+}
+
+static hmError hmWorkerDrainQueue(hmWorkerData* data)
+{
+    data->is_draining_queue = HM_TRUE;
+    return hmWorkerProcessNewItems(data);
 }
 
 static hmError hmWorkerThreadFunc(void* user_data)
 {
     hmWorkerData* data = (hmWorkerData*)user_data;
-    do {
-        hmError err = hmWaitObjectWait(&data->wait_object, HM_WORKER_THREAD_WAIT_TIMEOUT_MS);
-        if (err == HM_ERROR_TIMEOUT) {
-            continue;
-        }
-        HM_TRY(err);
-        void* work_item = HM_NULL;
-        while (hmWorkerShouldDrainQueue(data) && (err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
-            err = data->worker_func(work_item);
-            if (data->item_dispose_func) {
-                err = hmMergeErrors(err, data->item_dispose_func(work_item));
-            }
-            HM_TRY(err);
-        }
-        if (err == HM_ERROR_INVALID_STATE) { /* No more work items in the queue. */
-            continue;
-        }
-        HM_TRY(err);
-    } while (hmWorkerShouldRun(data));
+    while (hmWorkerShouldRun(data)) {
+        HM_TRY(hmWorkerWaitForNewItems(data));
+        HM_TRY(hmWorkerProcessNewItems(data));
+    }
+    if (hmWorkerShouldDrainQueue(data)) {
+        HM_TRY(hmWorkerDrainQueue(data));
+    }
     return HM_OK;
 }
