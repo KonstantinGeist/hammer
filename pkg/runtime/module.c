@@ -32,7 +32,6 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_registry->name_to_module_map
     ));
-    HM_OWNED(in_registry->name_to_module_map);
     hmError err = hmCreateHashMap(
         allocator,
         &hmInt32HashFunc,
@@ -50,7 +49,6 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         return hmMergeErrors(err, hmHashMapDispose(&in_registry->name_to_module_map));
     }
     in_registry->allocator = allocator;
-    HM_UNOWNED(in_registry->name_to_module_map)
     return HM_OK;
 }
 
@@ -126,7 +124,6 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
 static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
-    HM_OWNED(in_module->name);
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
         &hmClassDisposeFunc, /* value_dispose_func */
@@ -139,7 +136,6 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     if (err != HM_OK) {
         return hmMergeErrors(err, hmStringDispose(&in_module->name));
     }
-    HM_MOVED(in_module->name, in_module);
     err = hmCreateHashMap(
         allocator,
         &hmInt32HashFunc,
@@ -161,15 +157,12 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     return HM_OK;
 }
 
+/* name, module are owned by this function */
 static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name, hmModule* module)
 {
-    HM_OWNED(name);
-    HM_OWNED(module);
     hmError err = HM_OK;
     hm_bool name_and_module_owned = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&registry->name_to_module_map, name, module));
-    HM_MOVED(name, registry->name_to_module_map);
-    HM_MOVED(module, registry->name_to_module_map);
     name_and_module_owned = HM_FALSE;
     void* module_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&registry->name_to_module_map, name, &module_ref));
@@ -201,14 +194,12 @@ static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void
     HM_TRY(hmModuleRegistryValidateModuleDoesNotExist(registry, metadata->module_id, &metadata->name));
     hmModule module;
     HM_TRY(hmCreateModule(registry->allocator, metadata->module_id, &metadata->name, &module));
-    HM_OWNED(module);
     hmString name;
     hmError err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
         return hmMergeErrors(err, hmModuleDispose(&module));
     }
-    HM_MOVED(module, hmModuleRegistryStoreModule);
-    HM_MOVED(name, hmModuleRegistryStoreModule);
+    /* module, name are moved to hmModuleRegistryStoreModule(..) */
     HM_TRY(hmModuleRegistryStoreModule(registry, metadata->module_id, &name, &module));
     return HM_OK;
 }
@@ -229,20 +220,16 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_int32 clas
 static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString* name, hmClass* in_class)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_class->name));
-    HM_MOVED(in_class->name, in_class);
     in_class->class_id = class_id;
     return HM_OK;
 }
 
+/* name, hm_class are owned by this function */
 static hmError hmModuleStoreClass(hmModule* module, hm_int32 class_id, hmString* name, hmClass* hm_class)
 {
-    HM_OWNED(name);
-    HM_OWNED(hm_class);
     hmError err = HM_OK;
     hm_bool name_and_class_owned = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&module->name_to_class_map, name, hm_class));
-    HM_MOVED(name, module->name_to_class_map);
-    HM_MOVED(hm_class, module->name_to_class_map);
     name_and_class_owned = HM_FALSE;
     void* class_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
@@ -271,14 +258,12 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     HM_TRY(hmModuleValidateClassDoesNotExist(module_ref, metadata->class_id, &metadata->name));
     hmClass hm_class;
     HM_TRY(hmCreateClass(registry->allocator, metadata->class_id, &metadata->name, &hm_class));
-    HM_OWNED(hm_class);
     hmString name;
     err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
         return hmMergeErrors(err, hmClassDispose(&hm_class));
     }
-    HM_MOVED(hm_class, hmModuleStoreClass);
-    HM_MOVED(name, hmModuleStoreClass);
+    /* hm_class, name are moved to hmModuleStoreClass(..) */
     HM_TRY(hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class));
     return HM_OK;
 }

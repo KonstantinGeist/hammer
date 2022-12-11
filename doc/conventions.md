@@ -22,7 +22,6 @@ There are several conventions to follow:
   If you take a reference to an object you do not own, pay attention to its lifetime to avoid using disposed objects.
 * Try disposing of objects in destructors to the maximum, combining various potential errors with hmMergeErrors.
   This way we hopefully reduce memory leaks to the minimum in case of unpredictable errors in object disposal code paths.
-* Mark ownership with the following idioms: HM_OWNED, HM_MOVED, HM_UNOWNED (see)
 * Static functions should come after public functions.
 * All objects are thread-unsafe and move-only by default, unless stated otherwise.
 * All integer operations (addition, multiplication, subtraction, division) must be done with safe math functions as

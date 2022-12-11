@@ -82,16 +82,4 @@ typedef hmError (*hmDisposeFunc)(void* object);
 #define HM_ON_FINALIZE finalize:
 #define HM_FINALIZE goto finalize
 
-/* Special attributes to extend C semantics with some human-readable metadata about how memory is managed. */
-
-/* The variable is owned by the current function and should be deallocated or its ownership transferred
-   somewhere else. */
-#define HM_OWNED(var);
-/* The owned variable was successfully moved because its content's ownership was transferred to another
-   entity; no need to deallocate it anymore. May be problematic with views. */
-#define HM_MOVED(from, to)
-/* Similar to HM_MOVED, except it's not moved anywhere explicitly. We just say we no longer own it.
-   When a dispose function is called on a value, it's implicitly assumed that it's unowned. */
-#define HM_UNOWNED(var)
-
 #endif /* HM_COMMON_H */
