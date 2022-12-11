@@ -17,6 +17,8 @@
 #include <core/common.h>
 #include <core/string.h>
 
+#define HM_WORKER_MAX_ITEM_SIZE 1024
+
 struct _hmAllocator;
 
 typedef hmError(*hmWorkerFunc)(void* work_item);
@@ -28,6 +30,7 @@ typedef struct {
 /* A worker allows to process work items on a separate thread.
    The allocator should be thread-safe, as it will allocate/deallocate on different threads.
    The work queue can be made bounded. If it's bounded, the queue will never grow (see also hmWorkerEnqueueItem(..)).
+   `item_size` specifies the size of a work item; returns HM_ERROR_INVALID_ARGUMENT if it's bigger than HM_WORKER_MAX_ITEM_SIZE.
    `item_dispose_func` specifies how items are disposed when they're removed from the queue after being processed. The
    function should be thread-safe, because it will be accessed on different threads. Can be HM_NULL.
    `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
@@ -38,6 +41,7 @@ hmError hmCreateWorker(
     struct _hmAllocator* allocator,
     hmString* name,
     hmWorkerFunc worker_func,
+    hm_nint item_size,
     hmDisposeFunc item_dispose_func,
     hm_bool is_queue_bounded,
     hm_nint queue_size,
@@ -60,8 +64,9 @@ hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms);
 /* Enqueues a new item to be processed by the worker some time in the future on its dedicated thread when it has
    the resources to do so. If the worker's queue is bounded and it's full, returns HM_ERROR_LIMIT_EXCEEDED.
    `work_item` cannot be HM_NULL; also, the value should be thread-safe, because it will be accessed on different threads.
-    The value will be passed to hmWorkerFunc(..) */
-hmError hmWorkerEnqueueItem(hmWorker* worker, void* work_item);
+    The value will be passed to hmWorkerFunc(..)
+    The item will be disposed of with `item_dispose_func` passed to the constructor of the worker. */
+hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a worker's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmWorkerGetName(hmWorker* worker, hmString* in_string);

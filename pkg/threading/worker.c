@@ -14,6 +14,7 @@
 #include <threading/worker.h>
 
 #include <core/allocator.h>
+#include <core/utils.h>
 #include <collections/queue.h>
 #include <threading/mutex.h>
 #include <threading/thread.h>
@@ -31,6 +32,7 @@ typedef struct _hmWorkerData {
     hmMutex        queue_mutex;
     hmDisposeFunc  item_dispose_func;
     hmWorkerFunc   worker_func;
+    hm_nint        item_size;
 volatile
     hm_atomic_bool should_drain_queue;
     hm_bool        is_draining_queue;
@@ -42,13 +44,14 @@ hmError hmCreateWorker(
     struct _hmAllocator* allocator,
     hmString* name,
     hmWorkerFunc worker_func,
+    hm_nint item_size,
     hmDisposeFunc item_dispose_func,
     hm_bool is_queue_bounded,
     hm_nint queue_size,
     hmWorker* in_worker
 )
 {
-    if (!worker_func) {
+    if (!worker_func || item_size > HM_WORKER_MAX_ITEM_SIZE) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmWorkerData* data = (hmWorkerData*)hmAlloc(allocator, sizeof(hmWorkerData));
@@ -61,7 +64,7 @@ hmError hmCreateWorker(
     hmError err = HM_OK;
     HM_TRY_OR_FINALIZE(err, hmCreateQueue(
         allocator,
-        sizeof(void*),
+        queue_size,
         queue_size,
         item_dispose_func,
         is_queue_bounded,
@@ -76,6 +79,7 @@ hmError hmCreateWorker(
     data->allocator = allocator;
     data->item_dispose_func = item_dispose_func;
     data->worker_func = worker_func;
+    data->item_size = item_size;
     hmAtomicStore(&data->should_drain_queue, HM_FALSE);
     data->is_draining_queue = HM_FALSE;
     in_worker->data = data;
@@ -122,14 +126,14 @@ hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms)
     return hmThreadJoin(&worker->data->thread, timeout_ms);
 }
 
-hmError hmWorkerEnqueueItem(hmWorker* worker, void* work_item)
+hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item)
 {
-    if (!work_item) {
+    if (!in_work_item) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmWorkerData* data = worker->data;
     HM_TRY(hmMutexLock(&data->queue_mutex));
-    hmError err = hmQueueEnqueue(&data->queue, &work_item);
+    hmError err = hmQueueEnqueue(&data->queue, in_work_item);
     HM_TRY(hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex)));
     return hmWaitObjectPulse(&data->wait_object);
 }
@@ -139,7 +143,7 @@ hmError hmWorkerGetName(hmWorker* worker, hmString* in_string)
     return hmThreadGetName(&worker->data->thread, in_string);
 }
 
-static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void** out_work_item)
+static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void* out_work_item)
 {
     HM_TRY(hmMutexLock(&data->queue_mutex));
     hmError err = hmQueueDequeue(&data->queue, out_work_item);
@@ -170,15 +174,19 @@ static hmError hmWorkerWaitForNewItems(hmWorkerData* data)
 static hmError hmWorkerProcessNewItems(hmWorkerData* data)
 {
     hmError err = HM_OK;
-    void* work_item = HM_NULL;
-    while (hmWorkerShouldProcessQueue(data) && (err = hmWorkerDequeueWorkItem(data, &work_item)) == HM_OK) {
+    /* We allocate on the stack because we want to only copy work items under the lock (without processing them)
+       to minimize the time spent when the worker's queue is locked. However, work items can be of arbitrary size,
+       and for that reason, to prevent undefined behavior due to stack overflows, the maximum work item size is
+       limited to HM_WORKER_MAX_ITEM_SIZE when using hmAllocOnStack(..) */
+    void* work_item = hmAllocOnStack(hmAlignSize(data->item_size));
+    while (hmWorkerShouldProcessQueue(data) && (err = hmWorkerDequeueWorkItem(data, work_item)) == HM_OK) {
         err = data->worker_func(work_item);
         if (data->item_dispose_func) {
             err = hmMergeErrors(err, data->item_dispose_func(work_item));
         }
         HM_TRY(err);
     }
-    /* HM_ERROR_INVALID_STATE means there's no more work items in the queue. */
+    /* HM_ERROR_INVALID_STATE means there's no more work items in the queue, which is fine. */
     return err == HM_ERROR_INVALID_STATE ? HM_OK : err;
 }
 
