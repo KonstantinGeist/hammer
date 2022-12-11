@@ -55,7 +55,9 @@
 #define HM_PRE_STRINGIFY(s) #s
 #define HM_STRINGIFY(s) HM_PRE_STRINGIFY(s)
 
-#define HM_TEST_RUN_WITHOUT_OOM(name) printf("%s\n", "    " HM_STRINGIFY(name)); name()
+#define HM_TEST_RUN_WITHOUT_OOM(name) \
+    hm_test_is_oom_mode = HM_FALSE; \
+    printf("%s\n", "    " HM_STRINGIFY(name)); name()
 
 #define HM_TEST_INIT_ALLOC(allocator) \
     hm_test_is_oom = HM_FALSE; \
