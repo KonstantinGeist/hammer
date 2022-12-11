@@ -13,6 +13,7 @@
 
 #include <core/random.h>
 #include <core/environment.h>
+#include <core/math.h>
 
 /* Based on Numerical Recipes in C (2nd Ed.) and Random.cs from mono/CoreCLR (MIT license). */
 
@@ -22,7 +23,12 @@ hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random)
 {
     hm_int32* seed_array = &in_random->seed_array[0];
     hm_int32 mj, mk;
-    hm_int32 subtraction = (seed == HM_INT32_MIN) ? HM_INT32_MAX : abs(seed);
+    hm_int32 subtraction;
+    if (seed == HM_INT32_MAX) {
+        subtraction = HM_INT32_MAX;
+    } else {
+        HM_TRY(hmAbsInt32(seed, &subtraction));
+    }
     mj = MSEED - subtraction;
     seed_array[55] = mj;
     mk = 1;

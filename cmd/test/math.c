@@ -127,6 +127,22 @@ static void test_detects_millis_overflow_when_adding()
     HM_TEST_ASSERT(result == HM_MILLIS_MAX);
 }
 
+static void test_abs()
+{
+    hm_int32 result = 0;
+    hmError err = hmAbsInt32(5, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 5);
+    err = hmAbsInt32(-5, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 5);
+    err = hmAbsInt32(HM_INT32_MAX, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == HM_INT32_MAX);
+    err = hmAbsInt32(HM_INT32_MIN, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
+}
+
 void test_math()
 {
     HM_TEST_SUITE_BEGIN("Math");
@@ -135,5 +151,6 @@ void test_math()
         HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints);
         HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying);
         HM_TEST_RUN_WITHOUT_OOM(test_detects_millis_overflow_when_adding);
+        HM_TEST_RUN_WITHOUT_OOM(test_abs);
     HM_TEST_SUITE_END();
 }

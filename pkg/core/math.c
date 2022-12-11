@@ -59,3 +59,12 @@ hmError hmAddMillis(hm_millis a, hm_millis b, hm_millis* result)
     *result = a + b;
     return HM_OK;
 }
+
+hmError hmAbsInt32(hm_int32 value, hm_int32* out_value)
+{
+    if (value == HM_INT32_MIN) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    *out_value = value >= 0 ? value : -value;
+    return HM_OK;
+}
