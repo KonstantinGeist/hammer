@@ -1,1 +1,3 @@
-threading_sources = []
+threading_sources = files(
+    'worker.c'
+)
