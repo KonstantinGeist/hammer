@@ -228,6 +228,42 @@ void test_worker_returns_error_if_item_size_is_too_big()
     HM_TEST_ASSERT_OK(err);
 }
 
+static hmError worker_can_enqueue_by_value_worker_func(void* obj)
+{
+    integer_work_item* work_item = (integer_work_item*)obj;
+    processed_count += work_item->value;
+    return HM_OK;
+}
+
+static void test_worker_can_enqueue_by_value()
+{
+    hmWorker worker;
+    hmAllocator allocator;
+    create_worker_and_allocator(
+        &worker,
+        &allocator,
+        &worker_can_enqueue_by_value_worker_func,
+        sizeof(integer_work_item),
+        HM_NULL,
+        HM_FALSE,
+        DEFAULT_WORKER_QUEUE_SIZE
+    );
+    processed_count = 0;
+    for (hm_nint i = 0; i <= 1000; i++) {
+        integer_work_item arg;
+        arg.allocator = HM_NULL;
+        arg.value = i;
+        hmError err = hmWorkerEnqueueItem(&worker, &arg);
+        HM_TEST_ASSERT_OK(err);
+    }
+    hmError err = hmWorkerStop(&worker, HM_TRUE);
+    HM_TEST_ASSERT_OK(err);
+    err = hmWorkerWait(&worker, WORKER_WAIT_TIMEOUT);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(processed_count == 500500);
+    dispose_worker_and_allocator(&worker, &allocator);
+}
+
 void test_workers()
 {
     HM_TEST_SUITE_BEGIN("Workers");
@@ -236,5 +272,6 @@ void test_workers()
         HM_TEST_RUN_WITHOUT_OOM(test_worker_drains_queue_when_stopped);
         HM_TEST_RUN_WITHOUT_OOM(test_worker_does_not_drain_queue_when_stopped);
         HM_TEST_RUN_WITHOUT_OOM(test_worker_returns_error_if_item_size_is_too_big);
+        HM_TEST_RUN_WITHOUT_OOM(test_worker_can_enqueue_by_value);
     HM_TEST_SUITE_END();
 }
