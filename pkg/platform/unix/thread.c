@@ -32,7 +32,7 @@ volatile
 volatile
     hm_atomic_nint    ref_count;
 volatile
-    hm_atomic_nint    exit_error; /* actually, hmError */
+    hm_atomic_nint    exit_err; /* actually, hmError */
 volatile
     hm_atomic_bool    is_abort_requested; /* see hmThreadGetState(..) */
 volatile
@@ -68,7 +68,7 @@ hmError hmCreateThread(
     platform_data->user_data = user_data;
     platform_data->thread_func = thread_func;
     hmAtomicStore(&platform_data->state, HM_THREAD_STATE_UNSTARTED);
-    hmAtomicStore(&platform_data->exit_error, HM_OK);
+    hmAtomicStore(&platform_data->exit_err, HM_OK);
     hmAtomicStore(&platform_data->is_abort_requested, HM_FALSE);
     hmAtomicStore(&platform_data->is_detached, HM_FALSE);
     in_thread->platform_data = platform_data;
@@ -159,7 +159,7 @@ hm_millis hmThreadGetProcessorTime(hmThread* thread)
 hmError hmThreadGetExitError(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
-    return hmAtomicLoad(&platform_data->exit_error);
+    return hmAtomicLoad(&platform_data->exit_err);
 }
 
 hmError hmSleep(hm_millis ms)
@@ -190,7 +190,7 @@ static void* hmAdaptPosixThreadToHammer(void* arg)
 {
     hmThreadPlatformData* platform_data = (hmThreadPlatformData*)arg;
     hmAtomicStore(&platform_data->state, HM_THREAD_STATE_RUNNING);
-    hmAtomicStore(&platform_data->exit_error, platform_data->thread_func(platform_data->user_data));
+    hmAtomicStore(&platform_data->exit_err, platform_data->thread_func(platform_data->user_data));
     hmAtomicStore(&platform_data->state, HM_THREAD_STATE_STOPPED);
     /* Auto-disposes when the thread finishes, but the thread object may still be alive because the reference count
        will definitely be 0 only with a call to hmThreadDispose(..) */

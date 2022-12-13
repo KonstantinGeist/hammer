@@ -210,9 +210,9 @@ static void test_thread_reports_processor_time()
     dispose_thread_and_allocator(&thread, &allocator);
 }
 
-static hmError can_create_and_join_100_threads_thread_func(void* user_data)
+static hmError can_create_and_join_many_threads_thread_func(void* user_data)
 {
-    return hmSleep(10);
+    return hmSleep(100);
 }
 
 static void test_can_create_and_join_many_threads()
@@ -229,7 +229,7 @@ static void test_can_create_and_join_many_threads()
         err = hmCreateThread(
             &allocator,
             &name,
-            &can_create_and_join_100_threads_thread_func,
+            &can_create_and_join_many_threads_thread_func,
             HM_NULL,
             &threads[i]
         );

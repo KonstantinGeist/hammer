@@ -128,9 +128,6 @@ hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms)
 
 hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item)
 {
-    if (!in_work_item) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmWorkerData* data = worker->data;
     HM_TRY(hmMutexLock(&data->queue_mutex));
     hmError err = hmQueueEnqueue(&data->queue, in_work_item);
@@ -143,10 +140,10 @@ hmError hmWorkerGetName(hmWorker* worker, hmString* in_string)
     return hmThreadGetName(&worker->data->thread, in_string);
 }
 
-static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void* out_work_item)
+static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void* in_work_item)
 {
     HM_TRY(hmMutexLock(&data->queue_mutex));
-    hmError err = hmQueueDequeue(&data->queue, out_work_item);
+    hmError err = hmQueueDequeue(&data->queue, in_work_item);
     return hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex));
 }
 

@@ -115,8 +115,9 @@ static void test_can_wait_and_pulse_with_wait_objects()
 static hmError pulsed_without_waiters_thread_func(void* user_data)
 {
     shared_thread_context* context = (shared_thread_context*)user_data;
-    hmSleep(500); /* Simulates a long-running work item. */
-    hmError err = hmWaitObjectWait(&context->wait_object, 5000);
+    hmError err = hmSleep(500); /* Simulates a long-running work item. */
+    HM_TEST_ASSERT_OK(err);
+    err = hmWaitObjectWait(&context->wait_object, 5000);
     HM_TEST_ASSERT_OK(err); /* Should not timeout if it was pulsed before we started waiting. */
     return HM_OK;
 }

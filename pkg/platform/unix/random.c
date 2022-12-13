@@ -43,7 +43,7 @@ hm_int32 hmGenerateSeed()
         ret_value = *((hm_int32*)(&tick_count_hash)); /* type-punning to convert uint32 to int32 bitwise */
         /* Makes it more likely that each new seed is different. Otherwise, if hmGenerateSeed was called repeatedly,
            it would be possible to generate same seeds when based on the current tick count. */
-        hmSleep(16);
+        HM_TRY(hmSleep(16));
 #ifdef HM_SUPPORTS_GET_RANDOM
     }
 #endif

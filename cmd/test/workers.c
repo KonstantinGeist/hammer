@@ -131,8 +131,7 @@ static hmError worker_drains_queue_when_stopped_worker_func(void* obj)
 {
     integer_work_item* work_item = *((integer_work_item**)obj);
     processed_count += work_item->value;
-    hmSleep(200);
-    return HM_OK;
+    return hmSleep(200);
 }
 
 static void test_worker_drains_queue_when_stopped()
@@ -169,8 +168,7 @@ static hmError worker_does_not_drain_queue_when_stopped_worker_func(void* obj)
 {
     integer_work_item* work_item = *((integer_work_item**)obj);
     processed_count += work_item->value;
-    hmSleep(200);
-    return HM_OK;
+    return hmSleep(200);
 }
 
 static void test_worker_does_not_drain_queue_when_stopped()
