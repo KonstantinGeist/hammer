@@ -14,6 +14,9 @@
 #include <core/primitives.h>
 #include <core/hash.h>
 
+#include <inttypes.h> /* for PRId32 */
+#include <stdio.h> /* for sprintf */
+
 hm_uint32 hmNintHashFunc(void* key, hm_uint32 salt)
 {
     return hmHash(key, sizeof(hm_nint), salt);
@@ -36,4 +39,11 @@ hm_bool hmInt32EqualsFunc(void* value1, void* value2)
     hm_int32 a = *((hm_int32*)(value1));
     hm_int32 b = *((hm_int32*)(value2));
     return a == b;
+}
+
+hmError hmInt32ToString(struct _hmAllocator* allocator, hm_int32 value, hmString* in_string)
+{
+    char buf[64];
+    sprintf(buf, "%" PRId32 "", value);
+    return hmCreateStringFromCString(allocator, buf, in_string);
 }

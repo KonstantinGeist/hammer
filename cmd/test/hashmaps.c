@@ -15,7 +15,6 @@
 #include <collections/hashmap.h>
 #include <core/primitives.h>
 #include <core/string.h>
-#include <stdio.h>
 
 #define ITERATION_COUNT 1000
 #define HASH_SALT 666
@@ -23,13 +22,6 @@
 typedef struct {
     int x, y;
 } Point;
-
-static hmError create_string_from_nint(hmAllocator* allocator, hm_nint i, hmString* string)
-{
-    char buf[64];
-    sprintf(buf, "%d", (int)i);
-    return hmCreateStringFromCString(allocator, buf, string);
-}
 
 static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator* allocator)
 {
@@ -216,9 +208,9 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
     create_string_hash_map_and_allocator_with_dispose_func(&hash_map, &allocator);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
         hmString str_key, str_value;
-        hmError err = create_string_from_nint(&allocator, i, &str_key);
+        hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
         HM_TEST_ASSERT_OK_OR_OOM(err);
-        err = create_string_from_nint(&allocator, i*2, &str_value);
+        err = hmInt32ToString(&allocator, (hm_int32)i*2, &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         err = hmHashMapPut(&hash_map, &str_key, &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -226,7 +218,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
         if (i % 2 == 0) {
             hmString str_key;
-            hmError err = create_string_from_nint(&allocator, i, &str_key);
+            hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
             HM_TEST_ASSERT_OK_OR_OOM(err);
             hm_bool removed;
             err = hmHashMapRemove(&hash_map, &str_key, &removed);
@@ -238,7 +230,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
     }
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
         hmString str_key;
-        hmError err = create_string_from_nint(&allocator, i, &str_key);
+        hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         hmString* retrieved_value;
         err = hmHashMapGet(&hash_map, &str_key, &retrieved_value);

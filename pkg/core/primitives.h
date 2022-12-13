@@ -15,10 +15,15 @@
 #define HM_PRIMITIVES_H
 
 #include <core/common.h>
+#include <core/string.h>
+
+struct _hmAllocator;
 
 hm_uint32 hmNintHashFunc(void* key, hm_uint32 salt);
 hm_bool hmNintEqualsFunc(void* value1, void* value2);
 hm_uint32 hmInt32HashFunc(void* key, hm_uint32 salt);
 hm_bool hmInt32EqualsFunc(void* value1, void* value2);
+
+hmError hmInt32ToString(struct _hmAllocator* allocator, hm_int32 value, hmString* in_string);
 
 #endif /* HM_PRIMITIVES_H */
