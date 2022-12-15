@@ -1,6 +1,6 @@
 ## What's Hammer?
 
-Hammer is a programming language and runtime designed for building applications with modern architecture.
+Hammer is a programming language and runtime designed for building modern applications.
 
 Work in progress.
 
