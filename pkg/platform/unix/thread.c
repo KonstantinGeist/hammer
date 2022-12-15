@@ -18,8 +18,8 @@
 #include <collections/array.h>
 #include <platform/unix/common.h>
 
-#include <errno.h>
-#include <pthread.h>
+#include <errno.h>   /* for ETIMEDOUT */
+#include <pthread.h> /* for all the POSIX thread functions */
 
 typedef struct {
     hmAllocator*      allocator;

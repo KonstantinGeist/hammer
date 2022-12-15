@@ -15,6 +15,8 @@
 #include <core/math.h>
 #include <core/utils.h>
 
+#include <stdlib.h> /* for malloc(..) and free(..) */
+
 void* hmAlloc(hmAllocator* allocator, hm_nint sz)
 {
     return allocator->alloc(allocator, sz);

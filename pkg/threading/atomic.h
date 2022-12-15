@@ -16,7 +16,7 @@
 
 /* A set of "Hammerified" atomic intrinsics. */
 
-#include <stdatomic.h>
+#include <stdatomic.h> /* for atomic type definitions (atomic_bool, etc.) */
 
 typedef atomic_size_t hm_atomic_nint;
 typedef atomic_bool hm_atomic_bool;

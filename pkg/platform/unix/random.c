@@ -15,7 +15,7 @@
 #include <core/hash.h>
 #include <threading/thread.h>
 
-#include <unistd.h>
+#include <unistd.h> /* for getpid(..) */
 
 #if defined __GLIBC__ && defined __linux__
     #if __GLIBC__ > 2 || __GLIBC_MINOR__ > 24

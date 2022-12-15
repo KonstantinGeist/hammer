@@ -14,7 +14,7 @@
 #include <core/environment.h>
 #include <platform/unix/common.h>
 
-#include <unistd.h>
+#include <unistd.h> /* for sysconf and _SC_NPROCESSORS_ONLN  */
 
 hm_millis hmGetTickCount()
 {

@@ -22,9 +22,7 @@
 #endif
 
 #define _GNU_SOURCE /* without this define, sqlite3 breaks with stdint for some reason */
-#include <stddef.h>
-#include <stdint.h>
-#include <stdlib.h>
+#include <stdint.h> /* for primitive type definitions (uint8, etc.) */
 
 /* A readable constant for null pointers. */
 #define HM_NULL ((void*)0)

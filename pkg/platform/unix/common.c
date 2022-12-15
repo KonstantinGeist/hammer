@@ -14,7 +14,7 @@
 #include <platform/unix/common.h>
 #include <core/math.h>
 
-#include <time.h>
+#include <time.h> /* for clock_gettime(..), CLOCK_MONOTONIC and CLOCK_REALTIME */
 
 struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms)
 {

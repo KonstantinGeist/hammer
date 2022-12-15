@@ -16,7 +16,7 @@
 
 #include <core/common.h>
 
-#include <sys/time.h>
+#include <sys/time.h> /* for timespec */
 
 /* Unix-specific functions for converting between Hammer and Unix data formats. */
 
