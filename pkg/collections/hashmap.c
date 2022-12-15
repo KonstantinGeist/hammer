@@ -16,6 +16,7 @@
 #include <core/hash.h>
 #include <core/math.h>
 #include <core/string.h>
+#include <core/utils.h>
 
 #define HM_HASHMAP_GROWTH_FACTOR 2
 
@@ -157,7 +158,7 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
         if (hash_map->value_dispose_func) {
             HM_TRY(hash_map->value_dispose_func(value_dest));
         }
-        memcpy(value_dest, value, hash_map->value_size);
+        hmCopyMemory(value_dest, value, hash_map->value_size);
         return HM_OK;
     }
     hm_nint new_count = 0;
@@ -173,8 +174,8 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     }
     void* key_dest = hmHashMapEntryGetKey(hash_map, new_entry);
     void* value_dest = hmHashMapEntryGetValue(hash_map, new_entry);
-    memcpy(key_dest, key, hash_map->key_size);
-    memcpy(value_dest, value, hash_map->value_size);
+    hmCopyMemory(key_dest, key, hash_map->key_size);
+    hmCopyMemory(value_dest, value, hash_map->value_size);
     new_entry->next = hash_map->buckets[bucket_index];
     hash_map->buckets[bucket_index] = new_entry;
     hash_map->count = new_count;
@@ -188,7 +189,7 @@ hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value)
         return HM_ERROR_NOT_FOUND;
     }
     void* value_src = hmHashMapEntryGetValue(hash_map, entry);
-    memcpy(in_value, value_src, hash_map->value_size);
+    hmCopyMemory(in_value, value_src, hash_map->value_size);
     return HM_OK;
 }
 
@@ -260,7 +261,7 @@ static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* va
     if (hash_map->equals_func) {
         return hash_map->equals_func(value1, value2);
     }
-    return memcmp(value1, value2, hash_map->key_size) == 0;
+    return hmCompareMemory(value1, value2, hash_map->key_size) == 0;
 }
 
 static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key)

@@ -14,6 +14,7 @@
 #include <io/reader.h>
 #include <core/allocator.h>
 #include <core/math.h>
+#include <core/utils.h>
 
 hmError hmReaderRead(hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read)
 {
@@ -59,7 +60,7 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
     }
     hm_nint base_with_offset = 0;
     HM_TRY(hmAddNint((hm_nint)data->base, data->offset, &base_with_offset));
-    memcpy(buf, (const char*)base_with_offset, bytes_read);
+    hmCopyMemory(buf, (const char*)base_with_offset, bytes_read);
     data->offset = offset_with_sz;
     *out_bytes_read = bytes_read;
     return HM_OK;

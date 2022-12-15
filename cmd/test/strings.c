@@ -14,6 +14,8 @@
 #include "common.h"
 #include <core/string.h>
 
+#include <string.h> /* for strlen(..) and strcmp(..) */
+
 #define STRING_CONTENT "Hello, World!"
 #define DIFFERENT_STRING_CONTENT "different string content"
 #define HASH_SALT 34545

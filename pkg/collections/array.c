@@ -14,6 +14,7 @@
 #include <collections/array.h>
 #include <core/allocator.h>
 #include <core/math.h>
+#include <core/utils.h>
 
 #define HM_ARRAY_GROWTH_FACTOR 2
 
@@ -80,7 +81,7 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
     }
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint((hm_nint)array->items, array->count, array->item_size, &item_address));
-    memcpy((char*)item_address, in_value, array->item_size);
+    hmCopyMemory((char*)item_address, in_value, array->item_size);
     array->count = new_count;
     return HM_OK;
 }
@@ -92,7 +93,7 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value)
     }
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
-    memcpy(in_value, (char*)item_address, array->item_size);
+    hmCopyMemory(in_value, (char*)item_address, array->item_size);
     return HM_OK;
 }
 
@@ -103,7 +104,7 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
     }
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
-    memcpy((char*)item_address, in_value, array->item_size);
+    hmCopyMemory((char*)item_address, in_value, array->item_size);
     return HM_OK;
 }
 
@@ -140,7 +141,7 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
             item += array->item_size;
         }
     } else {
-        memset(array->items + array->count * array->item_size, 0, array->item_size * count);
+        hmZeroMemory(array->items + array->count * array->item_size, array->item_size * count);
     }
     array->count = new_count;
     return HM_OK;

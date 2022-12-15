@@ -16,6 +16,8 @@
 
 #include <core/common.h>
 
+#include <string.h> /* for memcpy(..), memset(..) and memcmp(..) */
+
 /* Aligns the size up to the value most suited for Hammer's allocators.
    WARNING Checks for overflow must be made before calling this function,
    because it panics on overflow. */
@@ -23,5 +25,10 @@ hm_nint hmAlignSize(hm_nint sz);
 /* Useful for logging when there's no other way to report an error. */
 void hmLog(const char* msg);
 void hmPanicIf(hm_bool condition, const char* description);
+
+/* We use own wrappers to be able to swap them with some instrumentation and safer variants later. */
+#define hmCopyMemory(dest, src, size) memcpy(dest, src, size)
+#define hmCompareMemory(value1, value2, size) memcmp(value1, value2, size)
+#define hmZeroMemory(dest, size) memset(dest, 0, size)
 
 #endif /* HM_UTILS_H */

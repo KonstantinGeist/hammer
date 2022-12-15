@@ -24,7 +24,7 @@ void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
 {
     void* r = allocator->alloc(allocator, sz);
     if (r) {
-        memset(r, 0, sz);
+        hmZeroMemory(r, sz);
     }
     return r;
 }
@@ -38,7 +38,7 @@ void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new
     if (!new_mem) {
         return HM_NULL;
     }
-    memcpy(new_mem, mem, old_size);
+    hmCopyMemory(new_mem, mem, old_size);
     allocator->free(allocator, mem);
     return new_mem;
 }

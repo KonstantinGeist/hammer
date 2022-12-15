@@ -19,8 +19,8 @@
 
 #include <core/common.h>
 
-#include <assert.h>
-#include <stdio.h>
+#include <assert.h> /* for HM_TEST_ macros */
+#include <stdio.h> /* for printf(..) */
 
 #define HM_TEST_LOG(msg) printf("%s\n", msg)
 

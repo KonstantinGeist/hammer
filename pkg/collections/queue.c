@@ -14,6 +14,7 @@
 #include <collections/queue.h>
 #include <core/allocator.h>
 #include <core/math.h>
+#include <core/utils.h>
 
 #define HM_QUEUE_GROWTH_FACTOR 2
 
@@ -76,7 +77,7 @@ hmError hmQueueEnqueue(hmQueue* queue, void* value)
     HM_TRY(hmAddNint(queue->count, 1, &new_count));
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->write_index, &item_address));
-    memcpy((char*)item_address, value, queue->item_size);
+    hmCopyMemory((char*)item_address, value, queue->item_size);
     queue->write_index = hmQueueIncrementIndex(queue, queue->write_index);
     queue->count = new_count;
     return HM_OK;
@@ -89,7 +90,7 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
     }
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->read_index, &item_address));
-    memcpy(in_value, (char*)item_address, queue->item_size);
+    hmCopyMemory(in_value, (char*)item_address, queue->item_size);
     queue->read_index = hmQueueIncrementIndex(queue, queue->read_index);
     queue->count--;
     return HM_OK;
@@ -113,7 +114,7 @@ static hmError hmQueueDoubleQueue(hmQueue* queue)
             hmFree(queue->allocator, new_items);
             return err;
         }
-        memcpy((char*)new_items_address, (const char*)old_items_address, queue->item_size);
+        hmCopyMemory((char*)new_items_address, (const char*)old_items_address, queue->item_size);
     }
     hmFree(queue->allocator, queue->items);
     queue->items = new_items;

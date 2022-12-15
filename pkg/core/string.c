@@ -15,6 +15,7 @@
 #include <core/allocator.h>
 #include <core/hash.h>
 #include <core/math.h>
+#include <core/utils.h>
 
 #define HM_EMPTY_STRING_HASH HM_UINT32_MAX
 #define HM_EMPTY_STRING_LENGTH HM_NINT_MAX
@@ -31,7 +32,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    memcpy(content_copy, content, length_with_null);
+    hmCopyMemory(content_copy, content, length_with_null);
     in_string->content = content_copy;
     in_string->allocator = allocator;
     in_string->length = length;
@@ -85,7 +86,7 @@ hm_uint32 hmStringHash(hmString* string, hm_uint32 salt)
     hm_uint32 hash = hmHash(string->content, hmStringGetLength(string), salt);
     /* Hash should never be HM_EMPTY_STRING_HASH because it signifies "no hash computed". */
     if (hash == HM_EMPTY_STRING_HASH) {
-        hash = 0;
+        hash++; /* OK to wrap around, because it's an unsigned value */
     }
     string->hash = hash;
     return string->hash;

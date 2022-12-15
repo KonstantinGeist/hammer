@@ -12,13 +12,14 @@
 * ******************************************************************************/
 
 #include <core/hash.h>
+#include <core/utils.h>
 
 /* Based on github.com/wangyi-fudan/wyhash which is in public domain. */
 
 static hm_uint32 wyr32(const hm_uint8 *p)
 {
     hm_uint32 v;
-    memcpy(&v, p, sizeof(hm_uint32));
+    hmCopyMemory(&v, p, sizeof(hm_uint32));
     return v;
 }
 

@@ -14,6 +14,8 @@
 #include "common.h"
 #include <core/allocator.h>
 
+#include <string.h> /* for memset(..) */
+
 static void create_system_allocator(hmAllocator* allocator)
 {
     hmError err = hmCreateSystemAllocator(allocator);

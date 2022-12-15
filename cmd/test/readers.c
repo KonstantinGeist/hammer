@@ -14,6 +14,8 @@
 #include "common.h"
 #include <io/reader.h>
 
+#include <string.h> /* for memcmp(..) */
+
 #define READ_BUF_SIZE 5
 #define MEMORY_BUF_STRING "Hello, World"
 
