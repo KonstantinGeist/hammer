@@ -25,21 +25,21 @@ typedef struct {
     struct _hmAllocator* allocator;
     void*                platform_data; /* Platform-specific data are hidden from header files.
                                            Also a pointer guards against moves/copies. */
-} hmWaitObject;
+} hmWaitableEvent;
 
-/* Creates a "wait object" which allows to block the current thread until the wait object's Pulse() method is called.
+/* Creates a "waitable event" which allows to block the current thread until the waitable event's Signal() method is called.
    Useful for building queue consumers to avoid burning the CPU while waiting. */
-hmError hmCreateWaitObject(struct _hmAllocator* allocator, hmWaitObject* in_wait_object);
-hmError hmWaitObjectDispose(hmWaitObject* wait_object);
-/* Blocks the current thread until the wait object is "pulsed" (gets Pulse() called) or the interval `timeout_ms`
+hmError hmCreateWaitableEvent(struct _hmAllocator* allocator, hmWaitableEvent* in_waitable_event);
+hmError hmWaitableEventDispose(hmWaitableEvent* waitable_event);
+/* Blocks the current thread until the waitable event is "signaled" (gets Signal() called) or the interval `timeout_ms`
    (in milliseconds) elapses.
-   Returns HM_OK if the current thread was woken up via Pulse(); returns HM_ERROR_TIMEOUT if the timeout expired.
+   Returns HM_OK if the current thread was woken up via Signal(); returns HM_ERROR_TIMEOUT if the timeout expired.
    `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
    HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases (zero or infinite timeouts).
  */
-hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_millis timeout_ms);
-/* Creates a "pulse", allowing one waiting thread to proceed. Only one thread at a time is guaranteed to proceed.
-   After a wait object is pulsed, any new threads calling hmWaitObjectWait(..) will block again.  */
-hmError hmWaitObjectPulse(hmWaitObject* wait_object);
+hmError hmWaitableEventWait(hmWaitableEvent* waitable_event, hm_millis timeout_ms);
+/* Allows one waiting thread to proceed. Only one thread at a time is guaranteed to proceed.
+   After a waitable event is signaled, any new threads calling hmWaitableEventWait(..) will block again.  */
+hmError hmWaitableEventSignal(hmWaitableEvent* waitable_event);
 
 #endif /* HM_WAIT_OBJECT_H */

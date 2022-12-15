@@ -18,21 +18,21 @@
 #include <collections/queue.h>
 #include <threading/mutex.h>
 #include <threading/thread.h>
-#include <threading/waitobject.h>
+#include <threading/waitableevent.h>
 
-/* A reasonable timeout just in case something is wrong with our WaitObject implementation and the whole thing hangs --
+/* A reasonable timeout just in case something is wrong with our WaitableEvent implementation and the whole thing hangs --
    if we want to stop the worker, it will eventually reactivate and stop in any case. */
 #define HM_WORKER_THREAD_WAIT_TIMEOUT_MS 4000
 
 typedef struct _hmWorkerData {
-    hmAllocator*   allocator;
-    hmThread       thread;
-    hmQueue        queue;
-    hmWaitObject   wait_object;
-    hmMutex        queue_mutex;
-    hmDisposeFunc  item_dispose_func;
-    hmWorkerFunc   worker_func;
-    hm_nint        item_size;
+    hmAllocator*    allocator;
+    hmThread        thread;
+    hmQueue         queue;
+    hmWaitableEvent waitable_event;
+    hmMutex         queue_mutex;
+    hmDisposeFunc   item_dispose_func;
+    hmWorkerFunc    worker_func;
+    hm_nint         item_size;
 volatile
     hm_atomic_bool should_drain_queue;
     hm_bool        is_draining_queue;
@@ -58,9 +58,9 @@ hmError hmCreateWorker(
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    hm_bool queue_initialized       = HM_FALSE,
-            wait_object_initialized = HM_FALSE,
-            mutex_initialized       = HM_FALSE;
+    hm_bool queue_initialized          = HM_FALSE,
+            waitable_event_initialized = HM_FALSE,
+            mutex_initialized          = HM_FALSE;
     hmError err = HM_OK;
     HM_TRY_OR_FINALIZE(err, hmCreateQueue(
         allocator,
@@ -71,8 +71,8 @@ hmError hmCreateWorker(
         &data->queue
     ));
     queue_initialized = HM_TRUE;
-    HM_TRY_OR_FINALIZE(err, hmCreateWaitObject(allocator, &data->wait_object));
-    wait_object_initialized = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmCreateWaitableEvent(allocator, &data->waitable_event));
+    waitable_event_initialized = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmCreateMutex(allocator, &data->queue_mutex));
     mutex_initialized = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmCreateThread(allocator, name, &hmWorkerThreadFunc, data, &data->thread));
@@ -88,8 +88,8 @@ HM_ON_FINALIZE
         if (mutex_initialized) {
             err = hmMergeErrors(err, hmMutexDispose(&data->queue_mutex));
         }
-        if (wait_object_initialized) {
-            err = hmMergeErrors(err, hmWaitObjectDispose(&data->wait_object));
+        if (waitable_event_initialized) {
+            err = hmMergeErrors(err, hmWaitableEventDispose(&data->waitable_event));
         }
         if (queue_initialized) {
             err = hmMergeErrors(err, hmQueueDispose(&data->queue));
@@ -107,7 +107,7 @@ hmError hmWorkerDispose(hmWorker* worker)
     }
     hmError err = hmThreadDispose(&data->thread);
     err = hmMergeErrors(err, hmMutexDispose(&data->queue_mutex));
-    err = hmMergeErrors(err, hmWaitObjectDispose(&data->wait_object));
+    err = hmMergeErrors(err, hmWaitableEventDispose(&data->waitable_event));
     err = hmMergeErrors(err, hmQueueDispose(&data->queue));
     hmFree(data->allocator, data);
     return err;
@@ -118,7 +118,7 @@ hmError hmWorkerStop(hmWorker* worker, hm_bool should_drain_queue)
     hmWorkerData* data = worker->data;
     hmAtomicStore(&data->should_drain_queue, should_drain_queue);
     HM_TRY(hmThreadAbort(&data->thread));
-    return hmWaitObjectPulse(&data->wait_object); /* Wakes up the worker to make it abort quicker (without waiting for the timeout). */
+    return hmWaitableEventSignal(&data->waitable_event); /* Wakes up the worker to make it abort quicker (without waiting for the timeout). */
 }
 
 hmError hmWorkerWait(hmWorker* worker, hm_millis timeout_ms)
@@ -132,7 +132,7 @@ hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item)
     HM_TRY(hmMutexLock(&data->queue_mutex));
     hmError err = hmQueueEnqueue(&data->queue, in_work_item);
     HM_TRY(hmMergeErrors(err, hmMutexUnlock(&data->queue_mutex)));
-    return hmWaitObjectPulse(&data->wait_object);
+    return hmWaitableEventSignal(&data->waitable_event);
 }
 
 hmError hmWorkerGetName(hmWorker* worker, hmString* in_string)
@@ -164,7 +164,7 @@ static hm_bool hmWorkerShouldProcessQueue(hmWorkerData* data)
 
 static hmError hmWorkerWaitForNewItems(hmWorkerData* data)
 {
-    hmError err = hmWaitObjectWait(&data->wait_object, HM_WORKER_THREAD_WAIT_TIMEOUT_MS);
+    hmError err = hmWaitableEventWait(&data->waitable_event, HM_WORKER_THREAD_WAIT_TIMEOUT_MS);
     return err == HM_ERROR_TIMEOUT ? HM_OK : err; /* It's OK if we time out here. */
 }
 

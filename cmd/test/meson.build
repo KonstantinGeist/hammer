@@ -15,7 +15,7 @@ test_sources = files(
     'strings.c',
     'threads.c',
     'utils.c',
-    'waitobjects.c',
+    'waitableevents.c',
     'workers.c'
 )
 

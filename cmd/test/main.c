@@ -34,7 +34,7 @@ int main()
     test_math();
     /* Tests which rely on timing should come last for the faster tests to fail earlier. */
     test_mutexes();
-    test_wait_objects();
+    test_waitable_events();
     test_threads();
     test_workers();
     HM_TEST_LOG("***************");

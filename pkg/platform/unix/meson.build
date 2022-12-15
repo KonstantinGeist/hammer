@@ -4,5 +4,5 @@ platform_sources = files(
     'mutex.c',
     'random.c',
     'thread.c',
-    'waitobject.c'
+    'waitableevent.c'
 )

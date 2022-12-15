@@ -19,7 +19,7 @@
  *      MIT License
  */
 
-#include <threading/waitobject.h>
+#include <threading/waitableevent.h>
 #include <threading/atomic.h>
 #include <core/math.h>
 #include <platform/unix/common.h>
@@ -32,14 +32,14 @@ typedef struct {
     pthread_mutex_t         mutex;
     pthread_cond_t          cond_variable;
     volatile hm_atomic_nint signaled_state; /* access to be protected with the mutex */
-} hmWaitObjectPlatformData;
+} hmWaitableEventPlatformData;
 
-#define hmWaitObjectGetPlatformData(wait_object) ((hmWaitObjectPlatformData*)(wait_object)->platform_data)
-static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_millis timeout);
+#define hmWaitableEventGetPlatformData(waitable_event) ((hmWaitableEventPlatformData*)(waitable_event)->platform_data)
+static hmError hmWaitableEventWaitWithoutLock(hmWaitableEventPlatformData* platform_data, hm_millis timeout);
 
-hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
+hmError hmCreateWaitableEvent(hmAllocator* allocator, hmWaitableEvent* in_waitable_event)
 {
-    hmWaitObjectPlatformData* platform_data = (hmWaitObjectPlatformData*)hmAlloc(allocator, sizeof(hmWaitObjectPlatformData));
+    hmWaitableEventPlatformData* platform_data = (hmWaitableEventPlatformData*)hmAlloc(allocator, sizeof(hmWaitableEventPlatformData));
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -47,8 +47,8 @@ hmError hmCreateWaitObject(hmAllocator* allocator, hmWaitObject* in_wait_object)
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_cond_init(&platform_data->cond_variable, HM_NULL)));
     HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->mutex, HM_NULL)));
     hmAtomicStore(&platform_data->signaled_state, HM_FALSE);
-    in_wait_object->allocator = allocator;
-    in_wait_object->platform_data = platform_data;
+    in_waitable_event->allocator = allocator;
+    in_waitable_event->platform_data = platform_data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
         hmFree(allocator, platform_data);
@@ -56,32 +56,32 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmWaitObjectDispose(hmWaitObject* wait_object)
+hmError hmWaitableEventDispose(hmWaitableEvent* waitable_event)
 {
     hmError err = HM_OK;
-    hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
+    hmWaitableEventPlatformData* platform_data = hmWaitableEventGetPlatformData(waitable_event);
     err = hmMergeErrors(err, hmResultToError(pthread_cond_destroy(&platform_data->cond_variable)));
     err = hmMergeErrors(err, hmResultToError(pthread_mutex_destroy(&platform_data->mutex)));
-    hmFree(wait_object->allocator, platform_data);
+    hmFree(waitable_event->allocator, platform_data);
     return err;
 }
 
-hmError hmWaitObjectWait(hmWaitObject* wait_object, hm_millis timeout_ms)
+hmError hmWaitableEventWait(hmWaitableEvent* waitable_event, hm_millis timeout_ms)
 {
     if (timeout_ms < HM_WAIT_OBJECT_MIN_TIMEOUT_MS || timeout_ms > HM_WAIT_OBJECT_MAX_TIMEOUT_MS) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
+    hmWaitableEventPlatformData* platform_data = hmWaitableEventGetPlatformData(waitable_event);
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
-    hmError err = hmWaitObjectWaitWithoutLock(platform_data, timeout_ms);
+    hmError err = hmWaitableEventWaitWithoutLock(platform_data, timeout_ms);
     return hmMergeErrors(err, hmResultToError(pthread_mutex_unlock(&platform_data->mutex))); /* always unlock */
 }
 
-hmError hmWaitObjectPulse(hmWaitObject* wait_object)
+hmError hmWaitableEventSignal(hmWaitableEvent* waitable_event)
 {
     /* The classic idiom: the state is protected with a mutex + then there's a call to pthread_cond_signal(..) which unblocks
-       pthread_cond_timedwait(..) in hmWaitObjectWaitWithoutLock, allowing a blocked consumer to proceed. */
-    hmWaitObjectPlatformData* platform_data = hmWaitObjectGetPlatformData(wait_object);
+       pthread_cond_timedwait(..) in hmWaitableEventWaitWithoutLock, allowing a blocked consumer to proceed. */
+    hmWaitableEventPlatformData* platform_data = hmWaitableEventGetPlatformData(waitable_event);
     HM_TRY_FOR_RESULT(pthread_mutex_lock(&platform_data->mutex));
     hmAtomicStore(&platform_data->signaled_state, HM_TRUE);
     HM_TRY_FOR_RESULT(pthread_mutex_unlock(&platform_data->mutex));
@@ -89,7 +89,7 @@ hmError hmWaitObjectPulse(hmWaitObject* wait_object)
     return HM_OK;
 }
 
-static hmError hmWaitObjectWaitWithoutLock(hmWaitObjectPlatformData* platform_data, hm_millis timeout_ms)
+static hmError hmWaitableEventWaitWithoutLock(hmWaitableEventPlatformData* platform_data, hm_millis timeout_ms)
 {
     int result = POSIX_RESULT_OK;
     if (!hmAtomicLoad(&platform_data->signaled_state)) {

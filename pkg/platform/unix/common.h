@@ -26,7 +26,7 @@
 
 /* Converts milliseconds to POSIX's timespec. Since time_t is platform-dependent, all users, transitively,
    must have a reasonable limit for `ms`, to prevent overflows. For that reason, functions like hmThreadJoin(..) and
-   hmWaitObjectWait(..) have clearly defined limits. */
+   hmWaitableEventWait(..) have clearly defined limits. */
 struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms);
 hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts);
 /* Returns the current time as a timespec struct. If is_monotonic is HM_TRUE, returns monotonic time;
