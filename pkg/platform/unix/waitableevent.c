@@ -68,7 +68,7 @@ hmError hmWaitableEventDispose(hmWaitableEvent* waitable_event)
 
 hmError hmWaitableEventWait(hmWaitableEvent* waitable_event, hm_millis timeout_ms)
 {
-    if (timeout_ms < HM_WAIT_OBJECT_MIN_TIMEOUT_MS || timeout_ms > HM_WAIT_OBJECT_MAX_TIMEOUT_MS) {
+    if (timeout_ms < HM_WAITABLE_EVENT_MIN_TIMEOUT_MS || timeout_ms > HM_WAITABLE_EVENT_MAX_TIMEOUT_MS) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmWaitableEventPlatformData* platform_data = hmWaitableEventGetPlatformData(waitable_event);

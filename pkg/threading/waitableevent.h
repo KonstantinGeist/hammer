@@ -11,15 +11,15 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_WAIT_OBJECT_H
-#define HM_WAIT_OBJECT_H
+#ifndef HM_WAITABLE_EVENT_H
+#define HM_WAITABLE_EVENT_H
 
 #include <core/common.h>
 
 struct _hmAllocator;
 
-#define HM_WAIT_OBJECT_MIN_TIMEOUT_MS 1
-#define HM_WAIT_OBJECT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough */
+#define HM_WAITABLE_EVENT_MIN_TIMEOUT_MS 1
+#define HM_WAITABLE_EVENT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough */
 
 typedef struct {
     struct _hmAllocator* allocator;
@@ -34,7 +34,7 @@ hmError hmWaitableEventDispose(hmWaitableEvent* waitable_event);
 /* Blocks the current thread until the waitable event is "signaled" (gets Signal() called) or the interval `timeout_ms`
    (in milliseconds) elapses.
    Returns HM_OK if the current thread was woken up via Signal(); returns HM_ERROR_TIMEOUT if the timeout expired.
-   `timeout_ms` is restricted to the range from HM_WAIT_OBJECT_MIN_TIMEOUT_MS to HM_WAIT_OBJECT_MAX_TIMEOUT_MS (otherwise,
+   `timeout_ms` is restricted to the range from HM_WAITABLE_EVENT_MIN_TIMEOUT_MS to HM_WAITABLE_EVENT_MAX_TIMEOUT_MS (otherwise,
    HM_ERROR_INVALID_ARGUMENT is returned). This way, we don't have to deal with corner cases (zero or infinite timeouts).
  */
 hmError hmWaitableEventWait(hmWaitableEvent* waitable_event, hm_millis timeout_ms);
@@ -42,4 +42,4 @@ hmError hmWaitableEventWait(hmWaitableEvent* waitable_event, hm_millis timeout_m
    After a waitable event is signaled, any new threads calling hmWaitableEventWait(..) will block again.  */
 hmError hmWaitableEventSignal(hmWaitableEvent* waitable_event);
 
-#endif /* HM_WAIT_OBJECT_H */
+#endif /* HM_WAITABLE_EVENT_H */
