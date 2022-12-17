@@ -19,6 +19,9 @@
 
 void* hmAlloc(hmAllocator* allocator, hm_nint sz)
 {
+    if (!sz) {
+        return HM_NULL; /* it's meaningless to try allocate 0 bytes */
+    }
     return allocator->alloc(allocator, sz);
 }
 
@@ -340,4 +343,74 @@ void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value)
 {
     hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
     data->is_tracking = value;
+}
+
+/* ************************ */
+/*      BufferAllocator.    */
+/* ************************ */
+
+typedef struct {
+    char*        start;
+    char*        current;
+    char*        end;
+    hmAllocator* fallback_allocator;
+} hmBufferAllocatorData;
+
+static void* hmBufferAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+{
+    hmBufferAllocatorData* data = (hmBufferAllocatorData*)allocator->data;
+    if (sz > data->end - data->current) { /* underflow-safe because `end` must be greater than `current` */
+        if (data->fallback_allocator) {
+            return hmAlloc(data->fallback_allocator, sz);
+        }
+        return HM_NULL;
+    }
+    char* result = data->current;
+    hm_nint new_current = 0;
+    hmError err = hmAddNint(hmCastPointerToNint(data->current), sz, &new_current);
+    if (err != HM_OK) {
+        /* Tries to use the fallback allocator on overflow: the only sane behavior at this point. */
+        return hmAlloc(data->fallback_allocator, sz);
+    }
+    data->current = hmCastNintToPointer(new_current, char*);
+    return result;
+}
+
+static void hmBufferAllocator_free(hmAllocator* allocator, void* mem)
+{
+    hmBufferAllocatorData* data = (hmBufferAllocatorData*)allocator->data;
+    if ((char*)mem >= data->start && (char*)mem < data->end) {
+        /* Nothing to do: allocated from the supplied buffer. */
+        return;
+    }
+    if (data->fallback_allocator) {
+        /* Otherwise, deallocate with the fallback allocator. */
+        hmFree(data->fallback_allocator, mem);
+    }
+}
+
+static hmError hmBufferAllocator_dispose(hmAllocator* allocator)
+{
+    /* Nothing to do. */
+    return HM_OK;
+}
+
+hmError hmCreateBufferAllocator(char* buffer, hm_nint buffer_size, hmAllocator* fallback_allocator, hmAllocator* in_allocator)
+{
+    if (buffer_size < sizeof(hmBufferAllocatorData)) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hmBufferAllocatorData* data = (hmBufferAllocatorData*)buffer;
+    hm_nint current = 0, end = 0;
+    HM_TRY(hmAddNint(hmCastPointerToNint(buffer), sizeof(hmBufferAllocatorData), &current));
+    HM_TRY(hmAddNint(hmCastPointerToNint(buffer), buffer_size, &end));
+    data->start = buffer;
+    data->current = hmCastNintToPointer(current, char*);
+    data->end = hmCastNintToPointer(end, char*);
+    data->fallback_allocator = fallback_allocator;
+    in_allocator->data = data;
+    in_allocator->alloc = &hmBufferAllocator_alloc;
+    in_allocator->free = &hmBufferAllocator_free;
+    in_allocator->dispose = &hmBufferAllocator_dispose;
+    return HM_OK;
 }

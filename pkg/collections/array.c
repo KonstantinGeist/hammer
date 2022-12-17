@@ -80,8 +80,8 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
         array->capacity = new_capacity;
     }
     hm_nint item_address = 0;
-    HM_TRY(hmAddMulNint((hm_nint)array->items, array->count, array->item_size, &item_address));
-    hmCopyMemory((char*)item_address, in_value, array->item_size);
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), array->count, array->item_size, &item_address));
+    hmCopyMemory(hmCastNintToPointer(item_address, char*), in_value, array->item_size);
     array->count = new_count;
     return HM_OK;
 }
@@ -92,8 +92,8 @@ hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value)
         return HM_ERROR_OUT_OF_RANGE;
     }
     hm_nint item_address = 0;
-    HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
-    hmCopyMemory(in_value, (char*)item_address, array->item_size);
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), index, array->item_size, &item_address));
+    hmCopyMemory(in_value, hmCastNintToPointer(item_address, char*), array->item_size);
     return HM_OK;
 }
 
@@ -103,8 +103,8 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
         return HM_ERROR_OUT_OF_RANGE;
     }
     hm_nint item_address = 0;
-    HM_TRY(hmAddMulNint((hm_nint)array->items, index, array->item_size, &item_address));
-    hmCopyMemory((char*)item_address, in_value, array->item_size);
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), index, array->item_size, &item_address));
+    hmCopyMemory(hmCastNintToPointer(item_address, char*), in_value, array->item_size);
     return HM_OK;
 }
 

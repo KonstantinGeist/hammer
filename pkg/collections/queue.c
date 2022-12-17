@@ -76,8 +76,8 @@ hmError hmQueueEnqueue(hmQueue* queue, void* value)
     hm_nint new_count = 0;
     HM_TRY(hmAddNint(queue->count, 1, &new_count));
     hm_nint item_address = 0;
-    HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->write_index, &item_address));
-    hmCopyMemory((char*)item_address, value, queue->item_size);
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(queue->items), queue->item_size, queue->write_index, &item_address));
+    hmCopyMemory(hmCastNintToPointer(item_address, char*), value, queue->item_size);
     queue->write_index = hmQueueIncrementIndex(queue, queue->write_index);
     queue->count = new_count;
     return HM_OK;
@@ -89,8 +89,8 @@ hmError hmQueueDequeue(hmQueue* queue, void* in_value)
         return HM_ERROR_INVALID_STATE;
     }
     hm_nint item_address = 0;
-    HM_TRY(hmAddMulNint((hm_nint)queue->items, queue->item_size, queue->read_index, &item_address));
-    hmCopyMemory(in_value, (char*)item_address, queue->item_size);
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(queue->items), queue->item_size, queue->read_index, &item_address));
+    hmCopyMemory(in_value, hmCastNintToPointer(item_address, char*), queue->item_size);
     queue->read_index = hmQueueIncrementIndex(queue, queue->read_index);
     queue->count--;
     return HM_OK;
@@ -108,13 +108,13 @@ static hmError hmQueueDoubleQueue(hmQueue* queue)
     }
     for (hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
         hm_nint old_items_address = 0, new_items_address = 0;
-        hmError err = hmAddMulNint((hm_nint)queue->items, queue->read_index, queue->item_size, &old_items_address);
-        err = hmMergeErrors(err, hmAddMulNint((hm_nint)new_items, i, queue->item_size, &new_items_address));
+        hmError err = hmAddMulNint(hmCastPointerToNint(queue->items), queue->read_index, queue->item_size, &old_items_address);
+        err = hmMergeErrors(err, hmAddMulNint(hmCastPointerToNint(new_items), i, queue->item_size, &new_items_address));
         if (err != HM_OK) {
             hmFree(queue->allocator, new_items);
             return err;
         }
-        hmCopyMemory((char*)new_items_address, (const char*)old_items_address, queue->item_size);
+        hmCopyMemory(hmCastNintToPointer(new_items_address, char*), hmCastNintToPointer(old_items_address, char*), queue->item_size);
     }
     hmFree(queue->allocator, queue->items);
     queue->items = new_items;

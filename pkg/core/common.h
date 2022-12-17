@@ -27,7 +27,7 @@
 /* A readable constant for null pointers. */
 #define HM_NULL ((void*)0)
 
-/* Platform-specific integer size, can also be cast to/from pointers. */
+/* Platform-specific integer size, can also be cast to/from void pointers. */
 typedef uintptr_t hm_nint;
 typedef uint8_t hm_uint8;
 typedef uint32_t hm_uint32;
@@ -78,5 +78,9 @@ typedef hmError (*hmDisposeFunc)(void* object);
 #define HM_TRY_OR_FINALIZE(err, expr) err = hmMergeErrors(err, expr); if (err != HM_OK) goto finalize
 #define HM_ON_FINALIZE finalize:
 #define HM_FINALIZE goto finalize
+
+/* A few macros to cast nints => pointers and back, with some extra caution in regards to the C Standard. */
+#define hmCastPointerToNint(value) ((hm_nint)(void*)value)
+#define hmCastNintToPointer(value, type) ((type)(void*)value)
 
 #endif /* HM_COMMON_H */

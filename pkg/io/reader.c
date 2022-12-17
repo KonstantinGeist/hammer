@@ -59,8 +59,8 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_n
         bytes_read = data->size - data->offset;
     }
     hm_nint base_with_offset = 0;
-    HM_TRY(hmAddNint((hm_nint)data->base, data->offset, &base_with_offset));
-    hmCopyMemory(buf, (const char*)base_with_offset, bytes_read);
+    HM_TRY(hmAddNint(hmCastPointerToNint(data->base), data->offset, &base_with_offset));
+    hmCopyMemory(buf, hmCastNintToPointer(base_with_offset, const char*), bytes_read);
     data->offset = offset_with_sz;
     *out_bytes_read = bytes_read;
     return HM_OK;
