@@ -26,7 +26,8 @@ typedef struct {
 } hmString;
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
-   internal buffer when the object is disposed of. See also hmCreateStringViewFromCString. */
+   internal buffer when the object is disposed of. See also hmCreateStringViewFromCString.
+   Strings are immutable. */
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string

@@ -18,6 +18,9 @@
 
 #include <alloca.h> /* for hmAllocOnStack(..) */
 
+/* BufferAllocator requires 4 pointers for internal state according to the documentation (see hmCreateBufferAllocator(..)) */
+#define HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE (4 * sizeof(void*))
+
 /* This header file and the accompanying source file contain several different allocators for different purposes
    which can be, however, interchangeable thanks to the hmAllocator interface. */
 

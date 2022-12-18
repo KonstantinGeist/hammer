@@ -22,7 +22,7 @@ void* hmAlloc(hmAllocator* allocator, hm_nint sz)
     if (!sz) {
         return HM_NULL; /* it's meaningless to try allocate 0 bytes */
     }
-    return allocator->alloc(allocator, sz);
+    return allocator->alloc(allocator, hmAlignSize(sz));
 }
 
 void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
@@ -36,6 +36,7 @@ void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
 
 void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new_size)
 {
+    new_size = hmAlignSize(new_size);
     if (new_size <= old_size) {
         return mem;
     }
@@ -141,7 +142,6 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         data->large_object_count = new_large_object_count;
         return result;
     }
-    sz = hmAlignSize(sz);
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
     hm_nint new_index = 0;
     if (cur_segment) {
