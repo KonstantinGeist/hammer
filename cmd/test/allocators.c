@@ -181,7 +181,7 @@ static void test_buffer_allocator_returns_out_of_memory()
         &allocator
     );
     HM_TEST_ASSERT_OK(err);
-    void* values[BUFFER_ALLOCATOR_ALLOCATION_COUNT];
+    void* values[BUFFER_ALLOCATOR_ALLOCATION_COUNT + 1];
     for (hm_nint i = 0; i < BUFFER_ALLOCATOR_ALLOCATION_COUNT + 1; i++) {
         hm_bool is_oom_iteration = i >= BUFFER_ALLOCATOR_ALLOCATION_COUNT;
         hm_nint size_to_allocate = BUFFER_ALLOCATOR_BUFFER_SIZE / BUFFER_ALLOCATOR_ALLOCATION_COUNT;

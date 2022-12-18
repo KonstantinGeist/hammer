@@ -81,7 +81,8 @@ void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
    whatsoever (if `fallback_allocator` is set to HM_NULL), ideal for building short-lived objects whose lifetime is bound
    to the current stack frame (if the passed buffer is allocated on the stack).
    Allocations are aligned.
-   `buffer_size` must be at least the size of 4 pointers (to store internal state); otherwise, HM_ERROR_INVALID_ARGUMENT is returned.
+   `buffer_size` must be at least the size of 4 pointers (to store internal state) plus HM_ALLOC_SIZE_ALIGNMENT;
+   otherwise, HM_ERROR_INVALID_ARGUMENT is returned.
    If `fallback_allocator` is specified (i.e., not HM_NULL), allocates from it if there's no more space in the provided buffer. */
 hmError hmCreateBufferAllocator(char* buffer, hm_nint buffer_size, hmAllocator* fallback_allocator, hmAllocator* in_allocator);
 

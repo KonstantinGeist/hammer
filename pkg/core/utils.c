@@ -17,9 +17,6 @@
 #include <stdio.h>  /* for printf(..) */
 #include <stdlib.h> /* for exit(..) */
 
-/* Necessary for better alignment on typical CPU's for faster memory access. */
-#define HM_ALLOC_SIZE_ALIGNMENT 16
-
 hm_nint hmAlignSize(hm_nint sz)
 {
     hm_nint sz_with_alignment = 0;

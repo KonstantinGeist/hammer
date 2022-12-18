@@ -397,7 +397,7 @@ static hmError hmBufferAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateBufferAllocator(char* buffer, hm_nint buffer_size, hmAllocator* fallback_allocator, hmAllocator* in_allocator)
 {
-    if (buffer_size < sizeof(hmBufferAllocatorData)) {
+    if (!buffer || buffer_size < sizeof(hmBufferAllocatorData) + HM_ALLOC_SIZE_ALIGNMENT) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmBufferAllocatorData* data = (hmBufferAllocatorData*)buffer;

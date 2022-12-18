@@ -18,6 +18,9 @@
 
 #include <string.h> /* for memcpy(..), memset(..) and memcmp(..) */
 
+/* Necessary for better alignment on typical CPU's for faster memory access. */
+#define HM_ALLOC_SIZE_ALIGNMENT 16
+
 /* Aligns the size up to the value most suited for Hammer's allocators.
    WARNING Checks for overflow must be made before calling this function,
    because it panics on overflow. */
