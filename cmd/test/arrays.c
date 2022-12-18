@@ -225,6 +225,39 @@ HM_TEST_ON_FINALIZE
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_add_range_to_array()
+{
+    #define ADD_RANGE_COUNT (ARRAY_CAPACITY - 1) /* to make sure AddRange exceeds the capacity and we have a resizing */
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    for (hm_nint i = 0; i < ADD_RANGE_COUNT; i++) {
+        testItem test_item;
+        test_item.x = 10 * i;
+        test_item.y = 20 * i;
+        hmError err = hmArrayAdd(&array, &test_item);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+    }
+    testItem test_items[ADD_RANGE_COUNT];
+    for (hm_nint i = 0; i < ADD_RANGE_COUNT; i++) {
+        testItem test_item;
+        test_item.x = 10 * (ADD_RANGE_COUNT + i);
+        test_item.y = 20 * (ADD_RANGE_COUNT + i);
+        test_items[i] = test_item;
+    }
+    hmError err = hmArrayAddRange(&array, test_items, ADD_RANGE_COUNT);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    for (hm_nint i = 0; i < ADD_RANGE_COUNT * 2; i++) {
+        testItem test_item;
+        err = hmArrayGet(&array, i, &test_item);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+        HM_TEST_ASSERT(test_item.x == i * 10);
+        HM_TEST_ASSERT(test_item.y == i * 20);
+    }
+HM_TEST_ON_FINALIZE
+    dispose_array_and_allocator(&array, &allocator);
+}
+
 void test_arrays()
 {
     HM_TEST_SUITE_BEGIN("Arrays");
@@ -236,5 +269,6 @@ void test_arrays()
         HM_TEST_RUN(test_can_expand_array_without_expand_func);
         HM_TEST_RUN(test_can_expand_array_with_expand_func);
         HM_TEST_RUN(test_can_set_array_item);
+        HM_TEST_RUN(test_can_add_range_to_array);
     HM_TEST_SUITE_END();
 }

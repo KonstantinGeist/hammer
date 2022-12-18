@@ -6,5 +6,6 @@ core_sources = files(
     'primitives.c',
     'random.c',
     'string.c',
+    'stringbuilder.c',
     'utils.c'
 )

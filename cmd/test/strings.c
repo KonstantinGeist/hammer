@@ -17,10 +17,11 @@
 #include <string.h> /* for strlen(..) and strcmp(..) */
 
 #define STRING_CONTENT "Hello, World!"
+#define STRING_CONTENT_TRIMMED "Hello"
 #define DIFFERENT_STRING_CONTENT "different string content"
 #define HASH_SALT 34545
 
-static void test_can_create_string()
+static void test_can_create_string_from_c_string()
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
@@ -31,6 +32,23 @@ static void test_can_create_string()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
     HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+HM_TEST_ON_FINALIZE
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_can_create_string_from_c_string_and_length()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmString string;
+    hmError err = hmCreateStringFromCStringAndLength(&allocator, STRING_CONTENT, strlen(STRING_CONTENT_TRIMMED), &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT_TRIMMED));
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT_TRIMMED) == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -117,7 +135,8 @@ static void test_can_hash_empty_string()
 void test_strings()
 {
     HM_TEST_SUITE_BEGIN("Strings");
-        HM_TEST_RUN(test_can_create_string);
+        HM_TEST_RUN(test_can_create_string_from_c_string);
+        HM_TEST_RUN(test_can_create_string_from_c_string_and_length);
         HM_TEST_RUN_WITHOUT_OOM(test_can_create_string_view);
         HM_TEST_RUN(test_can_duplicate_string);
         HM_TEST_RUN_WITHOUT_OOM(test_can_compare_string_to_c_string);

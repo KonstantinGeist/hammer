@@ -49,6 +49,9 @@ hmError hmArrayDispose(hmArray* array);
    by having a shallow copy. in_value is a reference to the value (not the value itself). The value is copied
    to the array's internal backing array by using the item size supplied in the constructor. */
 hmError hmArrayAdd(hmArray* array, void* in_value);
+/* Same as calling hmArrayAdd(..) in a loop, except potentially more performant.
+   `in_values` points to a contiguous array of elements (values, not pointers). */
+hmError hmArrayAddRange(hmArray* array, void* in_values, hm_nint count);
 /* Gets an item by its index. Returns HM_ERROR_OUT_OF_RANGE if the index is out of range. The retrieved value
    is copied to a memory block pointed to by in_value, depending on item_size. */
 hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);

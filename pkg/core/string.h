@@ -29,6 +29,9 @@ typedef struct {
    internal buffer when the object is disposed of. See also hmCreateStringViewFromCString.
    Strings are immutable. */
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
+/* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
+   as an argument (a null terminator not included in the length). */
+hmError hmCreateStringFromCStringAndLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string
    is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived

@@ -13,6 +13,7 @@ test_sources = files(
     'random.c',
     'readers.c',
     'strings.c',
+    'stringbuilders.c',
     'threads.c',
     'utils.c',
     'waitableevents.c',

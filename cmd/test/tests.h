@@ -16,6 +16,7 @@ void test_readers();
 void test_arrays();
 void test_modules();
 void test_strings();
+void test_string_builders();
 void test_utils();
 void test_hashmaps();
 void test_hashes();

@@ -40,6 +40,26 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     return HM_OK;
 }
 
+hmError hmCreateStringFromCStringAndLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string)
+{
+    if (!content || !length) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hm_nint length_with_null = 0;
+    HM_TRY(hmAddNint(length, 1, &length_with_null));
+    char* content_copy = hmAlloc(allocator, length_with_null);
+    if (!content_copy) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hmCopyMemory(content_copy, content, length);
+    content_copy[length] = 0; /* null terminator */
+    in_string->content = content_copy;
+    in_string->allocator = allocator;
+    in_string->length = length;
+    in_string->hash = HM_EMPTY_STRING_HASH;
+    return HM_OK;
+}
+
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 {
     if (!content) {

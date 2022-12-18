@@ -24,6 +24,7 @@ int main()
     test_arrays();
     test_modules();
     test_strings();
+    test_string_builders();
     test_utils();
     test_hashmaps();
     test_hashes();

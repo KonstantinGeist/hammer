@@ -18,6 +18,8 @@
 
 #define HM_ARRAY_GROWTH_FACTOR 2
 
+static hmError hmArrayUpdateCapacityIfRequired(hmArray* array, hm_nint new_count);
+
 hmError hmCreateArray(
     struct _hmAllocator* allocator,
     hm_nint item_size,
@@ -62,26 +64,27 @@ hmError hmArrayAdd(hmArray* array, void* in_value)
 {
     hm_nint new_count = 0;
     HM_TRY(hmAddNint(array->count, 1, &new_count));
-    if (new_count >= array->capacity) {
-        hm_nint new_capacity = 0;
-        HM_TRY(hmMulNint(array->capacity, HM_ARRAY_GROWTH_FACTOR, &new_capacity));
-        hm_nint new_items_capacity = 0;
-        HM_TRY(hmMulNint(array->item_size, new_capacity, &new_items_capacity));
-        char* new_items = hmRealloc(
-            array->allocator,
-            array->items,
-            array->item_size * array->capacity, /* No hmMulNint here, because it's an old value which was already validated. */
-            new_items_capacity
-        );
-        if (!new_items) {
-            return HM_ERROR_OUT_OF_MEMORY;
-        }
-        array->items = new_items;
-        array->capacity = new_capacity;
-    }
+    HM_TRY(hmArrayUpdateCapacityIfRequired(array, new_count));
     hm_nint item_address = 0;
     HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), array->count, array->item_size, &item_address));
     hmCopyMemory(hmCastNintToPointer(item_address, char*), in_value, array->item_size);
+    array->count = new_count;
+    return HM_OK;
+}
+
+hmError hmArrayAddRange(hmArray* array, void* in_values, hm_nint count)
+{
+    if (!count) {
+        return HM_OK;
+    }
+    hm_nint new_count = 0;
+    HM_TRY(hmAddNint(array->count, count, &new_count));
+    HM_TRY(hmArrayUpdateCapacityIfRequired(array, new_count));
+    hmCopyMemory(
+        array->items + array->count * array->item_size,
+        in_values,
+        count * array->item_size
+    );
     array->count = new_count;
     return HM_OK;
 }
@@ -134,9 +137,9 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
     }
     /* The following block doesn't need safe math operations, because they were prevalidated when expanding the internal buffer. */
     if (array_expand_func) {
-        char* item = array->items+array->count * array->item_size;
+        char* item = array->items + array->count * array->item_size;
         for (hm_nint i = 0; i < count; i++) {
-            /* NOTE: no need to deallocate array->items on error */
+            /* NOTE: no need to deallocate array->items on error. */
             HM_TRY(array_expand_func(array, array->count + i, item, user_data));
             item += array->item_size;
         }
@@ -144,5 +147,28 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         hmZeroMemory(array->items + array->count * array->item_size, array->item_size * count);
     }
     array->count = new_count;
+    return HM_OK;
+}
+
+static hmError hmArrayUpdateCapacityIfRequired(hmArray* array, hm_nint new_count)
+{
+    if (new_count < array->capacity) {
+        return HM_OK;
+    }
+    hm_nint new_capacity = 0;
+    HM_TRY(hmMulNint(array->capacity, HM_ARRAY_GROWTH_FACTOR, &new_capacity));
+    hm_nint new_items_capacity = 0;
+    HM_TRY(hmMulNint(array->item_size, new_capacity, &new_items_capacity));
+    char* new_items = hmRealloc(
+        array->allocator,
+        array->items,
+        array->item_size * array->capacity, /* No hmMulNint here, because it's an old value which was already validated. */
+        new_items_capacity
+    );
+    if (!new_items) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    array->items = new_items;
+    array->capacity = new_capacity;
     return HM_OK;
 }
