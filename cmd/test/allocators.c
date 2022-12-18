@@ -13,6 +13,7 @@
 
 #include "common.h"
 #include <core/allocator.h>
+#include <core/utils.h>
 
 #include <string.h> /* for memset(..) */
 
@@ -217,11 +218,10 @@ static void test_buffer_allocator_returns_out_of_memory()
 static void test_buffer_allocator_uses_fallback_allocator_when_out_of_memory()
 {
     hmAllocator fallback_allocator;
-    hmError err = hmCreateSystemAllocator(&fallback_allocator);
-    HM_TEST_ASSERT_OK(err);
+    create_system_allocator(&fallback_allocator);
     hmAllocator allocator;
     char buffer[BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE];
-    err = hmCreateBufferAllocator(
+    hmError err = hmCreateBufferAllocator(
         buffer,
         BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE,
         &fallback_allocator,
@@ -243,6 +243,35 @@ static void test_buffer_allocator_uses_fallback_allocator_when_out_of_memory()
     dispose_allocator(&fallback_allocator);
 }
 
+static void test_can_alloc_zero_initialized()
+{
+    hmAllocator allocator;
+    create_system_allocator(&allocator);
+    hm_nint size = 16;
+    char* mem = (char*)hmAllocZeroInitialized(&allocator, size);
+    HM_TEST_ASSERT(mem != HM_NULL);
+    for (hm_nint i = 0; i < size; i++) {
+        HM_TEST_ASSERT(mem[i] == 0);
+    }
+    hmFree(&allocator, mem);
+    dispose_allocator(&allocator);
+}
+
+static void test_alloc_returns_aligned_memory()
+{
+    hmAllocator allocator;
+    create_system_allocator(&allocator);
+    hm_nint size = 24;
+    hm_nint aligned_size = hmAlignSize(size);
+    char* mem = (char*)hmAllocZeroInitialized(&allocator, size);
+    HM_TEST_ASSERT(mem != HM_NULL);
+    for (hm_nint i = 0; i < aligned_size; i++) {
+        HM_TEST_ASSERT(mem[i] == 0); /* we hope Valgrind will report problems if it's past the array */
+    }
+    hmFree(&allocator, mem);
+    dispose_allocator(&allocator);
+}
+
 void test_allocators()
 {
     HM_TEST_SUITE_BEGIN("Allocators");
@@ -255,5 +284,7 @@ void test_allocators()
         HM_TEST_RUN_WITHOUT_OOM(test_can_allocate_from_buffer_allocator);
         HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_returns_out_of_memory);
         HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_uses_fallback_allocator_when_out_of_memory);
+        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_zero_initialized);
+        HM_TEST_RUN_WITHOUT_OOM(test_alloc_returns_aligned_memory);
     HM_TEST_SUITE_END();
 }

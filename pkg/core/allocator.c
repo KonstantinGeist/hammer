@@ -27,6 +27,10 @@ void* hmAlloc(hmAllocator* allocator, hm_nint sz)
 
 void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
 {
+    if (!sz) {
+        return HM_NULL; /* it's meaningless to try allocate 0 bytes */
+    }
+    sz = hmAlignSize(sz);
     void* r = allocator->alloc(allocator, sz);
     if (r) {
         hmZeroMemory(r, sz);
@@ -75,7 +79,7 @@ static void hmSystemAllocator_free(hmAllocator* allocator, void* mem)
 
 static hmError hmSystemAllocator_dispose(hmAllocator* allocator)
 {
-    /* Do nothing (everything's managed by the OS). */
+    /* Do nothing (everything's managed by the C runtime). */
     return HM_OK;
 }
 
@@ -223,7 +227,7 @@ static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
     void* result = hmAlloc(data->base_allocator, sz);
     if (data->is_tracking) {
-        /* in case of an overflow, total_alloc_count will simply stop updating */
+        /* In case of an overflow, total_alloc_count will simply stop updating. */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
     }
     return result;
@@ -293,7 +297,7 @@ static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     }
     void* result = hmAlloc(data->base_allocator, sz);
     if (data->is_tracking) {
-        /* in case of an overflow, total_alloc_count will simply stop updating */
+        /* In case of an overflow, total_alloc_count will simply stop updating. */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
     }
     return result;
