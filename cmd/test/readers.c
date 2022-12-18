@@ -42,7 +42,7 @@ static void test_memory_reader_can_create_read_close()
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
+    hmError err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
     HM_TEST_ASSERT(memcmp(read_buf, "Hello", READ_BUF_SIZE) == 0);
@@ -59,7 +59,7 @@ static void test_memory_can_create_seek_read_close()
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 3);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
+    err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
     HM_TEST_ASSERT(memcmp(read_buf, "lo, W", READ_BUF_SIZE) == 0);
@@ -86,7 +86,7 @@ static void test_memory_reader_truncates_buffer_if_read_past_buffer()
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 8);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    err = hmReaderRead(&reader, &read_buf[0], READ_BUF_SIZE, &bytes_read);
+    err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE-1);
     HM_TEST_ASSERT(memcmp(read_buf, "orld", READ_BUF_SIZE-1) == 0);
@@ -101,7 +101,7 @@ static void test_memory_reader_ignores_zero_size_requests()
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderRead(&reader, &read_buf[0], 0, &bytes_read);
+    hmError err = hmReaderRead(&reader, read_buf, 0, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == 0);
     HM_TEST_ASSERT(read_buf[0] == '\0');

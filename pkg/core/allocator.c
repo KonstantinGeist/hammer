@@ -161,7 +161,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         cur_segment = new_segment;
         data->cur_segment = cur_segment;
     }
-    void* result = &cur_segment->data[0] + cur_segment->index;
+    void* result = cur_segment->data + cur_segment->index; /* no need for overflow-safe math because already validated */
     cur_segment->index = new_index;
     return result;
 }

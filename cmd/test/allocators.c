@@ -152,7 +152,7 @@ static void test_can_allocate_from_buffer_allocator()
     hmAllocator allocator;
     char buffer[BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE];
     hmError err = hmCreateBufferAllocator(
-        &buffer[0],
+        buffer,
         BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE,
         HM_NULL,
         &allocator
@@ -175,7 +175,7 @@ static void test_buffer_allocator_returns_out_of_memory()
     hmAllocator allocator;
     char buffer[BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE];
     hmError err = hmCreateBufferAllocator(
-        &buffer[0],
+        buffer,
         BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE,
         HM_NULL,
         &allocator
@@ -213,7 +213,7 @@ static void test_buffer_allocator_uses_fallback_allocator_when_out_of_memory()
     hmAllocator allocator;
     char buffer[BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE];
     err = hmCreateBufferAllocator(
-        &buffer[0],
+        buffer,
         BUFFER_ALLOCATOR_BUFFER_SIZE + HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE,
         &fallback_allocator,
         &allocator

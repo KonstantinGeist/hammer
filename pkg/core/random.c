@@ -21,7 +21,7 @@
 
 hmError hmCreateRandom(hm_int32 seed, hmRandom* in_random)
 {
-    hm_int32* seed_array = &in_random->seed_array[0];
+    hm_int32* seed_array = in_random->seed_array;
     hm_int32 mj, mk;
     hm_int32 subtraction;
     if (seed == HM_INT32_MAX) {

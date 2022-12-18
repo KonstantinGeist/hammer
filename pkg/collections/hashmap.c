@@ -25,8 +25,8 @@ typedef struct _hmHashMapEntry {
     char                    payload[1]; /* the size afterwards depends on key_size+value_size */
 } hmHashMapEntry;
 
-#define hmHashMapEntryGetKey(hashmap, entry) (&((entry)->payload[0]))
-#define hmHashMapEntryGetValue(hashmap, entry) (&((entry)->payload[0])+((hashmap)->key_size))
+#define hmHashMapEntryGetKey(hashmap, entry) ((entry)->payload)
+#define hmHashMapEntryGetValue(hashmap, entry) (((entry)->payload) + ((hashmap)->key_size))
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key);
 static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2);
 static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key);
