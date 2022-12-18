@@ -43,3 +43,8 @@ hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAlloc
     hm_nint count = hmArrayGetCount(&string_builder->array);
     return hmCreateStringFromCStringAndLength(allocator, chars, count, in_string);
 }
+
+hmError hmStringBuilderClear(hmStringBuilder* string_builder)
+{
+    return hmArrayClear(&string_builder->array);
+}

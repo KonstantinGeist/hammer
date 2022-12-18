@@ -47,17 +47,9 @@ hmError hmCreateArray(
 
 hmError hmArrayDispose(hmArray* array)
 {
-    hmError err = HM_OK;
-    if (array->item_dispose_func) {
-        char* item = array->items;
-        for (hm_nint i = 0; i < array->count; i++) {
-            err = hmMergeErrors(err, array->item_dispose_func(item));
-            /* No hmAddNint because if we were able to add this many elements, it must have been valid. */
-            item += array->item_size;
-        }
-    }
+    HM_TRY(hmArrayClear(array));
     hmFree(array->allocator, array->items);
-    return err;
+    return HM_OK;
 }
 
 hmError hmArrayAdd(hmArray* array, void* in_value)
@@ -109,6 +101,21 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
     HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), index, array->item_size, &item_address));
     hmCopyMemory(hmCastNintToPointer(item_address, char*), in_value, array->item_size);
     return HM_OK;
+}
+
+hmError hmArrayClear(hmArray* array)
+{
+    hmError err = HM_OK;
+    if (array->item_dispose_func) {
+        char* item = array->items;
+        for (hm_nint i = 0; i < array->count; i++) {
+            err = hmMergeErrors(err, array->item_dispose_func(item));
+            /* No hmAddNint because if we were able to add this many elements, it must have been valid. */
+            item += array->item_size;
+        }
+    }
+    array->count = 0;
+    return err;
 }
 
 hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func, void* user_data)

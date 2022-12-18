@@ -258,6 +258,31 @@ HM_TEST_ON_FINALIZE
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_clear_array()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    hm_nint item_dispose_sum_control = 0;
+    item_dispose_sum = 0;
+    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: also checks reallocations */
+        testItem test_item;
+        test_item.x = i*10;
+        test_item.y = i*20;
+        item_dispose_sum_control += test_item.x+test_item.y;
+        hmError err = hmArrayAdd(&array, &test_item);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+    }
+    hmError err = hmArrayClear(&array);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(item_dispose_sum == item_dispose_sum_control);
+HM_TEST_ON_FINALIZE
+    dispose_array_and_allocator(&array, &allocator);
+    if (!HM_TEST_IS_OOM()) {
+        HM_TEST_ASSERT(item_dispose_sum == item_dispose_sum_control);
+    }
+}
+
 void test_arrays()
 {
     HM_TEST_SUITE_BEGIN("Arrays");
@@ -270,5 +295,6 @@ void test_arrays()
         HM_TEST_RUN(test_can_expand_array_with_expand_func);
         HM_TEST_RUN(test_can_set_array_item);
         HM_TEST_RUN(test_can_add_range_to_array);
+        HM_TEST_RUN(test_can_clear_array);
     HM_TEST_SUITE_END();
 }

@@ -57,6 +57,9 @@ hmError hmArrayAddRange(hmArray* array, void* in_values, hm_nint count);
 hmError hmArrayGet(hmArray* array, hm_nint index, void* in_value);
 /* See hmArrayGet. */
 hmError hmArraySet(hmArray* array, hm_nint index, void* in_value);
+/* Removes all the elements in the array, allowing to reuse it.
+   Calls `item_dispose_func` on all the elements, if it's specified. */
+hmError hmArrayClear(hmArray* array);
 /* Gets access to the raw data of the array. Useful for fast iterations as it doesn't do range checks. */
 #define hmArrayGetRaw(array, type) (type*)((array)->items)
 #define hmArrayGetCount(array) (array)->count
