@@ -22,7 +22,7 @@
 
 typedef struct _hmHashMapEntry {
     struct _hmHashMapEntry* next;
-    char                    payload[1]; /* the size afterwards depends on key_size+value_size */
+    char                    payload[1]; /* the size afterwards depends on key_size + value_size */
 } hmHashMapEntry;
 
 #define hmHashMapEntryGetKey(hashmap, entry) ((entry)->payload)

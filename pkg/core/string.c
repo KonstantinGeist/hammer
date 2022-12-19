@@ -28,7 +28,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     hm_nint length = strlen(content);
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));
-    char* content_copy = hmAlloc(allocator, length_with_null);
+    char* content_copy = (char*)hmAlloc(allocator, length_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -47,12 +47,12 @@ hmError hmCreateStringFromCStringAndLength(struct _hmAllocator* allocator, const
     }
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));
-    char* content_copy = hmAlloc(allocator, length_with_null);
+    char* content_copy = (char*)hmAlloc(allocator, length_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
     hmCopyMemory(content_copy, content, length);
-    content_copy[length] = 0; /* null terminator */
+    content_copy[length] = '\0'; /* null terminator */
     in_string->content = content_copy;
     in_string->allocator = allocator;
     in_string->length = length;

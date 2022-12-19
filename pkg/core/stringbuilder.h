@@ -30,6 +30,8 @@ hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* i
 hmError hmStringBuilderDispose(hmStringBuilder* string_builder);
 /* Appends a C string to the end of the string being constructed. */
 hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char* c_string);
+/* Same as hmStringBuilderAppendCString(..), except uses the provided argument for length instead of null termination. */
+hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length);
 /* Creates a string from the string builder.
    `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
    will be reused. */

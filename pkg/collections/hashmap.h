@@ -28,7 +28,7 @@ typedef hm_bool(*hmHashMapEqualsFunc)(void* value1, void* value2);
 
 typedef struct {
     struct _hmAllocator*       allocator;
-    struct _hmHashMapEntry**   buckets;  /* A list of buckets which contain linked lists of entries of size key_size+value_size. */
+    struct _hmHashMapEntry**   buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
     hmHashMapHashFunc          hash_func;
     hmHashMapEqualsFunc        equals_func;
     hmDisposeFunc              key_dispose_func;   /* can be HM_NULL */

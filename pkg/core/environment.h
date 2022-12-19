@@ -15,11 +15,18 @@
 #define HM_ENVIRONMENT_H
 
 #include <core/common.h>
+#include <collections/array.h>
+
+struct _hmAllocator;
 
 /* Gets the number of milliseconds elapsed since a platform-dependent epoch. */
 hm_millis hmGetTickCount();
 /* Returns the number of processors available in the current environment.
    May return 1 if it's not possible to detect the number of processors. */
 hm_nint hmGetProcessorCount();
+/* Returns a list of the program's command line arguments as passed to the executable (not including the
+   program name).
+   `in_array` is an array of strings, which should be disposed by the caller with hmArrayDispose(..) */
+hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array);
 
 #endif /* HM_ENVIRONMENT_H */

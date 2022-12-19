@@ -12,9 +12,14 @@
 * ******************************************************************************/
 
 #include <core/environment.h>
+#include <core/stringbuilder.h>
 #include <platform/unix/common.h>
 
-#include <unistd.h> /* for sysconf and _SC_NPROCESSORS_ONLN  */
+#include <inttypes.h> /* for PRId32 */
+#include <stdio.h>    /* for fopen(..) and sprintf(..) */
+#include <unistd.h>   /* for sysconf and _SC_NPROCESSORS_ONLN  */
+
+#define HM_COMMAND_LINE_BUFFER_SIZE 1024
 
 hm_millis hmGetTickCount()
 {
@@ -33,4 +38,65 @@ hm_nint hmGetProcessorCount()
 #else
     return 1;
 #endif /* _SC_NPROCESSORS_ONLN */
+}
+
+hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array)
+{
+    HM_TRY(hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, &hmStringDisposeFunc, in_array));
+    hm_bool is_string_builder_initialized = HM_FALSE;
+    hmError err = HM_OK;
+    hmStringBuilder string_builder;
+    HM_TRY_OR_FINALIZE(err, hmCreateStringBuilder(allocator, &string_builder));
+    is_string_builder_initialized = HM_TRUE;
+    char file_name[64];
+    pid_t proc_id = getpid();
+    /* Not quite portable to cast pid_t to int32, but in GCC it's an integer and it's very unlikely
+       to be larger than int32. However, if this invariant is not upheld, we may end up reading arguments
+       of a different, unrelated process if there's a wraparound. */
+    sprintf(file_name, "/proc/%" PRId32 "/cmdline", (hm_int32)proc_id);
+    FILE* file = fopen(file_name, "rb");
+    if (!file) {
+        err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
+        HM_FINALIZE;
+    }
+    char buffer[HM_COMMAND_LINE_BUFFER_SIZE];
+    hm_nint read_bytes = 0;
+    hm_nint arg_count = 0; /* to skip the first element, which is the executable name we don't need in our API */
+    while ((read_bytes = fread(buffer, 1, HM_COMMAND_LINE_BUFFER_SIZE, file)) != 0) {
+        hm_nint last_i = 0;
+        for (hm_nint i = 0; i < read_bytes; i++) {
+            char c = buffer[i];
+            if (!c) { /* null terminator found */
+                if (arg_count > 0) {
+                    HM_TRY_OR_FINALIZE(err, hmStringBuilderAppendCStringWithLength(&string_builder, buffer + last_i, i - last_i));
+                    hmString string;
+                    HM_TRY_OR_FINALIZE(err, hmStringBuilderToString(&string_builder, HM_NULL, &string));
+                    err = hmArrayAdd(in_array, &string);
+                    if (err != HM_OK) {
+                        err = hmMergeErrors(err, hmStringDispose(&string));
+                        HM_FINALIZE;
+                    }
+                }
+                HM_TRY_OR_FINALIZE(err, hmStringBuilderClear(&string_builder));
+                last_i = i + 1;
+                arg_count++;
+            }
+        }
+        if (last_i != read_bytes) {
+            if (arg_count > 0) {
+                HM_TRY_OR_FINALIZE(err, hmStringBuilderAppendCStringWithLength(&string_builder, buffer + last_i, read_bytes - last_i));
+            }
+        }
+    }
+HM_ON_FINALIZE
+    if (is_string_builder_initialized) {
+        err = hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
+    }
+    if (file && fclose(file)) {
+        err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
+    }
+    if (err != HM_OK) {
+        err = hmMergeErrors(err, hmArrayDispose(in_array));
+    }
+    return err;
 }

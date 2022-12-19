@@ -34,6 +34,11 @@ hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char
     return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
 }
 
+hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length)
+{
+    return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
+}
+
 hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, hmString* in_string)
 {
     if (!allocator) {
