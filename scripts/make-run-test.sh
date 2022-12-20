@@ -1,0 +1,1 @@
+./scripts/make.sh && ./scripts/run-test.sh "$@"

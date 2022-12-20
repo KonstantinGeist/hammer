@@ -23,9 +23,6 @@ static void test_can_align_size()
     HM_TEST_ASSERT(hmAlignSize(0) == 0);
 }
 
-void test_utils()
-{
-    HM_TEST_SUITE_BEGIN("Utils");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_align_size);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(utils)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_align_size)
+HM_TEST_SUITE_END()

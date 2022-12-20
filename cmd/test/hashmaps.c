@@ -289,17 +289,14 @@ HM_TEST_ON_FINALIZE
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
-void test_hashmaps()
-{
-    HM_TEST_SUITE_BEGIN("Hashmaps");
-        HM_TEST_RUN(test_can_create_and_dispose_hash_map);
-        HM_TEST_RUN(test_can_put_and_get_integers_from_hash_map);
-        HM_TEST_RUN(test_can_remove_integers_from_hash_map);
-        HM_TEST_RUN(test_hash_map_returns_error_on_non_existing_key);
-        HM_TEST_RUN(test_hash_map_reports_nothing_was_removed);
-        HM_TEST_RUN(test_hash_map_reports_correct_count);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func); /* without OOM: takes too much time */
-        HM_TEST_RUN(test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs);
-        HM_TEST_RUN(test_hashmap_can_get_value_by_ref);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(hashmaps)
+    HM_TEST_RUN(test_can_create_and_dispose_hash_map)
+    HM_TEST_RUN(test_can_put_and_get_integers_from_hash_map)
+    HM_TEST_RUN(test_can_remove_integers_from_hash_map)
+    HM_TEST_RUN(test_hash_map_returns_error_on_non_existing_key)
+    HM_TEST_RUN(test_hash_map_reports_nothing_was_removed)
+    HM_TEST_RUN(test_hash_map_reports_correct_count)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func) /* without OOM: takes too much time */
+    HM_TEST_RUN(test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs)
+    HM_TEST_RUN(test_hashmap_can_get_value_by_ref)
+HM_TEST_SUITE_END()

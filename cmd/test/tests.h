@@ -11,21 +11,23 @@
 *
 * ******************************************************************************/
 
-void test_allocators();
-void test_readers();
-void test_arrays();
-void test_modules();
-void test_strings();
-void test_string_builders();
-void test_utils();
-void test_hashmaps();
-void test_hashes();
-void test_errors();
-void test_queues();
-void test_mutexes();
-void test_waitable_events();
-void test_threads();
-void test_environment();
-void test_random();
-void test_math();
-void test_workers();
+#include "common.h"
+
+HM_TEST_DECLARE_SUITE(allocators)
+HM_TEST_DECLARE_SUITE(readers)
+HM_TEST_DECLARE_SUITE(arrays)
+HM_TEST_DECLARE_SUITE(modules)
+HM_TEST_DECLARE_SUITE(strings)
+HM_TEST_DECLARE_SUITE(string_builders)
+HM_TEST_DECLARE_SUITE(utils)
+HM_TEST_DECLARE_SUITE(hashmaps)
+HM_TEST_DECLARE_SUITE(hashes)
+HM_TEST_DECLARE_SUITE(errors)
+HM_TEST_DECLARE_SUITE(queues)
+HM_TEST_DECLARE_SUITE(mutexes)
+HM_TEST_DECLARE_SUITE(waitable_events)
+HM_TEST_DECLARE_SUITE(threads)
+HM_TEST_DECLARE_SUITE(environment)
+HM_TEST_DECLARE_SUITE(random)
+HM_TEST_DECLARE_SUITE(math)
+HM_TEST_DECLARE_SUITE(workers)

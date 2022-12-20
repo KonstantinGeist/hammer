@@ -152,11 +152,8 @@ static void test_waitable_event_remains_signaled_when_without_waiters()
     HM_TEST_ASSERT_OK(err);
 }
 
-void test_waitable_events()
-{
-    HM_TEST_SUITE_BEGIN("WaitableEvents");
-        HM_TEST_RUN_WITHOUT_OOM(test_waitable_event_can_timeout);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_wait_and_signal_with_waitable_events);
-        HM_TEST_RUN_WITHOUT_OOM(test_waitable_event_remains_signaled_when_without_waiters);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(waitable_events)
+    HM_TEST_RUN_WITHOUT_OOM(test_waitable_event_can_timeout)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_wait_and_signal_with_waitable_events)
+    HM_TEST_RUN_WITHOUT_OOM(test_waitable_event_remains_signaled_when_without_waiters)
+HM_TEST_SUITE_END()

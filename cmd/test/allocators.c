@@ -272,19 +272,16 @@ static void test_alloc_returns_aligned_memory()
     dispose_allocator(&allocator);
 }
 
-void test_allocators()
-{
-    HM_TEST_SUITE_BEGIN("Allocators");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator);
-        HM_TEST_RUN_WITHOUT_OOM(test_realloc_accepts_smaller_size);
-        HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_allocator_works_with_large_objects);
-        HM_TEST_RUN_WITHOUT_OOM(test_stats_allocator_keeps_track_of_alloc_count);
-        HM_TEST_RUN_WITHOUT_OOM(test_oom_allocator_returns_out_of_memory);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_allocate_from_buffer_allocator);
-        HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_returns_out_of_memory);
-        HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_uses_fallback_allocator_when_out_of_memory);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_zero_initialized);
-        HM_TEST_RUN_WITHOUT_OOM(test_alloc_returns_aligned_memory);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(allocators)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator)
+    HM_TEST_RUN_WITHOUT_OOM(test_realloc_accepts_smaller_size)
+    HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_allocator_works_with_large_objects)
+    HM_TEST_RUN_WITHOUT_OOM(test_stats_allocator_keeps_track_of_alloc_count)
+    HM_TEST_RUN_WITHOUT_OOM(test_oom_allocator_returns_out_of_memory)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_allocate_from_buffer_allocator)
+    HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_returns_out_of_memory)
+    HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_uses_fallback_allocator_when_out_of_memory)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_zero_initialized)
+    HM_TEST_RUN_WITHOUT_OOM(test_alloc_returns_aligned_memory)
+HM_TEST_SUITE_END()

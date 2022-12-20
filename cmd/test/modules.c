@@ -79,10 +79,7 @@ static void test_cannot_load_non_existing_module()
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
-void test_modules()
-{
-    HM_TEST_SUITE_BEGIN("Modules");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_load_existing_module);
-        HM_TEST_RUN_WITHOUT_OOM(test_cannot_load_non_existing_module);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(modules)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_load_existing_module)
+    HM_TEST_RUN_WITHOUT_OOM(test_cannot_load_non_existing_module)
+HM_TEST_SUITE_END()

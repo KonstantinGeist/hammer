@@ -109,13 +109,10 @@ HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
-void test_readers()
-{
-    HM_TEST_SUITE_BEGIN("Readers");
-        HM_TEST_RUN(test_memory_reader_can_create_read_close);
-        HM_TEST_RUN(test_memory_can_create_seek_read_close);
-        HM_TEST_RUN(test_memory_reader_cant_seek_past_buffer);
-        HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer);
-        HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(readers)
+    HM_TEST_RUN(test_memory_reader_can_create_read_close)
+    HM_TEST_RUN(test_memory_can_create_seek_read_close)
+    HM_TEST_RUN(test_memory_reader_cant_seek_past_buffer)
+    HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer)
+    HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests)
+HM_TEST_SUITE_END()

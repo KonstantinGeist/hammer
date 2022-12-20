@@ -25,9 +25,6 @@ static void test_can_merge_errors()
     HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY);
 }
 
-void test_errors()
-{
-    HM_TEST_SUITE_BEGIN("Errors");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_merge_errors);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(errors)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_merge_errors)
+HM_TEST_SUITE_END()

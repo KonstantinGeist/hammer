@@ -262,14 +262,11 @@ static void test_worker_can_enqueue_by_value()
     dispose_worker_and_allocator(&worker, &allocator);
 }
 
-void test_workers()
-{
-    HM_TEST_SUITE_BEGIN("Workers");
-        HM_TEST_RUN_WITHOUT_OOM(test_can_start_stop_wait_worker_and_get_name);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_process_work_items_fast_with_dispose_func);
-        HM_TEST_RUN_WITHOUT_OOM(test_worker_drains_queue_when_stopped);
-        HM_TEST_RUN_WITHOUT_OOM(test_worker_does_not_drain_queue_when_stopped);
-        HM_TEST_RUN_WITHOUT_OOM(test_worker_returns_error_if_item_size_is_too_big);
-        HM_TEST_RUN_WITHOUT_OOM(test_worker_can_enqueue_by_value);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(workers)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_start_stop_wait_worker_and_get_name)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_process_work_items_fast_with_dispose_func)
+    HM_TEST_RUN_WITHOUT_OOM(test_worker_drains_queue_when_stopped)
+    HM_TEST_RUN_WITHOUT_OOM(test_worker_does_not_drain_queue_when_stopped)
+    HM_TEST_RUN_WITHOUT_OOM(test_worker_returns_error_if_item_size_is_too_big)
+    HM_TEST_RUN_WITHOUT_OOM(test_worker_can_enqueue_by_value)
+HM_TEST_SUITE_END()

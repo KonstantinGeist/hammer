@@ -132,16 +132,13 @@ static void test_can_hash_empty_string()
     HM_TEST_ASSERT(hash == 34545); /* precomputed */
 }
 
-void test_strings()
-{
-    HM_TEST_SUITE_BEGIN("Strings");
-        HM_TEST_RUN(test_can_create_string_from_c_string);
-        HM_TEST_RUN(test_can_create_string_from_c_string_and_length);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_create_string_view);
-        HM_TEST_RUN(test_can_duplicate_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_string_to_c_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_compare_strings);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_string);
-        HM_TEST_RUN_WITHOUT_OOM(test_can_hash_empty_string);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(strings)
+    HM_TEST_RUN(test_can_create_string_from_c_string)
+    HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_create_string_view)
+    HM_TEST_RUN(test_can_duplicate_string)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_compare_string_to_c_string)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_compare_strings)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_hash_string)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_hash_empty_string)
+HM_TEST_SUITE_END()

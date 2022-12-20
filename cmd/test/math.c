@@ -143,14 +143,11 @@ static void test_abs()
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
 }
 
-void test_math()
-{
-    HM_TEST_SUITE_BEGIN("Math");
-        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding);
-        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_multiplying);
-        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints);
-        HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying);
-        HM_TEST_RUN_WITHOUT_OOM(test_detects_millis_overflow_when_adding);
-        HM_TEST_RUN_WITHOUT_OOM(test_abs);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(math)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_multiplying)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_millis_overflow_when_adding)
+    HM_TEST_RUN_WITHOUT_OOM(test_abs)
+HM_TEST_SUITE_END()

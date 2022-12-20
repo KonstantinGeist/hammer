@@ -22,10 +22,14 @@
 #include <assert.h> /* for HM_TEST_ macros */
 #include <stdio.h> /* for printf(..) */
 
-#define HM_TEST_LOG(msg) printf("%s\n", msg)
+typedef struct {
+    const char* test_suite_name;
+} hmTestSelector;
 
-#define HM_TEST_SUITE_BEGIN(msg) printf("%s\n", msg)
-#define HM_TEST_SUITE_END() /* No-op so far. */
+#define HM_PRE_STRINGIFY(s) #s
+#define HM_STRINGIFY(s) HM_PRE_STRINGIFY(s)
+
+#define HM_TEST_LOG(msg) printf("%s\n", msg)
 
 #define HM_TEST_GLOBALS \
     static hm_nint hm_test_total_alloc_count __attribute__((unused)) = 0; \
@@ -51,13 +55,6 @@
     }
 
 #define HM_TEST_IS_OOM() (hm_test_is_oom_mode && hm_test_is_oom)
-
-#define HM_PRE_STRINGIFY(s) #s
-#define HM_STRINGIFY(s) HM_PRE_STRINGIFY(s)
-
-#define HM_TEST_RUN_WITHOUT_OOM(name) \
-    hm_test_is_oom_mode = HM_FALSE; \
-    printf("%s\n", "    " HM_STRINGIFY(name)); name()
 
 #define HM_TEST_INIT_ALLOC(allocator) \
     hm_test_is_oom = HM_FALSE; \
@@ -103,6 +100,21 @@
             name(); \
         } \
     }
+
+#define HM_TEST_RUN_WITHOUT_OOM(name) \
+    hm_test_is_oom_mode = HM_FALSE; \
+    printf("%s\n", "    " HM_STRINGIFY(name)); \
+    name();
+
+#define HM_TEST_DECLARE_SUITE(name) void test_ ## name();
+
+#define HM_TEST_SUITE_BEGIN(name) void test_ ## name(hmTestSelector* test_selector) { \
+    printf("%s\n", HM_STRINGIFY(name));
+
+#define HM_TEST_SUITE_END() }
+#define HM_TEST_RUN_SUITE(name) \
+    if (!test_selector->test_suite_name || strcmp(test_selector->test_suite_name, HM_STRINGIFY(name)) == 0) \
+        test_ ## name(test_selector);
 
 #include <core/allocator.h>
 HM_TEST_GLOBALS

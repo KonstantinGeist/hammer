@@ -201,14 +201,11 @@ HM_TEST_ON_FINALIZE
     dispose_queue_and_allocator(&queue, &allocator);
 }
 
-void test_queues()
-{
-    HM_TEST_SUITE_BEGIN("Queues");
-        HM_TEST_RUN(test_can_create_and_dispose_empty_queue);
-        HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_within_initial_capacity);
-        HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_beyond_capacity);
-        HM_TEST_RUN(test_returns_error_when_dequeing_from_empty_queue);
-        HM_TEST_RUN(test_queue_disposes_items_on_disposal);
-        HM_TEST_RUN(test_returns_limit_exceeded_when_queue_is_full);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(queues)
+    HM_TEST_RUN(test_can_create_and_dispose_empty_queue)
+    HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_within_initial_capacity)
+    HM_TEST_RUN(test_can_enqueue_and_dequeue_from_queue_beyond_capacity)
+    HM_TEST_RUN(test_returns_error_when_dequeing_from_empty_queue)
+    HM_TEST_RUN(test_queue_disposes_items_on_disposal)
+    HM_TEST_RUN(test_returns_limit_exceeded_when_queue_is_full)
+HM_TEST_SUITE_END()

@@ -96,11 +96,8 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
-void test_string_builders()
-{
-    HM_TEST_SUITE_BEGIN("StringBuilders");
-        HM_TEST_RUN(test_can_create_string_builder_append_and_convert_to_string);
-        HM_TEST_RUN(test_can_create_string_builder_append_with_length_and_convert_to_string);
-        HM_TEST_RUN(test_can_clear_string_builder);
-    HM_TEST_SUITE_END();
-}
+HM_TEST_SUITE_BEGIN(string_builders)
+    HM_TEST_RUN(test_can_create_string_builder_append_and_convert_to_string)
+    HM_TEST_RUN(test_can_create_string_builder_append_with_length_and_convert_to_string)
+    HM_TEST_RUN(test_can_clear_string_builder)
+HM_TEST_SUITE_END()
