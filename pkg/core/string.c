@@ -46,7 +46,7 @@ hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, cons
         return HM_ERROR_INVALID_ARGUMENT;
     }
     if (!length) { /* special case as an optimization */
-        return hmCreateStringViewFromCString("", in_string);
+        return hmCreateEmptyStringView(in_string);
     }
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));
@@ -72,6 +72,15 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
     in_string->allocator = HM_NULL;
     in_string->length = HM_EMPTY_STRING_LENGTH; /* it will be computed lazily in hmStringGetLength(..) */
     in_string->hash = HM_EMPTY_STRING_HASH;
+    return HM_OK;
+}
+
+hmError hmCreateEmptyStringView(hmString* in_string)
+{
+    in_string->content = "";
+    in_string->allocator = HM_NULL;
+    in_string->length = 0;
+    in_string->hash = 0;
     return HM_OK;
 }
 

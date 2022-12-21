@@ -18,6 +18,7 @@
 
 #include <inttypes.h> /* for PRId32 */
 #include <stdio.h>    /* for fopen(..) and sprintf(..) */
+#include <stdlib.h>   /* for getenv(..) */
 #include <unistd.h>   /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
 
 #define HM_COMMAND_LINE_BUFFER_SIZE 1024
@@ -100,4 +101,13 @@ HM_ON_FINALIZE
         err = hmMergeErrors(err, hmArrayDispose(in_array));
     }
     return err;
+}
+
+hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* name, hmString* in_value)
+{
+    char* value = getenv(name);
+    if (!value) {
+        return hmCreateEmptyStringView(in_value);
+    }
+    return hmCreateStringFromCString(allocator, value, in_value);
 }

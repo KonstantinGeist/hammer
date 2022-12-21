@@ -15,6 +15,7 @@
 #define HM_ENVIRONMENT_H
 
 #include <core/common.h>
+#include <core/string.h>
 #include <collections/array.h>
 
 struct _hmAllocator;
@@ -28,5 +29,9 @@ hm_nint hmGetProcessorCount();
    program name).
    `in_array` is an array of strings, which should be disposed by the caller with hmArrayDispose(..) */
 hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array);
+/* Returns an environment variable. More often than not, variable names are fixed constants, so we use
+   a C string here for the key instead of a Hammer string, for convenience.
+   Returns an empty string if no variable is found. */
+hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* name, hmString* in_value);
 
 #endif /* HM_ENVIRONMENT_H */

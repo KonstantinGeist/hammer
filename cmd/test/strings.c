@@ -149,6 +149,16 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_can_create_empty_string_view()
+{
+    hmString string;
+    hmError err = hmCreateEmptyStringView(&string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "") == 0);
+    err = hmStringDispose(&string);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -159,4 +169,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_hash_string)
     HM_TEST_RUN(test_can_hash_empty_string)
     HM_TEST_RUN(test_can_create_string_with_zero_length)
+    HM_TEST_RUN(test_can_create_empty_string_view);
 HM_TEST_SUITE_END()
