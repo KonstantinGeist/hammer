@@ -63,8 +63,10 @@ hmError hmAllocatorDispose(hmAllocator* allocator);
 hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
 /* Creates a simple, but fast bump pointer allocator. Allocations are fast (just a pointer is bumped), and frees
    are no-ops. Useful for static objects which are allocated together and deleted at once (for example, class
-   metadata. Note that this allocator is not thread-safe and shouldn't be used with hmThread. */
-hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
+   metadata). Note that this allocator is not thread-safe and shouldn't be used with hmThread.
+   `memory_limit` specifies the memory limit in bytes, because otherwise a bump pointer allocator which never frees
+   could exhaust all memory in the system. If the limit is exceeded, always returns HM_NULL. */
+hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hm_nint memory_limit, hmAllocator* in_allocator);
 /* Creates an allocator which wraps another allocator and additionally keeps track of statistics. */
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
 /* Returns the number of allocations. UNSAFE: it may crash if the underlying allocator is not a StatsAllocator. */

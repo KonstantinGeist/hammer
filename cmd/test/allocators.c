@@ -20,17 +20,22 @@
 #define MEM_BLOCK_SENTINEL 13
 #define NEW_MEM_BLOCK_SENTINEL 14
 
+#define BUFFER_ALLOCATOR_BUFFER_SIZE 1024
+#define BUFFER_ALLOCATOR_ALLOCATION_COUNT 4
+
+#define BUMP_POINTER_ALLOCATOR_LIMIT_SIZE (124*1024*1024)
+
 static void create_system_allocator(hmAllocator* allocator)
 {
     hmError err = hmCreateSystemAllocator(allocator);
     HM_TEST_ASSERT_OK(err);
 }
 
-static void create_bump_pointer_allocator(hmAllocator* system_allocator, hmAllocator* bump_pointer_allocator)
+static void create_bump_pointer_allocator(hmAllocator* system_allocator, hm_nint memory_limit, hmAllocator* bump_pointer_allocator)
 {
     hmError err = hmCreateSystemAllocator(system_allocator);
     HM_TEST_ASSERT_OK(err);
-    err = hmCreateBumpPointerAllocator(system_allocator, bump_pointer_allocator);
+    err = hmCreateBumpPointerAllocator(system_allocator, memory_limit, bump_pointer_allocator);
     HM_TEST_ASSERT_OK(err);
 }
 
@@ -75,7 +80,7 @@ static void test_can_alloc_realloc_and_free_from_bump_pointer_allocator()
 {
     hmAllocator system_allocator;
     hmAllocator bump_pointer_allocator;
-    create_bump_pointer_allocator(&system_allocator, &bump_pointer_allocator);
+    create_bump_pointer_allocator(&system_allocator, BUMP_POINTER_ALLOCATOR_LIMIT_SIZE, &bump_pointer_allocator);
     test_can_alloc_realloc_and_free_from_allocator(&bump_pointer_allocator);
     dispose_allocator(&bump_pointer_allocator);
     dispose_allocator(&system_allocator);
@@ -96,7 +101,7 @@ static void test_bump_pointer_allocator_works_with_large_objects()
 {
     hmAllocator system_allocator;
     hmAllocator bump_pointer_allocator;
-    create_bump_pointer_allocator(&system_allocator, &bump_pointer_allocator);
+    create_bump_pointer_allocator(&system_allocator, BUMP_POINTER_ALLOCATOR_LIMIT_SIZE, &bump_pointer_allocator);
     void* mems[3] = {0};
     for (hm_nint i = 0; i < 3; i++) {
         int size_to_allocate = 4*1024*1023+i;
@@ -150,9 +155,6 @@ static void test_oom_allocator_returns_out_of_memory()
     dispose_allocator(&oom_allocator);
     dispose_allocator(&system_allocator);
 }
-
-#define BUFFER_ALLOCATOR_BUFFER_SIZE 1024
-#define BUFFER_ALLOCATOR_ALLOCATION_COUNT 4
 
 static void test_can_allocate_from_buffer_allocator()
 {
@@ -272,6 +274,23 @@ static void test_alloc_returns_aligned_memory()
     dispose_allocator(&allocator);
 }
 
+static void test_bump_pointer_limits_memory_size()
+{
+    hmAllocator system_allocator;
+    hmAllocator bump_pointer_allocator;
+    create_bump_pointer_allocator(&system_allocator, 1064, &bump_pointer_allocator);
+    void* mem = hmAlloc(&bump_pointer_allocator, 1024);
+    HM_TEST_ASSERT(mem != HM_NULL);
+    hmFree(&bump_pointer_allocator, mem);
+    mem = hmAlloc(&bump_pointer_allocator, 32);
+    HM_TEST_ASSERT(mem != HM_NULL);
+    hmFree(&bump_pointer_allocator, mem);
+    mem = hmAlloc(&bump_pointer_allocator, 32);
+    HM_TEST_ASSERT(mem == HM_NULL);
+    dispose_allocator(&bump_pointer_allocator);
+    dispose_allocator(&system_allocator);
+}
+
 HM_TEST_SUITE_BEGIN(allocators)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator)
@@ -284,4 +303,5 @@ HM_TEST_SUITE_BEGIN(allocators)
     HM_TEST_RUN_WITHOUT_OOM(test_buffer_allocator_uses_fallback_allocator_when_out_of_memory)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_zero_initialized)
     HM_TEST_RUN_WITHOUT_OOM(test_alloc_returns_aligned_memory)
+    HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_limits_memory_size)
 HM_TEST_SUITE_END()

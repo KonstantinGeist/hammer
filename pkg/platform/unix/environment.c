@@ -79,7 +79,7 @@ hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_ar
                     }
                 }
                 HM_TRY_OR_FINALIZE(err, hmStringBuilderClear(&string_builder));
-                last_i = i + 1;
+                last_i = i + 1; /* no overflow-safe math because `i` is guaranteed to be less than HM_COMMAND_LINE_BUFFER_SIZE */
                 HM_TRY(hmAddNint(arg_count, 1, &arg_count));
             }
         }

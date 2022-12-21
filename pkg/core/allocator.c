@@ -115,18 +115,25 @@ typedef struct {
     hmAllocator* base_allocator;
     void**       large_objects; /* for objects larger than HM_LARGE_OBJECT_SIZE_THRESHOLD */
     hm_nint      large_object_count;
+    hm_nint      memory_limit;
+    hm_nint      used_memory;
 } hmBumpPointerAllocatorData;
 
 static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
 {
     hmBumpPointerAllocatorData* data = (hmBumpPointerAllocatorData*)allocator->data;
+    hm_nint new_used_memory = 0;
+    hmError err = hmAddNint(data->used_memory, sz, &new_used_memory);
+    if (err != HM_OK || new_used_memory > data->memory_limit) {
+        return HM_NULL;
+    }
     if (sz > HM_LARGE_OBJECT_SIZE_THRESHOLD) { /* too large to fit in a segment */
         void* result = hmAlloc(data->base_allocator, sz);
         if (!result) {
             return HM_NULL;
         }
         hm_nint new_large_object_count = 0, new_large_objects_size = 0;
-        hmError err = hmAddNint(data->large_object_count, 1, &new_large_object_count);
+        err = hmAddNint(data->large_object_count, 1, &new_large_object_count);
         err = hmMergeErrors(err, hmMulNint(sizeof(char*), new_large_object_count, &new_large_objects_size));
         if (err != HM_OK) {
             hmFree(data->base_allocator, result);
@@ -144,6 +151,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
         }
         data->large_objects[data->large_object_count] = result;
         data->large_object_count = new_large_object_count;
+        data->used_memory = new_used_memory;
         return result;
     }
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
@@ -167,6 +175,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     }
     void* result = cur_segment->data + cur_segment->index; /* no need for overflow-safe math because already validated */
     cur_segment->index = new_index;
+    data->used_memory = new_used_memory;
     return result;
 }
 
@@ -192,7 +201,7 @@ static hmError hmBumpPointerAllocator_dispose(hmAllocator* allocator)
     return HM_OK;
 }
 
-hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator)
+hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hm_nint memory_limit, hmAllocator* in_allocator)
 {
     if (!base_allocator || !in_allocator) {
         return HM_ERROR_INVALID_ARGUMENT;
@@ -205,6 +214,8 @@ hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hmAllocator* i
     data->base_allocator = base_allocator;
     data->large_objects = HM_NULL;
     data->large_object_count = 0;
+    data->memory_limit = memory_limit;
+    data->used_memory = 0;
     in_allocator->alloc = &hmBumpPointerAllocator_alloc;
     in_allocator->free = &hmBumpPointerAllocator_free;
     in_allocator->dispose = &hmBumpPointerAllocator_dispose;
