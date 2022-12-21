@@ -4,7 +4,7 @@ Feature ideas:
 * support for Domain-Driven Design (entities, value objects, bounded contexts)
 * support for layered architecture: layers, layer dependency tracking
 * support for units of work (transactions)
-* request/response-oriented pipeline
+* request/response-oriented stateless pipeline
 * built-in concurrency
 * minimum dependencies, lightweight
 * high fault tolerance

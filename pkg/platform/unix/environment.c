@@ -12,12 +12,13 @@
 * ******************************************************************************/
 
 #include <core/environment.h>
+#include <core/math.h>
 #include <core/stringbuilder.h>
 #include <platform/unix/common.h>
 
 #include <inttypes.h> /* for PRId32 */
 #include <stdio.h>    /* for fopen(..) and sprintf(..) */
-#include <unistd.h>   /* for sysconf and _SC_NPROCESSORS_ONLN  */
+#include <unistd.h>   /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
 
 #define HM_COMMAND_LINE_BUFFER_SIZE 1024
 
@@ -43,9 +44,9 @@ hm_nint hmGetProcessorCount()
 hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array)
 {
     HM_TRY(hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, &hmStringDisposeFunc, in_array));
-    hm_bool is_string_builder_initialized = HM_FALSE;
     hmError err = HM_OK;
     hmStringBuilder string_builder;
+    hm_bool is_string_builder_initialized = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmCreateStringBuilder(allocator, &string_builder));
     is_string_builder_initialized = HM_TRUE;
     char file_name[64];
@@ -79,7 +80,7 @@ hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_ar
                 }
                 HM_TRY_OR_FINALIZE(err, hmStringBuilderClear(&string_builder));
                 last_i = i + 1;
-                arg_count++;
+                HM_TRY(hmAddNint(arg_count, 1, &arg_count));
             }
         }
         if (last_i != read_bytes) {

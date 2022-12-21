@@ -30,13 +30,17 @@ typedef struct {
    Strings are immutable. */
 hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
 /* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
-   as an argument (a null terminator not included in the length). */
-hmError hmCreateStringFromCStringAndLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
+   as an argument (the null terminator is not included in the length).
+   It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
+   the actual string.
+   Strings are immutable. */
+hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string
    is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived
    views for reading, for example, as a key to a container (if the container promises to never retain the value).
-   String views should not be disposed, but it should be safe to try to dispose them. */
+   String views should not be disposed, but it should be safe to try to dispose them.
+   Strings are immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
 hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);

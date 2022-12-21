@@ -44,7 +44,7 @@ static void test_can_create_string_from_c_string_and_length()
     HM_TEST_INIT_ALLOC(&allocator);
     HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
     hmString string;
-    hmError err = hmCreateStringFromCStringAndLength(&allocator, STRING_CONTENT, strlen(STRING_CONTENT_TRIMMED), &string);
+    hmError err = hmCreateStringFromCStringWithLength(&allocator, STRING_CONTENT, strlen(STRING_CONTENT_TRIMMED), &string);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT_TRIMMED));
