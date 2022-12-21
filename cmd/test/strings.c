@@ -132,6 +132,23 @@ static void test_can_hash_empty_string()
     HM_TEST_ASSERT(hash == 34545); /* precomputed */
 }
 
+static void test_can_create_string_with_zero_length()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmString string;
+    hmError err = hmCreateStringFromCStringWithLength(&allocator, "Hello,, World!", 0, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    HM_TEST_ASSERT(hmStringGetLength(&string) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "") == 0);
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+HM_TEST_ON_FINALIZE
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -141,4 +158,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_compare_strings)
     HM_TEST_RUN(test_can_hash_string)
     HM_TEST_RUN(test_can_hash_empty_string)
+    HM_TEST_RUN(test_can_create_string_with_zero_length)
 HM_TEST_SUITE_END()

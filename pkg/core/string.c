@@ -42,8 +42,11 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
 
 hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string)
 {
-    if (!content || !length) {
+    if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
+    }
+    if (!length) { /* special case as an optimization */
+        return hmCreateStringViewFromCString("", in_string);
     }
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));

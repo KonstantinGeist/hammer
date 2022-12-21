@@ -32,7 +32,7 @@ hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* co
 /* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
    as an argument (the null terminator is not included in the length).
    It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
-   the actual string.
+   the actual string. Empty strings with zero length are allowed.
    Strings are immutable. */
 hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
