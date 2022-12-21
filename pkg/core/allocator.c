@@ -48,8 +48,10 @@ void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new
     if (!new_mem) {
         return HM_NULL;
     }
-    hmCopyMemory(new_mem, mem, old_size);
-    allocator->free(allocator, mem);
+    if (mem) {
+        hmCopyMemory(new_mem, mem, old_size);
+        allocator->free(allocator, mem);
+    }
     return new_mem;
 }
 
