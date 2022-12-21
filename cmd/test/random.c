@@ -91,7 +91,7 @@ static void test_can_generate_seed()
 }
 
 HM_TEST_SUITE_BEGIN(random)
-    HM_TEST_RUN_WITHOUT_OOM(test_random_generates_int_sequence)
-    HM_TEST_RUN_WITHOUT_OOM(test_random_generates_float_sequence)
-    HM_TEST_RUN_WITHOUT_OOM(test_can_generate_seed)
+    HM_TEST_RUN(test_random_generates_int_sequence)
+    HM_TEST_RUN(test_random_generates_float_sequence)
+    HM_TEST_RUN(test_can_generate_seed)
 HM_TEST_SUITE_END()
