@@ -18,26 +18,44 @@
 #include <core/string.h>
 
 typedef struct {
-    hm_int32 module_id;
     hmString name;
+    hm_int32 module_id;
 } hmModuleMetadata;
 
 typedef struct {
+    hmString name;
     hm_int32 class_id;
     hm_int32 module_id;
-    hmString name;
 } hmClassMetadata;
+
+/* We don't use hmString to represent opcodes because they may contain HM_NULL in the middle and hmString doesn't
+   support that. */
+typedef struct {
+    char*    opcodes;
+    hm_int32 size;
+} hmMethodCodeMetadata;
+
+typedef struct {
+    hmString              name;
+    hmString              signature; /* signature is encoded similar to Java -- as a string */
+    hmMethodCodeMetadata  code;
+    hm_int32              method_id;
+    hm_int32              class_id;
+} hmMethodMetadata;
 
 typedef hmError (*hmEnumModuleMetadataInImageFunc)(hmModuleMetadata* metadata, void* user_data);
 typedef hmError (*hmEnumClassMetadataInImageFunc)(hmClassMetadata* metadata, void* user_data);
+typedef hmError (*hmEnumMethodMetadataInImageFunc)(hmMethodMetadata* metadata, void* user_data);
 
 /* Enumerates metadata in a given Hammer image on disk and calls provided callbacks in the order of the arguments.
    Can be used for constructing new modules, for inspecting metadata, etc.
+   All callbacks can be HM_NULL if enumerating a specific object type (module, class or method) is not required.
    `user_data` can be used to pass additional context to the callbacks. */
 hmError hmEnumMetadataInImage(
     hmString* image_path,
     hmEnumModuleMetadataInImageFunc enum_modules_func,
     hmEnumClassMetadataInImageFunc enum_classes_func,
+    hmEnumMethodMetadataInImageFunc enum_methods_func,
     void* user_data
 );
 

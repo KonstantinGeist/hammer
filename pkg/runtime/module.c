@@ -18,6 +18,7 @@
 
 static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void* user_data);
 static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void* user_data);
+static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void* user_data);
 static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
 
@@ -64,6 +65,7 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* imag
         image_path,
         &hmModuleRegistry_enumModulesFunc,
         &hmModuleRegistry_enumClassesFunc,
+        &hmModuleRegistry_enumMethodsFunc,
         registry
     );
 }
@@ -157,19 +159,19 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     return HM_OK;
 }
 
-/* name, module are owned by this function */
+/* Ownership of `name`, `module` is transferred to this function. */
 static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name, hmModule* module)
 {
     hmError err = HM_OK;
-    hm_bool name_and_module_owned = HM_TRUE;
+    hm_bool name_and_module_are_saved_to_map = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&registry->name_to_module_map, name, module));
-    name_and_module_owned = HM_FALSE;
+    name_and_module_are_saved_to_map = HM_FALSE;
     void* module_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&registry->name_to_module_map, name, &module_ref));
     err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, &module_ref);
 HM_ON_FINALIZE
     if (err != HM_OK) {
-        if (name_and_module_owned) {
+        if (name_and_module_are_saved_to_map) {
             err = hmMergeErrors(err, hmStringDispose(name));
             err = hmMergeErrors(err, hmModuleDispose(module));
         } else {
@@ -265,5 +267,22 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     }
     /* hm_class, name are moved to hmModuleStoreClass(..) */
     HM_TRY(hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class));
+    return HM_OK;
+}
+
+// TODO
+#include <stdio.h>
+
+static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void* user_data)
+{
+    // TODO
+    printf(
+        "method: method_id=%d class_id=%d name=%s signature=%s blob_size=%d\n",
+        (int)metadata->method_id,
+        (int)metadata->class_id,
+        hmStringGetRaw(&metadata->name),
+        hmStringGetRaw(&metadata->signature),
+        (int)metadata->code.size
+    );
     return HM_OK;
 }
