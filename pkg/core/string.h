@@ -42,7 +42,7 @@ hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, cons
    Strings are immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
-   Strings are immutable */
+   Strings are immutable. */
 hmError hmCreateEmptyStringView(hmString* in_string);
 hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);

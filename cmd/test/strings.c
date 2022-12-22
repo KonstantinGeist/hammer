@@ -159,6 +159,14 @@ static void test_can_create_empty_string_view()
     err = hmStringDispose(&string);
 }
 
+static void test_different_salt_returns_different_string_hashes()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringHash(&string, 0) != hmStringHash(&string, 1));
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -170,4 +178,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_hash_empty_string)
     HM_TEST_RUN(test_can_create_string_with_zero_length)
     HM_TEST_RUN(test_can_create_empty_string_view);
+    HM_TEST_RUN(test_different_salt_returns_different_string_hashes);
 HM_TEST_SUITE_END()
