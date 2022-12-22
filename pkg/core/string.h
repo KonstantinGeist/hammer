@@ -22,7 +22,6 @@ typedef struct {
     char*                content;
     struct _hmAllocator* allocator;
     hm_nint              length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
-    hm_uint32            hash;      /* Cached hash to speed up rehashing. */
 } hmString;
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
@@ -49,13 +48,12 @@ hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmSt
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
-/* Hashes a string. For `salt`, see hmHash(..)
-   Once calculated, the result is cached inside the string. */
+/* Hashes a string. For `salt`, see hmHash(..) */
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
 /* Returns the length of the string. The length may be computed lazily and is cached inside the string. */
 hm_nint hmStringGetLength(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
-   because certain values, such as the string's length and the hash, are cached inside the string and assume
+   because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. */
 #define hmStringGetRaw(string) ((const char*)(string)->content)
 
