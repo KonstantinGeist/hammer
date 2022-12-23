@@ -33,12 +33,12 @@ typedef struct {
 typedef struct {
     char*    opcodes;
     hm_int32 size;
-} hmMethodCodeMetadata;
+} hmMethodBodyMetadata;
 
 typedef struct {
     hmString              name;
     hmString              signature; /* signature is encoded similar to Java -- as a string */
-    hmMethodCodeMetadata  code;
+    hmMethodBodyMetadata  body;
     hm_int32              method_id;
     hm_int32              class_id;
 } hmMethodMetadata;

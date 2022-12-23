@@ -282,7 +282,7 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
         (int)metadata->class_id,
         hmStringGetRaw(&metadata->name),
         hmStringGetRaw(&metadata->signature),
-        (int)metadata->code.size
+        (int)metadata->body.size
     );
     return HM_OK;
 }

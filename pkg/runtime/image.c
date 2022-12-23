@@ -121,8 +121,8 @@ static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc
         HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
         const char* signature = (const char*)sqlite3_column_text(stmt, 3);
         HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(signature, &metadata.signature));
-        metadata.code.opcodes = (char*)sqlite3_column_blob(stmt, 4);
-        metadata.code.size = sqlite3_column_int(stmt, 5);
+        metadata.body.opcodes = (char*)sqlite3_column_blob(stmt, 4);
+        metadata.body.size = sqlite3_column_int(stmt, 5);
         HM_TRY_OR_FINALIZE(err, enum_methods_func(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
