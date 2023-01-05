@@ -100,14 +100,21 @@ hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** 
 hm_bool hmIsValidMetadataName(hmString* name)
 {
     hm_nint length = hmStringGetLength(name);
+    if (!length) {
+        return HM_FALSE;
+    }
     hm_char* chars = hmStringGetChars(name);
     for (hm_nint i = 0; i < length; i++) {
         hm_char c = chars[i];
+        hm_bool is_digit = (c >= '0' && c <= '9');
         hm_bool is_valid = (c >= 'a' && c <= 'z')
                         || (c >= 'A' && c <= 'Z')
-                        || (c >= '0' && c <= '9')
+                        || is_digit
                         || c == '_';
         if (!is_valid) {
+            return HM_FALSE;
+        }
+        if (is_digit && i == 0) {
             return HM_FALSE;
         }
     }
@@ -228,8 +235,7 @@ static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void
         return hmMergeErrors(err, hmModuleDispose(&module));
     }
     /* module, name are moved to hmModuleRegistryStoreModule(..) */
-    HM_TRY(hmModuleRegistryStoreModule(registry, metadata->module_id, &name, &module));
-    return HM_OK;
+    return hmModuleRegistryStoreModule(registry, metadata->module_id, &name, &module);
 }
 
 static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_metadata_id class_id, hmString* name)
@@ -334,8 +340,7 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
         return hmMergeErrors(err, hmClassDispose(&hm_class));
     }
     /* hm_class, name are moved to hmModuleStoreClass(..) */
-    HM_TRY(hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class));
-    return HM_OK;
+    return hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class);
 }
 
 static hmError hmValidateSignature(hmString* signature)
@@ -462,6 +467,5 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
         return hmMergeErrors(err, hmMethodDispose(&method));
     }
     /* hm_class, name are moved to hmModuleStoreMethod(..) */
-    HM_TRY(hmModuleStoreMethod(class_ref, metadata->method_id, &name, &method));
-    return HM_OK;
+    return hmModuleStoreMethod(class_ref, metadata->method_id, &name, &method);
 }

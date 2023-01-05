@@ -82,7 +82,7 @@ hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** 
 
 /* Validates that the name is allowed as a name for a metadata object (module, class, method).
    We have very strict naming rules to make sure metadata names don't conflict with anything (signatures, emitted C code, etc.)
-   Only 'a-Z', 'A-Z', digits, and '_' are allowed.
+   Only 'a-Z', 'A-Z', digits, and '_' are allowed; additionally, a name can't start with a digit.
    Made public for tests (at least). */
 hm_bool hmIsValidMetadataName(hmString* name);
 

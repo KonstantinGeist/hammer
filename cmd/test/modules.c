@@ -161,9 +161,30 @@ HM_TEST_ON_FINALIZE
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 
+static void assert_is_valid_metadata_name(const char* c_metadata_name, hm_bool expected_result)
+{
+    hmString metadata_name;
+    hmError err = hmCreateStringViewFromCString(c_metadata_name, &metadata_name);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool is_valid = hmIsValidMetadataName(&metadata_name);
+    HM_TEST_ASSERT(is_valid == expected_result);
+}
+
+static void test_validates_metadata_names()
+{
+    assert_is_valid_metadata_name("", HM_FALSE);
+    assert_is_valid_metadata_name("afzA_FZ1_50", HM_TRUE);
+    assert_is_valid_metadata_name("1afzA_FZ1_50", HM_FALSE);
+    assert_is_valid_metadata_name("_0f", HM_TRUE);
+    assert_is_valid_metadata_name("f.", HM_FALSE);
+    assert_is_valid_metadata_name("F{", HM_FALSE);
+    assert_is_valid_metadata_name("Ü", HM_FALSE);
+}
+
 HM_TEST_SUITE_BEGIN(modules)
     HM_TEST_RUN(test_can_load_existing_module_class_and_method)
     HM_TEST_RUN(test_cannot_load_non_existing_module)
     HM_TEST_RUN(test_cannot_load_non_existing_class)
     HM_TEST_RUN(test_cannot_load_non_existing_method)
+    HM_TEST_RUN_WITHOUT_OOM(test_validates_metadata_names)
 HM_TEST_SUITE_END()

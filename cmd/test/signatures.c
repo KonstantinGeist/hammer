@@ -26,6 +26,7 @@ static void assert_is_valid_signature_desc(const char* signature_desc, hm_bool e
 
 static void test_validates_signature_descs()
 {
+    assert_is_valid_signature_desc("", HM_FALSE);
     assert_is_valid_signature_desc("V", HM_TRUE);
     assert_is_valid_signature_desc("F", HM_TRUE);
     assert_is_valid_signature_desc("VIFB", HM_TRUE);
