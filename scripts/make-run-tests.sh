@@ -1,1 +1,0 @@
-./scripts/make-impl.sh && ./scripts/run-tests.sh "$@"
