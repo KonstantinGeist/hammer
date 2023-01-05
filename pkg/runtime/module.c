@@ -21,6 +21,7 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
 static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void* user_data);
 static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
+static hmError hmMethodDisposeFunc(void* object);
 
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
@@ -86,6 +87,14 @@ hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** ou
     return HM_OK;
 }
 
+hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** out_method)
+{
+    void* method_ref;
+    HM_TRY(hmHashMapGetRef(&hm_class->name_to_method_map, name, &method_ref));
+    *out_method = (hmMethod*)method_ref;
+    return HM_OK;
+}
+
 static hmError hmModuleDispose(hmModule* module)
 {
     hmError err = hmStringDispose(&module->name);
@@ -95,19 +104,7 @@ static hmError hmModuleDispose(hmModule* module)
 
 static hmError hmModuleDisposeFunc(void* object)
 {
-    hmModule* module = (hmModule*)object;
-    return hmModuleDispose(module);
-}
-
-static hmError hmClassDispose(hmClass* hm_class)
-{
-    return hmStringDispose(&hm_class->name);
-}
-
-static hmError hmClassDisposeFunc(void* object)
-{
-    hmClass* hm_class = (hmClass*)object;
-    return hmClassDispose(hm_class);
+    return hmModuleDispose((hmModule*)object);
 }
 
 static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_metadata_id module_id, hmString* name)
@@ -222,8 +219,49 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_metadata_i
 static hmError hmCreateClass(hmAllocator* allocator, hm_metadata_id class_id, hmString* name, hmClass* in_class)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_class->name));
+    hmError err = hmCreateHashMapWithStringKeys(
+        allocator,
+        &hmMethodDisposeFunc, /* value_dispose_func */
+        sizeof(hmMethod),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
+        &in_class->name_to_method_map
+    );
+    if (err != HM_OK) {
+        return hmMergeErrors(err, hmStringDispose(&in_class->name));
+    }
+    err = hmCreateHashMap(
+        allocator,
+        &hmMetadataIDHashFunc,
+        &hmMetadataIDEqualsFunc,
+        HM_NULL,            /* key_dispose_func */
+        HM_NULL,            /* value_dispose_func */
+        sizeof(hm_metadata_id),
+        sizeof(hmMethod*),
+        HM_DEFAULT_HASHMAP_CAPACITY,
+        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        0,
+        &in_class->method_id_to_method_ref_map
+    );
+    if (err != HM_OK) {
+        err = hmMergeErrors(err, hmStringDispose(&in_class->name));
+        return hmMergeErrors(err, hmHashMapDispose(&in_class->name_to_method_map));
+    }
     in_class->class_id = class_id;
     return HM_OK;
+}
+
+static hmError hmClassDispose(hmClass* hm_class)
+{
+    hmError err = hmStringDispose(&hm_class->name);
+    err = hmMergeErrors(err, hmHashMapDispose(&hm_class->name_to_method_map));
+    return hmMergeErrors(err, hmHashMapDispose(&hm_class->method_id_to_method_ref_map));
+}
+
+static hmError hmClassDisposeFunc(void* object)
+{
+    return hmClassDispose((hmClass*)object);
 }
 
 /* name, hm_class are owned by this function */
@@ -235,7 +273,7 @@ static hmError hmModuleStoreClass(hmModule* module, hm_metadata_id class_id, hmS
     name_and_class_owned = HM_FALSE;
     void* class_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
-    err = hmHashMapPut(&module->class_id_to_class_ref_map, &class_id, (hmClass*)class_ref);
+    err = hmHashMapPut(&module->class_id_to_class_ref_map, &class_id, &class_ref);
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_class_owned) {
@@ -270,19 +308,92 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     return HM_OK;
 }
 
-// TODO
+static hmError hmCreateMethod(hmAllocator* allocator, hm_metadata_id method_id, hmString* name, hmMethod* in_method)
+{
+    HM_TRY(hmStringDuplicate(allocator, name, &in_method->name));
+    in_method->method_id = method_id;
+    return HM_OK;
+}
+
+static hmError hmMethodDispose(hmMethod* method)
+{
+    return hmStringDispose(&method->name);
+}
+
+static hmError hmMethodDisposeFunc(void* object)
+{
+    return hmMethodDispose((hmMethod*)object);
+}
+
+static hmError hmModuleRegistryGetClassRefByModuleAndClassID(
+    hmModuleRegistry* registry,
+    hm_metadata_id module_id,
+    hm_metadata_id class_id,
+    hmClass** out_class
+)
+{
+    void *module_ref, *class_ref;
+    HM_TRY(hmHashMapGet(&registry->module_id_to_module_ref_map, &module_id, &module_ref));
+    HM_TRY(hmHashMapGet(&((hmModule*)module_ref)->class_id_to_class_ref_map, &class_id, &class_ref));
+    *out_class = (hmClass*)class_ref;
+    return HM_OK;
+}
+
 #include <stdio.h>
+
+static hmError hmModuleValidateMethodDoesNotExist(hmClass* hm_class, hm_metadata_id method_id, hmString* name)
+{
+    hm_bool found = hmHashMapContains(&hm_class->name_to_method_map, name);
+    if (found) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    found = hmHashMapContains(&hm_class->method_id_to_method_ref_map, &method_id);
+    if (found) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    return HM_OK;
+}
+
+/* name, method are owned by this function */
+static hmError hmModuleStoreMethod(hmClass* hm_class, hm_metadata_id method_id, hmString* name, hmMethod* method)
+{
+    hmError err = HM_OK;
+    hm_bool name_and_method_owned = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmHashMapPut(&hm_class->name_to_method_map, name, method));
+    name_and_method_owned = HM_FALSE;
+    void* method_ref;
+    HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&hm_class->name_to_method_map, name, &method_ref));
+    err = hmHashMapPut(&hm_class->method_id_to_method_ref_map, &method_id, &method_ref);
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        if (name_and_method_owned) {
+            err = hmMergeErrors(err, hmStringDispose(name));
+            err = hmMergeErrors(err, hmMethodDispose(method));
+        } else {
+            err = hmMergeErrors(err, hmHashMapRemove(&hm_class->name_to_method_map, name, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&hm_class->method_id_to_method_ref_map, &method_id, HM_NULL));
+        }
+    }
+    return err;
+}
 
 static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void* user_data)
 {
-    // TODO
-    printf(
-        "method: method_id=%d class_id=%d name=%s signature=%s blob_size=%d\n",
-        (int)metadata->method_id,
-        (int)metadata->class_id,
-        hmStringGetRaw(&metadata->name),
-        hmStringGetRaw(&metadata->signature),
-        (int)metadata->body.size
-    );
+    hmModuleRegistry* registry = (hmModuleRegistry*)user_data;
+    hmClass* class_ref = HM_NULL;
+    hmError err = hmModuleRegistryGetClassRefByModuleAndClassID(registry, metadata->module_id, metadata->class_id, &class_ref);
+    if (err != HM_OK) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    HM_TRY(hmModuleValidateMethodDoesNotExist(class_ref, metadata->method_id, &metadata->name));
+    hmMethod method;
+    HM_TRY(hmCreateMethod(registry->allocator, metadata->method_id, &metadata->name, &method));
+    hmString name;
+    err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
+    if (err != HM_OK) {
+        return hmMergeErrors(err, hmMethodDispose(&method));
+    }
+    /* hm_class, name are moved to hmModuleStoreMethod(..) */
+    HM_TRY(hmModuleStoreMethod(class_ref, metadata->method_id, &name, &method));
     return HM_OK;
 }

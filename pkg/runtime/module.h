@@ -29,9 +29,16 @@ struct _hmAllocator;
    A disadvantage is that loading an image is slower (all the hashmaps must be populated) -- we can revisit it later if
    it proves to be too slow. */
 
-typedef struct _hmClass {
+typedef struct {
+    hmString       name; /* The name of the method which should be unique in a given class. */
+    hm_metadata_id method_id;
+} hmMethod;
+
+typedef struct {
     hmString       name;    /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
                                should be unique in a given module. */
+    hmHashMap      name_to_method_map;          /* hmHashMap<hmString, hmMethod>, for reflection */
+    hmHashMap      method_id_to_method_ref_map; /* hmHashMap<hm_metadata_id, hmMethod*>, for linking */
     hm_metadata_id class_id;
 } hmClass;
 
@@ -62,10 +69,16 @@ hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString*
 /* Similar to hmModuleRegistryGetModuleRefByName, but works with classes instead. */
 hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** out_class);
 
+/* Similar to hmModuleRegistryGetModuleRefByName, but works with methods instead. */
+hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** out_method);
+
 #define hmModuleGetName(module) (module)->name
 #define hmModuleGetID(module) (module)->module_id
 
 #define hmClassGetName(hm_class) (hm_class)->name
 #define hmClassGetID(hm_class) (hm_class)->class_id
+
+#define hmMethodGetName(method) (method)->name
+#define hmMethodGetID(method) (method)->method_id
 
 #endif /* HM_MODULE_H */

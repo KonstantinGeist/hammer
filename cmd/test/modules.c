@@ -40,6 +40,7 @@ static void test_can_load_existing_module()
 {
     #define CORE_MODULE_NAME "core"
     #define POINT_CLASS_NAME "Point"
+    #define FOO_METHOD_NAME "foo"
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry_and_allocator(&module_registry, &allocator);
@@ -60,6 +61,15 @@ static void test_can_load_existing_module()
     HM_TEST_ASSERT(hm_class != HM_NULL);
     HM_TEST_ASSERT(hmStringEqualsToCString(&hmClassGetName(hm_class), POINT_CLASS_NAME));
     HM_TEST_ASSERT(hmClassGetID(hm_class) == 1);
+    hmString foo_method_name;
+    err = hmCreateStringViewFromCString(FOO_METHOD_NAME, &foo_method_name);
+    HM_TEST_ASSERT_OK(err);
+    hmMethod* method = HM_NULL;
+    err = hmClassGetMethodRefByName(hm_class, &foo_method_name, &method);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(method != HM_NULL);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&hmMethodGetName(method), FOO_METHOD_NAME));
+    HM_TEST_ASSERT(hmMethodGetID(method) == 1);
     dispose_module_registry_and_allocator(&module_registry, &allocator);
 }
 

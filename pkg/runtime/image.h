@@ -32,7 +32,7 @@ typedef struct {
 /* We don't use hmString to represent opcodes because they may contain HM_NULL in the middle and hmString doesn't
    support that. */
 typedef struct {
-    char*          opcodes;
+    const char*    opcodes;
     hm_method_size size;
 } hmMethodBodyMetadata;
 
@@ -42,6 +42,7 @@ typedef struct {
     hmMethodBodyMetadata body;
     hm_metadata_id       method_id;
     hm_metadata_id       class_id;
+    hm_metadata_id       module_id;
 } hmMethodMetadata;
 
 typedef hmError (*hmEnumModuleMetadataInImageFunc)(hmModuleMetadata* metadata, void* user_data);

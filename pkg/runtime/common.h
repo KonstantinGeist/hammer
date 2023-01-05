@@ -22,7 +22,7 @@ typedef hm_uint32 hm_metadata_id;
 
 typedef hm_uint16 hm_method_size;
 #define HM_MIN_METHOD_SIZE 1 /* Methods of size 0 are meaningless. */
-#define HM_MAX_METHOD_SIZE HM_UINT16_MAX
+#define HM_MAX_METHOD_SIZE HM_UINT16_MAX /* Method size is restricted to 64KB similar to Java. */
 
 #define hmMetadataIDHashFunc hmUint32HashFunc
 #define hmMetadataIDEqualsFunc hmUint32EqualsFunc
