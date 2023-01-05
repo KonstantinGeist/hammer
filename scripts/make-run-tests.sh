@@ -1,1 +1,1 @@
-./scripts/make.sh && ./scripts/run-tests.sh "$@"
+./scripts/make-impl.sh && ./scripts/run-tests.sh "$@"

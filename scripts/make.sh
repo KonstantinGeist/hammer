@@ -1,4 +1,1 @@
-cd tmp_build
-ninja
-cp cmd/tests/hammer-tests ../bin
-cp cmd/hammer/hammer ../bin
+./scripts/clean.sh && ./scripts/setup.sh && ./scripts/make-impl.sh && ./scripts/check.sh && ./scripts/run-tests.sh

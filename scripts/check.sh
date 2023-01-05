@@ -1,0 +1,1 @@
+cppcheck -i pkg/vendor -i tmp_build --enable=warning,style,performance,portability .
