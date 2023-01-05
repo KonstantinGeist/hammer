@@ -8,21 +8,28 @@ Work in progress.
 
 #### Ubuntu
 
-To install GCC (tested version: 9.4.0) and GNU make (tested version: 4.2.1), run:
+To install GCC and GNU make, run:
 
     sudo apt install build-essential
 
-To install Meson (tested version: 0.53.2+), run:
+To install Meson, run:
 
     sudo apt-get install meson
 
-To install Valgrind (tested version: 3.15.0+), run:
+To install Valgrind, run:
 
     sudo apt-get install valgrind
 
-To install CppCheck (tested version: 1.90+), run:
+To install CppCheck, run:
 
     sudo apt-get install cppcheck
+
+Tested versions:
+* Meson: 0.53.2
+* Valgrind: 3.15.0
+* CppCheck: 1.90
+* GCC: 9.4.0
+* GNU make: 4.2.1
 
 # How to build and run
 
