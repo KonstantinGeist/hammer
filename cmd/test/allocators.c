@@ -291,6 +291,18 @@ static void test_bump_pointer_limits_memory_size()
     dispose_allocator(&system_allocator);
 }
 
+static void test_realloc_on_null_behaves_like_alloc()
+{
+    hmAllocator allocator;
+    create_system_allocator(&allocator);
+    hm_nint size = 16;
+    char* mem = (char*)hmRealloc(&allocator, HM_NULL, 0, size);
+    HM_TEST_ASSERT(mem != HM_NULL);
+    touch_memory(mem, size);
+    hmFree(&allocator, mem);
+    dispose_allocator(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(allocators)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator)
@@ -304,4 +316,5 @@ HM_TEST_SUITE_BEGIN(allocators)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_zero_initialized)
     HM_TEST_RUN_WITHOUT_OOM(test_alloc_returns_aligned_memory)
     HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_limits_memory_size)
+    HM_TEST_RUN_WITHOUT_OOM(test_realloc_on_null_behaves_like_alloc)
 HM_TEST_SUITE_END()
