@@ -19,7 +19,7 @@
 struct _hmAllocator;
 
 typedef struct {
-    char*                content;
+    hm_char*             content;
     struct _hmAllocator* allocator;
     hm_nint              length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
 } hmString;
@@ -55,7 +55,8 @@ hm_nint hmStringGetLength(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. */
-#define hmStringGetRaw(string) ((const char*)(string)->content)
+#define hmStringGetCString(string) ((const char*)(string)->content)
+#define hmStringGetChars(string) ((string)->content)
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);

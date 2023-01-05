@@ -12,6 +12,7 @@ test_sources = files(
     'queues.c',
     'random.c',
     'readers.c',
+    'signatures.c',
     'strings.c',
     'stringbuilders.c',
     'threads.c',

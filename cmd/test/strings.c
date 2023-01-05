@@ -31,7 +31,7 @@ static void test_can_create_string_from_c_string()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -48,7 +48,7 @@ static void test_can_create_string_from_c_string_and_length()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT_TRIMMED));
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT_TRIMMED) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), STRING_CONTENT_TRIMMED) == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -61,7 +61,7 @@ static void test_can_create_string_view()
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringGetLength(&string) == strlen(STRING_CONTENT));
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), STRING_CONTENT) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), STRING_CONTENT) == 0);
     err = hmStringDispose(&string); /* not necessary for views; just checking it doesn't crash */
     HM_TEST_ASSERT_OK(err);
 }
@@ -79,7 +79,7 @@ static void test_can_duplicate_string()
     err = hmStringDuplicate(&allocator, &string, &duplicate);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringGetLength(&string) == hmStringGetLength(&duplicate));
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), hmStringGetRaw(&duplicate)) == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), hmStringGetCString(&duplicate)) == 0);
     err = hmStringDispose(&duplicate);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -142,7 +142,7 @@ static void test_can_create_string_with_zero_length()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLength(&string) == 0);
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "") == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -155,7 +155,7 @@ static void test_can_create_empty_string_view()
     hmError err = hmCreateEmptyStringView(&string);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringGetLength(&string) == 0);
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "") == 0);
     err = hmStringDispose(&string);
 }
 

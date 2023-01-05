@@ -15,6 +15,7 @@
 #include <core/allocator.h>
 #include <core/primitives.h>
 #include <runtime/image.h>
+#include <runtime/signature.h>
 
 static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void* user_data);
 static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void* user_data);
@@ -95,6 +96,32 @@ hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** 
     return HM_OK;
 }
 
+hm_bool hmIsValidMetadataName(hmString* name)
+{
+    hm_nint length = hmStringGetLength(name);
+    hm_char* chars = hmStringGetChars(name);
+    for (hm_nint i = 0; i < length; i++) {
+        hm_char c = chars[i];
+        hm_bool is_valid = (c >= 'a' && c <= 'z')
+                        || (c >= 'A' && c <= 'Z')
+                        || (c >= '0' && c <= '9')
+                        || c == '_';
+        if (!is_valid) {
+            return HM_FALSE;
+        }
+    }
+    return HM_TRUE;
+}
+
+static hm_bool hmValidateMetadataName(hmString* name)
+{
+    hm_bool is_valid = hmIsValidMetadataName(name);
+    if (!is_valid) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    return HM_OK;
+}
+
 static hmError hmModuleDispose(hmModule* module)
 {
     hmError err = hmStringDispose(&module->name);
@@ -122,6 +149,7 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
 
 static hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, hmString* name, hmModule* in_module)
 {
+    HM_TRY(hmValidateMetadataName(name));
     HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
@@ -218,6 +246,7 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_metadata_i
 
 static hmError hmCreateClass(hmAllocator* allocator, hm_metadata_id class_id, hmString* name, hmClass* in_class)
 {
+    HM_TRY(hmValidateMetadataName(name));
     HM_TRY(hmStringDuplicate(allocator, name, &in_class->name));
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
@@ -308,8 +337,25 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     return HM_OK;
 }
 
-static hmError hmCreateMethod(hmAllocator* allocator, hm_metadata_id method_id, hmString* name, hmMethod* in_method)
+static hmError hmValidateSignature(hmString* signature)
 {
+    hm_bool is_valid = hmIsValidSignatureDesc(signature);
+    if (!is_valid) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    return HM_OK;
+}
+
+static hmError hmCreateMethod(
+    hmAllocator* allocator,
+    hm_metadata_id method_id,
+    hmString* name,
+    hmString* signature,
+    hmMethod* in_method
+)
+{
+    HM_TRY(hmValidateMetadataName(name));
+    HM_TRY(hmValidateSignature(signature));
     HM_TRY(hmStringDuplicate(allocator, name, &in_method->name));
     in_method->method_id = method_id;
     return HM_OK;
@@ -338,8 +384,6 @@ static hmError hmModuleRegistryGetClassRefByModuleAndClassID(
     *out_class = (hmClass*)class_ref;
     return HM_OK;
 }
-
-#include <stdio.h>
 
 static hmError hmModuleValidateMethodDoesNotExist(hmClass* hm_class, hm_metadata_id method_id, hmString* name)
 {
@@ -387,7 +431,7 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
     }
     HM_TRY(hmModuleValidateMethodDoesNotExist(class_ref, metadata->method_id, &metadata->name));
     hmMethod method;
-    HM_TRY(hmCreateMethod(registry->allocator, metadata->method_id, &metadata->name, &method));
+    HM_TRY(hmCreateMethod(registry->allocator, metadata->method_id, &metadata->name, &metadata->signature, &method));
     hmString name;
     err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {

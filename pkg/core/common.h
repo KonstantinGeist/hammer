@@ -36,6 +36,9 @@ typedef int32_t hm_int32;
 typedef uint64_t hm_uint64;
 typedef uint64_t hm_millis;
 
+typedef unsigned char hm_char;
+#define HM_CHAR(c) ((unsigned char)c)
+
 typedef uint8_t hm_bool;
 #define HM_TRUE ((hm_bool)1)
 #define HM_FALSE ((hm_bool)0)

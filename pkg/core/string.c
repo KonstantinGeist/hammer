@@ -27,7 +27,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     hm_nint length = strlen(content);
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));
-    char* content_copy = (char*)hmAlloc(allocator, length_with_null);
+    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -48,7 +48,7 @@ hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, cons
     }
     hm_nint length_with_null = 0;
     HM_TRY(hmAddNint(length, 1, &length_with_null));
-    char* content_copy = (char*)hmAlloc(allocator, length_with_null);
+    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -65,7 +65,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    in_string->content = (char*)content;
+    in_string->content = (hm_char*)content;
     in_string->allocator = HM_NULL;
     in_string->length = HM_EMPTY_STRING_LENGTH; /* it will be computed lazily in hmStringGetLength(..) */
     return HM_OK;
@@ -73,7 +73,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 
 hmError hmCreateEmptyStringView(hmString* in_string)
 {
-    in_string->content = "";
+    in_string->content = (hm_char*)"";
     in_string->allocator = HM_NULL;
     in_string->length = 0;
     return HM_OK;
@@ -92,17 +92,17 @@ hm_bool hmStringEqualsToCString(hmString* string, const char* content)
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    return strcmp(string->content, content) == 0;
+    return strcmp((const char*)string->content, content) == 0;
 }
 
 hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate)
 {
-    return hmCreateStringFromCString(allocator, string->content, in_duplicate);
+    return hmCreateStringFromCString(allocator, (const char*)string->content, in_duplicate);
 }
 
 hm_bool hmStringEquals(hmString* string1, hmString* string2)
 {
-    return strcmp(string1->content, string2->content) == 0;
+    return strcmp((const char*)string1->content, (const char*)string2->content) == 0;
 }
 
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt)
@@ -118,7 +118,7 @@ hm_nint hmStringGetLength(hmString* string)
     /* As HM_EMPTY_STRING_LENGTH is set to HM_NINT_MAX, which is a valid string length, there's a chance that
        it's a false positive and we'll end up recalculating the length over and over again; however, strings of size
        HM_NINT_MAX are extremely unlikely to exist in the wild. */
-    string->length = strlen(string->content);
+    string->length = strlen((const char*)string->content);
     return string->length;
 }
 

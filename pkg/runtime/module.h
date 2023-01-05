@@ -72,6 +72,12 @@ hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** ou
 /* Similar to hmModuleRegistryGetModuleRefByName, but works with methods instead. */
 hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** out_method);
 
+/* Validates that the name is allowed as a name for a metadata object (module, class, method).
+   We have very strict naming rules to make sure metadata names don't conflict with anything (signatures, emitted C code, etc.)
+   Only 'a-Z', 'A-Z', digits, and '_' are allowed.
+   Made public for tests (at least). */
+hm_bool hmIsValidMetadataName(hmString* name);
+
 #define hmModuleGetName(module) (module)->name
 #define hmModuleGetID(module) (module)->module_id
 

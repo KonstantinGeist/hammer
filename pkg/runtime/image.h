@@ -29,16 +29,15 @@ typedef struct {
     hm_metadata_id module_id;
 } hmClassMetadata;
 
-/* We don't use hmString to represent opcodes because they may contain HM_NULL in the middle and hmString doesn't
-   support that. */
 typedef struct {
-    const char*    opcodes;
-    hm_method_size size;
+    const hm_uint8* opcodes; /* We don't use hmString to represent opcodes because they may contain HM_NULL in the middle
+                                and hmString doesn't support that. */
+    hm_method_size  size;
 } hmMethodBodyMetadata;
 
 typedef struct {
     hmString             name;
-    hmString             signature; /* signature is encoded similar to Java -- as a string */
+    hmString             signature; /* Signature is encoded similar to Java -- as a string. */
     hmMethodBodyMetadata body;
     hm_metadata_id       method_id;
     hm_metadata_id       class_id;

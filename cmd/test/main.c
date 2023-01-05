@@ -29,7 +29,6 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(allocators);
         HM_TEST_RUN_SUITE(readers);
         HM_TEST_RUN_SUITE(arrays);
-        HM_TEST_RUN_SUITE(modules);
         HM_TEST_RUN_SUITE(strings);
         HM_TEST_RUN_SUITE(string_builders);
         HM_TEST_RUN_SUITE(utils);
@@ -40,6 +39,8 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(environment);
         HM_TEST_RUN_SUITE(random);
         HM_TEST_RUN_SUITE(math);
+        HM_TEST_RUN_SUITE(signatures);
+        HM_TEST_RUN_SUITE(modules);
         /* Tests which rely on timing should come last for the faster tests to fail earlier. */
         HM_TEST_RUN_SUITE(mutexes);
         HM_TEST_RUN_SUITE(waitable_events);
@@ -64,7 +65,7 @@ int main()
         hmString suite_name;
         err = hmArrayGet(&args, 0, (void*)&suite_name);
         HM_TEST_ASSERT_OK(err);
-        selector.test_suite_name = hmStringGetRaw(&suite_name);
+        selector.test_suite_name = hmStringGetCString(&suite_name);
     } else {
         selector.test_suite_name = HM_NULL;
     }

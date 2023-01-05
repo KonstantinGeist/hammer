@@ -20,7 +20,7 @@ static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc
 static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id);
 static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size);
 static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view);
-static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const char** out_blob);
+static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob);
 
 hmError hmEnumMetadataInImage(
     hmString* image_path,
@@ -35,7 +35,7 @@ hmError hmEnumMetadataInImage(
     }
     hmError err = HM_OK;
     sqlite3* db;
-    int sqlite_err = sqlite3_open_v2(hmStringGetRaw(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
+    int sqlite_err = sqlite3_open_v2(hmStringGetCString(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }
@@ -168,9 +168,9 @@ static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int
     return hmCreateStringViewFromCString(name, in_string_view);
 }
 
-static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const char** out_blob)
+static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob)
 {
-    const char* blob = (const char*)sqlite3_column_blob(stmt, column_index);
+    const hm_uint8* blob = (const hm_uint8*)sqlite3_column_blob(stmt, column_index);
     if (!blob) {
         return hmHasSqlite3ErrorOccurred(db) ? HM_ERROR_OUT_OF_MEMORY : HM_ERROR_INVALID_IMAGE;
     }

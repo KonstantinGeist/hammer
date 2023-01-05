@@ -33,7 +33,7 @@ static void test_can_create_string_builder_append_and_convert_to_string()
     hmString string;
     err = hmStringBuilderToString(&string_builder, HM_NULL, &string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "Hello, World!") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "Hello, World!") == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -58,7 +58,7 @@ static void test_can_create_string_builder_append_with_length_and_convert_to_str
     hmString string;
     err = hmStringBuilderToString(&string_builder, HM_NULL, &string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "Hello, Wor") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "Hello, Wor") == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
@@ -87,7 +87,7 @@ static void test_can_clear_string_builder()
     hmString string;
     err = hmStringBuilderToString(&string_builder, HM_NULL, &string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(strcmp(hmStringGetRaw(&string), "World!") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "World!") == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
