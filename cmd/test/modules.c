@@ -41,7 +41,7 @@ static void dispose_module_registry_and_allocator(hmModuleRegistry* module_regis
 static hmError load_image(hmModuleRegistry* module_registry)
 {
     hmString image_path;
-    HM_TRY(hmCreateStringViewFromCString("../cmd/test/data/modules.hma", &image_path));
+    HM_TRY(hmCreateStringViewFromCString("../cmd/test/data/modules.hmi", &image_path));
     return hmModuleRegistryLoadFromImage(module_registry, &image_path);
 }
 

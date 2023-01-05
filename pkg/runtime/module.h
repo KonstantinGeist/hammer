@@ -63,23 +63,22 @@ typedef struct {
     hmHashMap            module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
 } hmModuleRegistry;
 
-hmError hmCreateModuleRegistry(struct _hmAllocator* allocator, hmModuleRegistry *in_registry);
+/* A module registry is where all modules and their classes are registered and stored. Typically, there should
+   be only one module registry per runtime instance.
+   Thread safety: as a registry can be shared by multiple concurrent theads of execution, it should not be modified
+   when user code is running, unless otherwise noted. */
+hmError hmCreateModuleRegistry(struct _hmAllocator* allocator, hmModuleRegistry* in_registry);
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
-
 /* Loads a module from a Hammer image denoted by the path on disk. After registering, all classes in the module
    are immediately usable. */
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path);
-
 /* Returns a pointer to a module by its name in out_module. Returns HM_NULL if no module was found.
    Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module);
-
 /* Similar to hmModuleRegistryGetModuleRefByName, but works with classes instead. */
 hmError hmModuleGetClassRefByName(hmModule* module, hmString* name, hmClass** out_class);
-
 /* Similar to hmModuleRegistryGetModuleRefByName, but works with methods instead. */
 hmError hmClassGetMethodRefByName(hmClass* hm_class, hmString* name, hmMethod** out_method);
-
 /* Validates that the name is allowed as a name for a metadata object (module, class, method).
    We have very strict naming rules to make sure metadata names don't conflict with anything (signatures, emitted C code, etc.)
    Only 'a-Z', 'A-Z', digits, and '_' are allowed; additionally, a name can't start with a digit.
@@ -88,10 +87,8 @@ hm_bool hmIsValidMetadataName(hmString* name);
 
 #define hmModuleGetName(module) (module)->name
 #define hmModuleGetID(module) (module)->module_id
-
 #define hmClassGetName(hm_class) (hm_class)->name
 #define hmClassGetID(hm_class) (hm_class)->class_id
-
 #define hmMethodGetName(method) (method)->name
 #define hmMethodGetID(method) (method)->method_id
 

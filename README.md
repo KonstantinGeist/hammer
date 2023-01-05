@@ -4,9 +4,9 @@ Hammer is a programming language and runtime designed for building modern applic
 
 Work in progress.
 
-# How to build
+# How to build and run
 
-The Meson build system is required. Initialize the project with:
+The Meson build system is required (see "Dependencies"). Initialize the project with:
 
     ./scripts/setup.sh
 
@@ -14,6 +14,16 @@ To build, run:
 
     ./scripts/make.sh
 
-To run tests (requires Valgrind):
+To run tests (requires Valgrind, see "Dependencies"):
 
     ./scripts/run-test.sh
+
+# Dependencies
+
+To install Meson on Ubuntu, run:
+
+    sudo apt-get install meson
+
+To install Valgrind on Ubuntu, run:
+
+    sudo apt-get install valgrind
