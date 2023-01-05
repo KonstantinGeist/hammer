@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <core/environment.h>
 #include <core/string.h>
 #include <threading/thread.h>

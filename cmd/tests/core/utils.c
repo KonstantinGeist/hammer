@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <core/utils.h>
 
 static void test_can_align_size()

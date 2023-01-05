@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <core/hash.h>
 
 #define HASH_SALT 13

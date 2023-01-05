@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <threading/thread.h>
 #include <threading/waitableevent.h>
 

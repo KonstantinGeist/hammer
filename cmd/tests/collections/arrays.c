@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <collections/array.h>
 
 #define ARRAY_CAPACITY     4

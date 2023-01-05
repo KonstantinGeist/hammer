@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <core/math.h>
 
 static void test_detects_nint_overflow_when_adding()

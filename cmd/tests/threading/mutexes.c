@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <core/primitives.h>
 #include <collections/hashmap.h>
 #include <threading/mutex.h>

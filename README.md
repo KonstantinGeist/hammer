@@ -16,14 +16,14 @@ To build, run:
 
 To run tests (requires Valgrind, see "Dependencies"):
 
-    ./scripts/run-test.sh
+    ./scripts/run-tests.sh
 
 # Dependencies
 
-To install Meson on Ubuntu, run:
+To install Meson (tested version: 0.53.2+) on Ubuntu, run:
 
     sudo apt-get install meson
 
-To install Valgrind on Ubuntu, run:
+To install Valgrind (tested version: 3.15.0+) on Ubuntu, run:
 
     sudo apt-get install valgrind

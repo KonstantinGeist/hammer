@@ -1,2 +1,2 @@
 subdir('hammer')
-subdir('test')
+subdir('tests')

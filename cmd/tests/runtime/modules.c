@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include "common.h"
+#include "../common.h"
 #include <runtime/module.h>
 #include <core/string.h>
 
@@ -41,7 +41,7 @@ static void dispose_module_registry_and_allocator(hmModuleRegistry* module_regis
 static hmError load_image(hmModuleRegistry* module_registry)
 {
     hmString image_path;
-    HM_TRY(hmCreateStringViewFromCString("../cmd/test/data/modules.hmi", &image_path));
+    HM_TRY(hmCreateStringViewFromCString("../cmd/tests/data/modules.hmi", &image_path));
     return hmModuleRegistryLoadFromImage(module_registry, &image_path);
 }
 
