@@ -11,21 +11,20 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_PRIMITIVES_H
-#define HM_PRIMITIVES_H
+#ifndef HM_RUNTIME_COMMON_H
+#define HM_RUNTIME_COMMON_H
 
 #include <core/common.h>
-#include <core/string.h>
 
-struct _hmAllocator;
+typedef hm_uint32 hm_metadata_id;
+#define HM_MIN_METADATA_ID 0
+#define HM_MAX_METADATA_ID HM_UINT32_MAX
 
-hm_uint32 hmNintHashFunc(void* key, hm_uint32 salt);
-hm_bool hmNintEqualsFunc(void* value1, void* value2);
-hm_uint32 hmInt32HashFunc(void* key, hm_uint32 salt);
-hm_bool hmInt32EqualsFunc(void* value1, void* value2);
-hm_uint32 hmUint32HashFunc(void* key, hm_uint32 salt);
-hm_bool hmUint32EqualsFunc(void* value1, void* value2);
+typedef hm_uint16 hm_method_size;
+#define HM_MIN_METHOD_SIZE 1 /* Methods of size 0 are meaningless. */
+#define HM_MAX_METHOD_SIZE HM_UINT16_MAX
 
-hmError hmInt32ToString(struct _hmAllocator* allocator, hm_int32 value, hmString* in_string);
+#define hmMetadataIDHashFunc hmUint32HashFunc
+#define hmMetadataIDEqualsFunc hmUint32EqualsFunc
 
-#endif /* HM_PRIMITIVES_H */
+#endif /* HM_RUNTIME_COMMON_H */

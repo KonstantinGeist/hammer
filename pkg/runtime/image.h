@@ -16,31 +16,32 @@
 
 #include <core/common.h>
 #include <core/string.h>
+#include <runtime/common.h>
 
 typedef struct {
     hmString name;
-    hm_int32 module_id;
+    hm_metadata_id module_id;
 } hmModuleMetadata;
 
 typedef struct {
     hmString name;
-    hm_int32 class_id;
-    hm_int32 module_id;
+    hm_metadata_id class_id;
+    hm_metadata_id module_id;
 } hmClassMetadata;
 
 /* We don't use hmString to represent opcodes because they may contain HM_NULL in the middle and hmString doesn't
    support that. */
 typedef struct {
-    char*    opcodes;
-    hm_int32 size;
+    char*          opcodes;
+    hm_method_size size;
 } hmMethodBodyMetadata;
 
 typedef struct {
-    hmString              name;
-    hmString              signature; /* signature is encoded similar to Java -- as a string */
-    hmMethodBodyMetadata  body;
-    hm_int32              method_id;
-    hm_int32              class_id;
+    hmString             name;
+    hmString             signature; /* signature is encoded similar to Java -- as a string */
+    hmMethodBodyMetadata body;
+    hm_metadata_id       method_id;
+    hm_metadata_id       class_id;
 } hmMethodMetadata;
 
 typedef hmError (*hmEnumModuleMetadataInImageFunc)(hmModuleMetadata* metadata, void* user_data);

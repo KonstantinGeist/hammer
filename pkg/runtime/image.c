@@ -17,6 +17,9 @@
 static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data);
 static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data);
 static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func, void* user_data);
+static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id);
+static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size);
+static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view);
 
 hmError hmEnumMetadataInImage(
     hmString* image_path,
@@ -92,9 +95,8 @@ static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT module_id, name FROM module")
         hmModuleMetadata metadata;
-        metadata.module_id = sqlite3_column_int(stmt, 0);
-        const char* name = (const char*)sqlite3_column_text(stmt, 1);
-        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.module_id));
+        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 1, &metadata.name));
         HM_TRY_OR_FINALIZE(err, enum_modules_func(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
@@ -103,10 +105,9 @@ static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc 
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT class_id, module_id, name FROM class")
         hmClassMetadata metadata;
-        metadata.class_id = sqlite3_column_int(stmt, 0);
-        metadata.module_id = sqlite3_column_int(stmt, 1);
-        const char* name = (const char*)sqlite3_column_text(stmt, 2);
-        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.class_id));
+        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 1, &metadata.module_id));
+        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 2, &metadata.name));
         HM_TRY_OR_FINALIZE(err, enum_classes_func(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
@@ -115,14 +116,52 @@ static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT method_id, class_id, name, signature, code, length(code) AS code_length FROM method")
         hmMethodMetadata metadata;
-        metadata.method_id = sqlite3_column_int(stmt, 0);
-        metadata.class_id = sqlite3_column_int(stmt, 1);
-        const char* name = (const char*)sqlite3_column_text(stmt, 2);
-        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(name, &metadata.name));
-        const char* signature = (const char*)sqlite3_column_text(stmt, 3);
-        HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString(signature, &metadata.signature));
+        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.method_id));
+        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 1, &metadata.class_id));
+        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 2, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 3, &metadata.signature));
         metadata.body.opcodes = (char*)sqlite3_column_blob(stmt, 4);
-        metadata.body.size = sqlite3_column_int(stmt, 5);
+        HM_TRY_OR_FINALIZE(err, hmGetMethodSizeFromStatement(db, stmt, 5, &metadata.body.size));
         HM_TRY_OR_FINALIZE(err, enum_methods_func(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
+}
+
+static hm_bool hmHasSqlite3ErrorOccurred(sqlite3* db) {
+    int error_code = sqlite3_errcode(db);
+    return error_code != SQLITE_OK && error_code != SQLITE_ROW && error_code != SQLITE_DONE;
+}
+
+static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id)
+{
+    sqlite3_int64 id = sqlite3_column_int64(stmt, column_index);
+    if (!id && hmHasSqlite3ErrorOccurred(db)) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    if (id < HM_MIN_METADATA_ID || id > HM_MAX_METADATA_ID) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    *out_id = (hm_metadata_id)id;
+    return HM_OK;
+}
+
+static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size)
+{
+    sqlite3_int64 size = sqlite3_column_int64(stmt, column_index);
+    if (!size && hmHasSqlite3ErrorOccurred(db)) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    if (size < HM_MIN_METHOD_SIZE || size > HM_MAX_METHOD_SIZE) {
+        return HM_ERROR_INVALID_IMAGE;
+    }
+    *out_size = (hm_method_size)size;
+    return HM_OK;
+}
+
+static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view)
+{
+    const char* name = (const char*)sqlite3_column_text(stmt, column_index);
+    if (!name) {
+        return hmHasSqlite3ErrorOccurred(db) ? HM_ERROR_OUT_OF_MEMORY : HM_ERROR_INVALID_IMAGE;
+    }
+    return hmCreateStringViewFromCString(name, in_string_view);
 }

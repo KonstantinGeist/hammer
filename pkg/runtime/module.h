@@ -15,30 +15,37 @@
 #define HM_MODULE_H
 
 #include <core/common.h>
+#include <core/string.h>
 #include <collections/array.h>
 #include <collections/hashmap.h>
-#include <core/string.h>
-#include "type.h"
+#include <runtime/common.h>
 
 struct _hmAllocator;
 
+/* Modules store classes, and classes store methods, by using hashmaps. It's not superperformant per se (each lookup
+   involves searching in a hashmap), however, high-level (HL) bytecode will be translated to low-level (LL) bytecode where
+   pointers are directly stored in the LL bytecode, so it's not an issue at runtime (no dispatch will happen). Storing objects inside
+   hashmaps has an advantage of it being more flexible: there can be "holes" in ID sequences which can happen if bytecode is patched.
+   A disadvantage is that loading an image is slower (all the hashmaps must be populated) -- we can revisit it later if
+   it proves to be too slow. */
+
 typedef struct _hmClass {
-    hm_int32              class_id;
-    hmString              name;      /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
-                                        should be unique in a given module. */
+    hmString       name;    /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
+                               should be unique in a given module. */
+    hm_metadata_id class_id;
 } hmClass;
 
 typedef struct {
-    hm_int32             module_id;
-    hmString             name;      /* The name of the module. Should be unique in a given module registry. */
-    hmHashMap            name_to_class_map;         /* hmHashMap<hmString, hmClass> */
-    hmHashMap            class_id_to_class_ref_map; /* hmHashMap<hm_int32, hmClass*> */
+    hmString       name;                      /* The name of the module. Should be unique in a given module registry. */
+    hmHashMap      name_to_class_map;         /* hmHashMap<hmString, hmClass>, for reflection */
+    hmHashMap      class_id_to_class_ref_map; /* hmHashMap<hm_metadata_id, hmClass*>, for linking */
+    hm_metadata_id module_id;
 } hmModule;
 
 typedef struct {
     struct _hmAllocator* allocator;
-    hmHashMap            name_to_module_map;          /* hmHashMap<hmString, hmModule> */
-    hmHashMap            module_id_to_module_ref_map; /* hmHashMap<hm_int32, hmModule*> */
+    hmHashMap            name_to_module_map;          /* hmHashMap<hmString, hmModule>, for reflection */
+    hmHashMap            module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
 } hmModuleRegistry;
 
 hmError hmCreateModuleRegistry(struct _hmAllocator* allocator, hmModuleRegistry *in_registry);

@@ -30,6 +30,7 @@
 /* Platform-specific integer size, can also be cast to/from void pointers. */
 typedef uintptr_t hm_nint;
 typedef uint8_t hm_uint8;
+typedef uint16_t hm_uint16;
 typedef uint32_t hm_uint32;
 typedef int32_t hm_int32;
 typedef uint64_t hm_uint64;
@@ -41,6 +42,7 @@ typedef uint8_t hm_bool;
 
 typedef double hm_float64;
 
+#define HM_UINT16_MAX UINT16_MAX
 #define HM_UINT32_MAX UINT32_MAX
 #define HM_INT32_MIN INT32_MIN
 #define HM_INT32_MAX INT32_MAX

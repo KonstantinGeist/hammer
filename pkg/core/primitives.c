@@ -41,6 +41,18 @@ hm_bool hmInt32EqualsFunc(void* value1, void* value2)
     return a == b;
 }
 
+hm_uint32 hmUint32HashFunc(void* key, hm_uint32 salt)
+{
+    return hmHash(key, sizeof(hm_uint32), salt);
+}
+
+hm_bool hmUint32EqualsFunc(void* value1, void* value2)
+{
+    hm_uint32 a = *((hm_uint32*)(value1));
+    hm_uint32 b = *((hm_uint32*)(value2));
+    return a == b;
+}
+
 hmError hmInt32ToString(struct _hmAllocator* allocator, hm_int32 value, hmString* in_string)
 {
     char buffer[64];

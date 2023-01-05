@@ -35,11 +35,11 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
     ));
     hmError err = hmCreateHashMap(
         allocator,
-        &hmInt32HashFunc,
-        &hmInt32EqualsFunc,
+        &hmMetadataIDHashFunc,
+        &hmMetadataIDEqualsFunc,
         HM_NULL,            /* key_dispose_func */
         HM_NULL,            /* value_dispose_func */
-        sizeof(hm_int32),
+        sizeof(hm_metadata_id),
         sizeof(hmModule*),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -110,7 +110,7 @@ static hmError hmClassDisposeFunc(void* object)
     return hmClassDispose(hm_class);
 }
 
-static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_int32 module_id, hmString* name)
+static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* registry, hm_metadata_id module_id, hmString* name)
 {
     hm_bool found = hmHashMapContains(&registry->name_to_module_map, name);
     if (found) {
@@ -123,7 +123,7 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
     return HM_OK;
 }
 
-static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmString* name, hmModule* in_module)
+static hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, hmString* name, hmModule* in_module)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_module->name));
     hmError err = hmCreateHashMapWithStringKeys(
@@ -140,11 +140,11 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
     }
     err = hmCreateHashMap(
         allocator,
-        &hmInt32HashFunc,
-        &hmInt32EqualsFunc,
+        &hmMetadataIDHashFunc,
+        &hmMetadataIDEqualsFunc,
         HM_NULL,            /* key_dispose_func */
         HM_NULL,            /* value_dispose_func */
-        sizeof(hm_int32),
+        sizeof(hm_metadata_id),
         sizeof(hmClass*),
         HM_DEFAULT_HASHMAP_CAPACITY,
         HM_DEFAULT_HASHMAP_LOAD_FACTOR,
@@ -160,7 +160,7 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_int32 module_id, hmStri
 }
 
 /* Ownership of `name`, `module` is transferred to this function. */
-static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_int32 module_id, hmString* name, hmModule* module)
+static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_metadata_id module_id, hmString* name, hmModule* module)
 {
     hmError err = HM_OK;
     hm_bool name_and_module_are_saved_to_map = HM_TRUE;
@@ -182,7 +182,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_int32 module_id, hmModule** out_module)
+static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_metadata_id module_id, hmModule** out_module)
 {
     void* module_ref;
     HM_TRY(hmHashMapGet(&registry->module_id_to_module_ref_map, &module_id, &module_ref));
@@ -206,7 +206,7 @@ static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void
     return HM_OK;
 }
 
-static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_int32 class_id, hmString* name)
+static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_metadata_id class_id, hmString* name)
 {
     hm_bool found = hmHashMapContains(&module->name_to_class_map, name);
     if (found) {
@@ -219,7 +219,7 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_int32 clas
     return HM_OK;
 }
 
-static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString* name, hmClass* in_class)
+static hmError hmCreateClass(hmAllocator* allocator, hm_metadata_id class_id, hmString* name, hmClass* in_class)
 {
     HM_TRY(hmStringDuplicate(allocator, name, &in_class->name));
     in_class->class_id = class_id;
@@ -227,7 +227,7 @@ static hmError hmCreateClass(hmAllocator* allocator, hm_int32 class_id, hmString
 }
 
 /* name, hm_class are owned by this function */
-static hmError hmModuleStoreClass(hmModule* module, hm_int32 class_id, hmString* name, hmClass* hm_class)
+static hmError hmModuleStoreClass(hmModule* module, hm_metadata_id class_id, hmString* name, hmClass* hm_class)
 {
     hmError err = HM_OK;
     hm_bool name_and_class_owned = HM_TRUE;
