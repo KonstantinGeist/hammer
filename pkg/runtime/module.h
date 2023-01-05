@@ -30,8 +30,16 @@ struct _hmAllocator;
    it proves to be too slow. */
 
 typedef struct {
-    hmString       name; /* The name of the method which should be unique in a given class. */
-    hm_metadata_id method_id;
+    hm_uint8*      opcodes;
+    hm_method_size size;
+} hmMethodBody;
+
+typedef struct {
+    struct _hmAllocator* allocator;
+    hmString             name;           /* The name of the method which should be unique in a given class. */
+    hmString             signature_desc; /* Signature desc: unresolved desc as stored in the image; it will be resolved during method resolution. */
+    hmMethodBody         hl_body;        /* High-level bytecode: it will be compiled to low-level bytecode during method resolution. */
+    hm_metadata_id       method_id;
 } hmMethod;
 
 typedef struct {

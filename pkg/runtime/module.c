@@ -14,6 +14,7 @@
 #include <runtime/module.h>
 #include <core/allocator.h>
 #include <core/primitives.h>
+#include <core/utils.h>
 #include <runtime/image.h>
 #include <runtime/signature.h>
 
@@ -351,18 +352,33 @@ static hmError hmCreateMethod(
     hm_metadata_id method_id,
     hmString* name,
     hmString* signature,
+    const hm_uint8* opcodes,
+    hm_method_size size,
     hmMethod* in_method
 )
 {
     HM_TRY(hmValidateMetadataName(name));
     HM_TRY(hmValidateSignature(signature));
-    HM_TRY(hmStringDuplicate(allocator, name, &in_method->name));
+    hm_uint8* opcodes_copy = hmAlloc(allocator, sizeof(hm_uint8) * size);
+    if (!opcodes_copy) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hmCopyMemory(opcodes_copy, opcodes, sizeof(hm_uint8) * size);
+    hmError err = hmStringDuplicate(allocator, name, &in_method->name);
+    if (err != HM_OK) {
+        hmFree(allocator, opcodes_copy);
+        return err;
+    }
+    in_method->allocator = allocator;
     in_method->method_id = method_id;
+    in_method->hl_body.opcodes = opcodes_copy;
+    in_method->hl_body.size = size;
     return HM_OK;
 }
 
 static hmError hmMethodDispose(hmMethod* method)
 {
+    hmFree(method->allocator, method->hl_body.opcodes);
     return hmStringDispose(&method->name);
 }
 
@@ -431,7 +447,15 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
     }
     HM_TRY(hmModuleValidateMethodDoesNotExist(class_ref, metadata->method_id, &metadata->name));
     hmMethod method;
-    HM_TRY(hmCreateMethod(registry->allocator, metadata->method_id, &metadata->name, &metadata->signature, &method));
+    HM_TRY(hmCreateMethod(
+        registry->allocator,
+        metadata->method_id,
+        &metadata->name,
+        &metadata->signature,
+        metadata->body.opcodes,
+        metadata->body.size,
+        &method
+    ));
     hmString name;
     err = hmStringDuplicate(registry->allocator, &metadata->name, &name);
     if (err != HM_OK) {
