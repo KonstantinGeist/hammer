@@ -8,13 +8,17 @@ Feature ideas:
 * built-in concurrency
 * minimum dependencies, lightweight
 * high fault tolerance
-* batteries included for typical workloads
+* batteries included for typical web workloads (string handling, persistence, distributed RPC with circuit breakers & friends, templating, JSON etc.)
 * strong/static typing
 * built-in tooling: unit testing, fuzzing
 * automatic memory management
-* sandboxing
+* sandboxing (file system sandboxing, CPU load limits, memory limits, bytecode verification)
 * multitenancy support
 * event handling & queues
 * saga support
 * ease of debugging, inspectability
+* no null
+* zero downtime rollouts and hotfix support (without restarts)
+* arbitrary data embedding inside Hammer images
+* structural typing  
   and more.
