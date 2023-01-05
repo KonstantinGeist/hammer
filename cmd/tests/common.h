@@ -20,7 +20,7 @@
 #include <core/common.h>
 
 #include <assert.h> /* for HM_TEST_ macros */
-#include <stdio.h> /* for printf(..) */
+#include <stdio.h>  /* for printf(..) */
 
 typedef struct {
     const char* test_suite_name;
@@ -37,21 +37,24 @@ typedef struct {
     static hm_nint hm_test_oom_iteration __attribute__((unused)) = 0; \
     static hmAllocator hm_test_base_allocator __attribute__((unused)); \
     static hmAllocator* hm_test_oom_allocator __attribute__((unused)) = HM_NULL; \
-    static hm_bool hm_test_is_oom __attribute__((unused)) = HM_FALSE;
+    static hm_bool hm_test_is_oom __attribute__((unused)) = HM_FALSE; \
+    static hm_nint hm_assert_count __attribute__((unused)) = 0;
 
 #define HM_TEST_ON_FINALIZE hm_test_on_finalize:
 
-#define HM_TEST_ASSERT(expr) assert(expr)
-#define HM_TEST_ASSERT_OK(err) assert((err) == HM_OK)
+#define HM_TEST_ASSERT(expr) assert(expr); hm_assert_count++
+#define HM_TEST_ASSERT_OK(err) assert((err) == HM_OK); hm_assert_count++
 #define HM_TEST_ASSERT_OK_OR_OOM(err) \
     if (!hm_test_is_oom_mode) { \
         assert((err) == HM_OK); \
+        hm_assert_count++; \
     } else { \
         if (hmOOMAllocatorIsOutOfMEmory(hm_test_oom_allocator) && err == HM_ERROR_OUT_OF_MEMORY) { \
             hm_test_is_oom = HM_TRUE; \
             goto hm_test_on_finalize; \
         } \
         assert((err) == HM_OK); \
+        hm_assert_count++; \
     }
 
 #define HM_TEST_IS_OOM() (hm_test_is_oom_mode && hm_test_is_oom)
@@ -92,7 +95,11 @@ typedef struct {
 #define HM_TEST_RUN(name) \
     printf("    " HM_STRINGIFY(name) "\n"); \
     hm_test_is_oom_mode = HM_FALSE; \
+    hm_assert_count = 0; \
     name(); \
+    if (!hm_assert_count) { \
+        printf("        SUSPICIOUS (no asserts)\n"); \
+    } \
     hm_test_is_oom_mode = HM_TRUE; \
     if (hm_test_total_alloc_count > 0) { \
         printf("    " HM_STRINGIFY(name) "_OOM_%d_allocs\n", (int)hm_test_total_alloc_count); \
@@ -104,7 +111,11 @@ typedef struct {
 #define HM_TEST_RUN_WITHOUT_OOM(name) \
     hm_test_is_oom_mode = HM_FALSE; \
     printf("%s\n", "    " HM_STRINGIFY(name)); \
-    name();
+    hm_assert_count = 0; \
+    name(); \
+    if (!hm_assert_count) { \
+        printf("        SUSPICIOUS (no asserts)\n"); \
+    }
 
 #define HM_TEST_DECLARE_SUITE(name) void test_ ## name();
 
