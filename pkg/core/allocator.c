@@ -159,7 +159,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
     hm_nint new_index = 0;
     if (cur_segment) {
-        hmError err = hmAddNint(cur_segment->index, sz, &new_index);
+        err = hmAddNint(cur_segment->index, sz, &new_index);
         if (err != HM_OK) {
             return HM_NULL;
         }

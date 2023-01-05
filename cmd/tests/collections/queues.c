@@ -172,7 +172,7 @@ static void test_queue_disposes_items_on_disposal()
     item_dispose_sum = 0;
     for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
         hm_nint value = i * 2;
-        hmError err = hmQueueEnqueue(&queue, &value);
+        err = hmQueueEnqueue(&queue, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         item_dispose_sum_control += value;
     }

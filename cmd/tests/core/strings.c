@@ -157,6 +157,7 @@ static void test_can_create_empty_string_view()
     HM_TEST_ASSERT(hmStringGetLength(&string) == 0);
     HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "") == 0);
     err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
 }
 
 static void test_different_salt_returns_different_string_hashes()

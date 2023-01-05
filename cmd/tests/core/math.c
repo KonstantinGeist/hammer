@@ -23,8 +23,10 @@ static void test_detects_nint_overflow_when_adding()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 50);
     err = hmAddNint(0, 10, &result);
+    HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 10);
     err = hmAddNint(10, 0, &result);
+    HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 10);
     err = hmAddNint(HM_NINT_MAX, 5, &result);
     HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);
@@ -112,8 +114,10 @@ static void test_detects_millis_overflow_when_adding()
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 50);
     err = hmAddMillis(0, 10, &result);
+    HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 10);
     err = hmAddMillis(10, 0, &result);
+    HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(result == 10);
     err = hmAddMillis(HM_MILLIS_MAX, 5, &result);
     HM_TEST_ASSERT(err == HM_ERROR_OVERFLOW);

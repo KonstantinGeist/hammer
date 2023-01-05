@@ -64,6 +64,8 @@ hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_ar
     char buffer[HM_COMMAND_LINE_BUFFER_SIZE];
     hm_nint read_bytes = 0;
     hm_nint arg_count = 0; /* to skip the first element, which is the executable name we don't need in our API */
+    // cppcheck doesn't understand that HM_FINALIZE=goto:
+    // cppcheck-suppress nullPointerRedundantCheck
     while ((read_bytes = fread(buffer, 1, HM_COMMAND_LINE_BUFFER_SIZE, file)) != 0) {
         hm_nint last_i = 0;
         for (hm_nint i = 0; i < read_bytes; i++) {

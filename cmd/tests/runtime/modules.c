@@ -63,6 +63,7 @@ static void test_can_load_existing_module_class_and_method()
     HM_TEST_ASSERT(hmModuleGetID(module) == 1);
     hmString point_class_name;
     err = hmCreateStringViewFromCString(POINT_CLASS_NAME, &point_class_name);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     hmClass* hm_class = HM_NULL;
     err = hmModuleGetClassRefByName(module, &point_class_name, &hm_class);
     HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -118,6 +119,7 @@ static void test_cannot_load_non_existing_class()
     HM_TEST_ASSERT(hmModuleGetID(module) == 1);
     hmString point_class_name;
     err = hmCreateStringViewFromCString(NON_EXISTING_CLASS_NAME, &point_class_name);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     hmClass* hm_class = HM_NULL;
     err = hmModuleGetClassRefByName(module, &point_class_name, &hm_class);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
@@ -144,6 +146,7 @@ static void test_cannot_load_non_existing_method()
     HM_TEST_ASSERT(hmModuleGetID(module) == 1);
     hmString point_class_name;
     err = hmCreateStringViewFromCString(POINT_CLASS_NAME, &point_class_name);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     hmClass* hm_class = HM_NULL;
     err = hmModuleGetClassRefByName(module, &point_class_name, &hm_class);
     HM_TEST_ASSERT_OK_OR_OOM(err);
