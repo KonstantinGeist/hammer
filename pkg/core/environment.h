@@ -33,5 +33,10 @@ hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_ar
    a C string here for the key instead of a Hammer string, for convenience.
    Returns an empty string if no variable is found. */
 hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* name, hmString* in_value);
+/* Gets the file path of the currently running executable. The returned string can be used to spawn another instance
+   of the running program. The returned file path points to the final executable loaded by the OS. In the case of
+   scripts, the path points to the script handler, not to the script. The returned value points to the actual exectuable
+   and not a symlink. */
+hmError hmGetExecutableFilePath(struct _hmAllocator* allocator, hmString* in_file_path);
 
 #endif /* HM_ENVIRONMENT_H */

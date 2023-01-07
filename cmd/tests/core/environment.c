@@ -15,6 +15,10 @@
 #include <core/environment.h>
 #include <threading/thread.h>
 
+#include <string.h> /* for strlen(..) */
+
+#define LAST_EXECUTABLE_FILE_PATH_PART "/hammer-tests"
+
 static void test_tick_count_grows_monotonically()
 {
     hm_millis first_tick_count = hmGetTickCount();
@@ -30,7 +34,28 @@ static void test_can_get_processor_count()
     HM_TEST_ASSERT(processor_count > 0);
 }
 
+static void test_can_get_executable_file_path()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    hmString executable_file_path;
+    hmError err = hmGetExecutableFilePath(&allocator, &executable_file_path);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    hm_nint last_part_length = strlen(LAST_EXECUTABLE_FILE_PATH_PART);
+    const char* c_ctring = hmStringGetCString(&executable_file_path) + hmStringGetLength(&executable_file_path) - last_part_length;
+    for(hm_nint i = 0; i < last_part_length; i++) {
+        HM_TEST_ASSERT(LAST_EXECUTABLE_FILE_PATH_PART[i] == c_ctring[i]);
+    }
+HM_TEST_ON_FINALIZE
+    if (err == HM_OK) {
+        err = hmStringDispose(&executable_file_path);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(environment)
     HM_TEST_RUN_WITHOUT_OOM(test_tick_count_grows_monotonically)
     HM_TEST_RUN_WITHOUT_OOM(test_can_get_processor_count)
+    HM_TEST_RUN(test_can_get_executable_file_path);
 HM_TEST_SUITE_END()

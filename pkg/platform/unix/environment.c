@@ -12,6 +12,7 @@
 * ******************************************************************************/
 
 #include <core/environment.h>
+#include <core/allocator.h>
 #include <core/math.h>
 #include <core/stringbuilder.h>
 #include <platform/unix/common.h>
@@ -22,6 +23,7 @@
 #include <unistd.h>   /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
 
 #define HM_COMMAND_LINE_BUFFER_SIZE 1024
+#define HM_EXECUTABLE_FILE_PATH_BUFFER_SIZE 1024
 
 hm_millis hmGetTickCount()
 {
@@ -44,19 +46,19 @@ hm_nint hmGetProcessorCount()
 
 hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array)
 {
-    HM_TRY(hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, &hmStringDisposeFunc, in_array));
     hmError err = HM_OK;
+    HM_TRY(hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, &hmStringDisposeFunc, in_array));
     hmStringBuilder string_builder;
     hm_bool is_string_builder_initialized = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmCreateStringBuilder(allocator, &string_builder));
     is_string_builder_initialized = HM_TRUE;
-    char file_name[64];
+    char system_file_name[64];
     pid_t proc_id = getpid();
     /* Not quite portable to cast pid_t to int32, but in GCC it's an integer and it's very unlikely
        to be larger than int32. However, if this invariant is not upheld, we may end up reading arguments
-       of a different, unrelated process if there's a wraparound. */
-    sprintf(file_name, "/proc/%" PRId32 "/cmdline", (hm_int32)proc_id);
-    FILE* file = fopen(file_name, "rb");
+       of a different, unrelated process if there's a wraparound. Also, see hmGetExecutableFilePath(..) */
+    sprintf(system_file_name, "/proc/%" PRId32 "/cmdline", (hm_int32)proc_id);
+    FILE* file = fopen(system_file_name, "rb");
     if (!file) {
         err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
         HM_FINALIZE;
@@ -112,4 +114,41 @@ hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* nam
         return hmCreateEmptyStringView(in_value);
     }
     return hmCreateStringFromCString(allocator, value, in_value);
+}
+
+hmError hmGetExecutableFilePath(struct _hmAllocator* allocator, hmString* in_file_path)
+{
+    hmError err = HM_OK;
+    char system_file_name[64];
+    pid_t proc_id = getpid();
+    /* Not quite portable to cast pid_t to int32, but in GCC it's an integer and it's very unlikely
+       to be larger than int32. However, if this invariant is not upheld, we may end up reading arguments
+       of a different, unrelated process if there's a wraparound. Also, see hmGetCommandLineArguments(..) */
+    sprintf(system_file_name, "/proc/%" PRId32 "/exe", (hm_int32)proc_id);
+    hm_nint buffer_size = HM_EXECUTABLE_FILE_PATH_BUFFER_SIZE;
+    char* buffer = HM_NULL;
+    for (;;) {
+        buffer = hmAlloc(allocator, buffer_size);
+        if (!buffer) {
+            return HM_ERROR_OUT_OF_MEMORY;
+        }
+        int ret = readlink(system_file_name, buffer, buffer_size);
+        if (ret == -1) {
+            err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
+            HM_FINALIZE;
+        }
+        if (ret < buffer_size) {
+            buffer[ret] = 0; /* Ensures proper null termination. */
+            break;
+        }
+        hmFree(allocator, buffer);
+        buffer = HM_NULL;
+        HM_TRY_OR_FINALIZE(err, hmMulNint(buffer_size, 2, &buffer_size));
+    }
+HM_ON_FINALIZE
+    if (err == HM_OK) {
+        err = hmMergeErrors(err, hmCreateStringFromCString(allocator, buffer, in_file_path));
+    }
+    hmFree(allocator, buffer);
+    return err;
 }
