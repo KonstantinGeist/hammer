@@ -30,6 +30,10 @@ hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* i
 hmError hmStringBuilderDispose(hmStringBuilder* string_builder);
 /* Appends a C string to the end of the string being constructed. */
 hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char* c_string);
+/* Same as hmStringBuilderAppendCString(..), except allows to append several C strings of type "const char*" at once.
+   Expects the last string to be HM_NULL for termination. The array can be partially appended after an out-of-memory
+   error happens. */
+hmError hmStringBuilderAppendCStrings(hmStringBuilder* string_builder, ...);
 /* Same as hmStringBuilderAppendCString(..), except uses the provided argument for length instead of null termination. */
 hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length);
 /* Creates a string from the string builder.

@@ -14,6 +14,7 @@
 #include <core/stringbuilder.h>
 #include <core/string.h>
 
+#include <stdarg.h> /* for va_list, va_start(..), va_end(..) and va_arg(..) */
 #include <string.h> /* for strlen(..) */
 
 hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* in_string_builder)
@@ -32,6 +33,22 @@ hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char
 {
     hm_nint length = strlen(c_string);
     return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
+}
+
+hmError hmStringBuilderAppendCStrings(hmStringBuilder* string_builder, ...)
+{
+    hmError err = HM_OK;
+    va_list vl;
+    va_start(vl, string_builder);
+    const char* c_string;
+    while ((c_string = va_arg(vl, const char*))) {
+        err = hmStringBuilderAppendCString(string_builder, c_string);
+        if (err != HM_OK) {
+            break;
+        }
+    }
+    va_end(vl);
+    return err;
 }
 
 hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length)
