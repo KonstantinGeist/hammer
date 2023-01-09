@@ -13,6 +13,7 @@
 
 #include <core/environment.h>
 #include <core/hash.h>
+#include <threading/atomic.h>
 #include <threading/thread.h>
 
 #include <unistd.h> /* for getpid(..) */
@@ -27,6 +28,8 @@
     #include <sys/random.h>
 #endif
 
+static hm_atomic_nint generate_seed_count = 0;
+
 hm_int32 hmGenerateSeed()
 {
     hm_int32 ret_value = 0;
@@ -34,6 +37,13 @@ hm_int32 hmGenerateSeed()
     ssize_t result = getrandom(&ret_value, sizeof(ret_value), 0);
     if (result == -1) {
 #endif
+        /* Makes it more likely that each new seed is different. Otherwise, if hmGenerateSeed(..) was called repeatedly,
+           it would be possible to generate same seeds when based on the current tick count.
+           Increments only starting with the second attempt to make sure the most common case (when the seed generated is only
+           once per process) has no delay on startup at all. */
+        if (hmAtomicIncrement(&generate_seed_count) > 1) {
+            HM_TRY(hmSleep(16));
+        }
         /* Falls back to the current time if /dev/urandom is not available.
            To make it more unpredictable, the current time is additionally hashed with the current process ID as the salt. */
         hm_millis tick_count = hmGetTickCount();
@@ -41,9 +51,6 @@ hm_int32 hmGenerateSeed()
         hm_uint32 process_id_hash = hmHash(&process_id, sizeof(process_id), (hm_uint32)tick_count);
         hm_uint32 tick_count_hash = hmHash(&tick_count, sizeof(tick_count), process_id_hash);
         ret_value = *((hm_int32*)(&tick_count_hash)); /* type-punning to convert uint32 to int32 bitwise */
-        /* Makes it more likely that each new seed is different. Otherwise, if hmGenerateSeed was called repeatedly,
-           it would be possible to generate same seeds when based on the current tick count. */
-        HM_TRY(hmSleep(16));
 #ifdef HM_SUPPORTS_GET_RANDOM
     }
 #endif
