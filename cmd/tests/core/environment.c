@@ -41,11 +41,15 @@ static void test_can_get_executable_file_path()
     hmString executable_file_path;
     hmError err = hmGetExecutableFilePath(&allocator, &executable_file_path);
     HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(hmStringGetLength(&executable_file_path) > 0);
     hm_nint last_part_length = strlen(LAST_EXECUTABLE_FILE_PATH_PART);
     const char* c_ctring = hmStringGetCString(&executable_file_path) + hmStringGetLength(&executable_file_path) - last_part_length;
     for(hm_nint i = 0; i < last_part_length; i++) {
         HM_TEST_ASSERT(LAST_EXECUTABLE_FILE_PATH_PART[i] == c_ctring[i]);
     }
+#ifdef HM_UNIX
+    HM_TEST_ASSERT(hmStringGetCString(&executable_file_path)[0] == '/');
+#endif
 HM_TEST_ON_FINALIZE
     if (err == HM_OK) {
         err = hmStringDispose(&executable_file_path);

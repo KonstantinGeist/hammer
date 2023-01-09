@@ -146,7 +146,7 @@ hmError hmGetExecutableFilePath(struct _hmAllocator* allocator, hmString* in_fil
     }
 HM_ON_FINALIZE
     if (err == HM_OK) {
-        err = hmMergeErrors(err, hmCreateStringFromCString(allocator, buffer, in_file_path));
+        err = hmCreateStringFromCString(allocator, buffer, in_file_path);
     }
     hmFree(allocator, buffer);
     return err;

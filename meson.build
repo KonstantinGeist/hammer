@@ -6,6 +6,10 @@ project('hammer', 'c',
 
 add_global_arguments(['-Werror', '-pedantic'], language: 'c')
 
+if host_machine.system() == 'linux'
+    add_global_arguments(['-DHM_UNIX'], language: 'c')
+endif
+
 inc = [include_directories('pkg')]
 
 subdir('pkg')
