@@ -19,7 +19,7 @@
 
 hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* in_string_builder)
 {
-    HM_TRY(hmCreateArray(allocator, sizeof(char), HM_DEFAULT_ARRAY_CAPACITY, HM_NULL, &in_string_builder->array));
+    HM_TRY(hmCreateArray(allocator, sizeof(char), HM_ARRAY_DEFAULT_CAPACITY, HM_NULL, &in_string_builder->array));
     in_string_builder->allocator = allocator;
     return HM_OK;
 }

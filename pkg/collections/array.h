@@ -16,7 +16,7 @@
 
 #include <core/common.h>
 
-#define HM_DEFAULT_ARRAY_CAPACITY 16
+#define HM_ARRAY_DEFAULT_CAPACITY 16
 
 struct _hmAllocator;
 

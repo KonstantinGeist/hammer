@@ -74,7 +74,7 @@ hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_ar
     hmStringBuilder string_builder;
     hm_bool is_array_initialized = HM_FALSE,
             is_string_builder_initialized = HM_FALSE;
-    HM_TRY_OR_FINALIZE(err, hmCreateArray(allocator, sizeof(hmString), HM_DEFAULT_ARRAY_CAPACITY, &hmStringDisposeFunc, in_array));
+    HM_TRY_OR_FINALIZE(err, hmCreateArray(allocator, sizeof(hmString), HM_ARRAY_DEFAULT_CAPACITY, &hmStringDisposeFunc, in_array));
     is_array_initialized = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmCreateStringBuilder(allocator, &string_builder));
     is_string_builder_initialized = HM_TRUE;

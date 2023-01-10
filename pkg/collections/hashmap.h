@@ -17,8 +17,8 @@
 #include <core/common.h>
 #include <collections/array.h>
 
-#define HM_DEFAULT_HASHMAP_CAPACITY 16
-#define HM_DEFAULT_HASHMAP_LOAD_FACTOR 0.75
+#define HM_HASHMAP_DEFAULT_CAPACITY 16
+#define HM_HASHMAP_DEFAULT_LOAD_FACTOR 0.75
 
 struct _hmAllocator;
 struct _hmHashMapEntry;
@@ -43,8 +43,8 @@ typedef struct {
 } hmHashMap;
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
-   Load factor should be in the range [0.5, 1.0] (preferred value is HM_DEFAULT_HASHMAP_LOAD_FACTOR).
-   Initial capacity can be set to HM_DEFAULT_HASHMAP_CAPACITY.
+   Load factor should be in the range [0.5, 1.0] (preferred value is HM_HASHMAP_DEFAULT_LOAD_FACTOR).
+   Initial capacity can be set to HM_HASHMAP_DEFAULT_CAPACITY.
    key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
    hash_func and equals_func can be null (in that case, bitwise comparisons are made).
    hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for more details.

@@ -23,7 +23,7 @@ static void create_integer_queue_and_allocator(hm_bool is_bounded, hmQueue* queu
     hmError err = hmCreateQueue(
         allocator,
         sizeof(hm_nint),
-        HM_DEFAULT_QUEUE_CAPACITY,
+        HM_QUEUE_DEFAULT_CAPACITY,
         HM_NULL, /* item_dispose_func */
         is_bounded,
         queue
@@ -56,7 +56,7 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
     hmQueue queue;
     hmAllocator allocator;
     create_integer_queue_and_allocator(HM_TRUE, &queue, &allocator);
-    for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
+    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -65,13 +65,13 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
     }
-    for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY/2; i++) {
+    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY/2; i++) {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
         hm_nint count = hmQueueGetCount(&queue);
-        HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i - 1);
+        HM_TEST_ASSERT(count == HM_QUEUE_DEFAULT_CAPACITY - i - 1);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
     }
@@ -83,13 +83,13 @@ static void test_can_enqueue_and_dequeue_from_queue_within_initial_capacity()
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
     }
-    for (hm_nint i = HM_DEFAULT_QUEUE_CAPACITY/2; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
+    for (hm_nint i = HM_QUEUE_DEFAULT_CAPACITY/2; i < HM_QUEUE_DEFAULT_CAPACITY; i++) {
         hm_nint retrieved_value;
         hmError err = hmQueueDequeue(&queue, &retrieved_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(retrieved_value == i * 2);
         hm_nint count = hmQueueGetCount(&queue);
-        HM_TEST_ASSERT(count == HM_DEFAULT_QUEUE_CAPACITY - i);
+        HM_TEST_ASSERT(count == HM_QUEUE_DEFAULT_CAPACITY - i);
         hm_bool is_empty = hmQueueIsEmpty(&queue);
         HM_TEST_ASSERT(is_empty == HM_FALSE);
     }
@@ -107,7 +107,7 @@ HM_TEST_ON_FINALIZE
 
 static void test_can_enqueue_and_dequeue_from_queue_beyond_capacity()
 {
-    #define HM_QUEUE_COUNT_BEYOND_CAPACITY HM_DEFAULT_QUEUE_CAPACITY*4
+    #define HM_QUEUE_COUNT_BEYOND_CAPACITY HM_QUEUE_DEFAULT_CAPACITY*4
     hmQueue queue;
     hmAllocator allocator;
     create_integer_queue_and_allocator(HM_FALSE, &queue, &allocator);
@@ -161,7 +161,7 @@ static void test_queue_disposes_items_on_disposal()
     hmError err = hmCreateQueue(
         &allocator,
         sizeof(hm_nint),
-        HM_DEFAULT_QUEUE_CAPACITY,
+        HM_QUEUE_DEFAULT_CAPACITY,
         &int_queue_dispose_func,
         HM_FALSE,
         &queue
@@ -170,7 +170,7 @@ static void test_queue_disposes_items_on_disposal()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hm_nint item_dispose_sum_control = 0;
     item_dispose_sum = 0;
-    for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY; i++) {
+    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY; i++) {
         hm_nint value = i * 2;
         err = hmQueueEnqueue(&queue, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -188,10 +188,10 @@ static void test_returns_limit_exceeded_when_queue_is_full()
     hmQueue queue;
     hmAllocator allocator;
     create_integer_queue_and_allocator(HM_TRUE, &queue, &allocator);
-    for (hm_nint i = 0; i < HM_DEFAULT_QUEUE_CAPACITY+1; i++) {
+    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY+1; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
-        if (i < HM_DEFAULT_QUEUE_CAPACITY) {
+        if (i < HM_QUEUE_DEFAULT_CAPACITY) {
             HM_TEST_ASSERT_OK_OR_OOM(err);
         } else {
             HM_TEST_ASSERT(err == HM_ERROR_LIMIT_EXCEEDED);

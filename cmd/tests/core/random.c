@@ -71,8 +71,8 @@ static void test_can_generate_seed()
         HM_NULL, /* value_dispose_func */
         sizeof(hm_int32),
         sizeof(hm_int32),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &hash_map
     );

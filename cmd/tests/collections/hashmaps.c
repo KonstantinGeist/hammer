@@ -35,8 +35,8 @@ static void create_integer_hash_map_and_allocator(hmHashMap* hash_map, hmAllocat
         HM_NULL, /* value_dispose_func */
         sizeof(hm_nint),
         sizeof(hm_nint),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         HASH_SALT,
         hash_map
     );
@@ -56,8 +56,8 @@ static void create_point_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator
         HM_NULL, /* value_dispose_func */
         sizeof(Point),
         sizeof(hm_nint),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         HASH_SALT,
         hash_map
     );
@@ -73,8 +73,8 @@ static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* ha
         allocator,
         &hmStringDisposeFunc, /* value_dispose_func */
         sizeof(hmString),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         HASH_SALT,
         hash_map
     );

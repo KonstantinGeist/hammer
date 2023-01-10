@@ -18,7 +18,7 @@
 
 struct _hmAllocator;
 
-#define HM_DEFAULT_QUEUE_CAPACITY 16
+#define HM_QUEUE_DEFAULT_CAPACITY 16
 
 typedef struct {
     struct _hmAllocator* allocator;

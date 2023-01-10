@@ -73,8 +73,8 @@ static hmError mutexes_protect_from_data_corruption_thread_func(void* user_data)
         HM_NULL,      /* value_dispose_func */
         sizeof(hm_nint),
         sizeof(hm_nint),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &context->hash_map
     );

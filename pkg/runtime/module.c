@@ -31,8 +31,8 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         allocator,
         &hmModuleDisposeFunc, /* value_dispose_func */
         sizeof(hmModule),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_registry->name_to_module_map
     ));
@@ -44,8 +44,8 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         HM_NULL,            /* value_dispose_func */
         sizeof(hm_metadata_id),
         sizeof(hmModule*),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &in_registry->module_id_to_module_ref_map
     );
@@ -163,8 +163,8 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, 
         allocator,
         &hmClassDisposeFunc, /* value_dispose_func */
         sizeof(hmClass),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_module->name_to_class_map
     );
@@ -179,8 +179,8 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, 
         HM_NULL,            /* value_dispose_func */
         sizeof(hm_metadata_id),
         sizeof(hmClass*),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &in_module->class_id_to_class_ref_map
     );
@@ -259,8 +259,8 @@ static hmError hmCreateClass(hmAllocator* allocator, hm_metadata_id class_id, hm
         allocator,
         &hmMethodDisposeFunc, /* value_dispose_func */
         sizeof(hmMethod),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_class->name_to_method_map
     );
@@ -275,8 +275,8 @@ static hmError hmCreateClass(hmAllocator* allocator, hm_metadata_id class_id, hm
         HM_NULL,            /* value_dispose_func */
         sizeof(hm_metadata_id),
         sizeof(hmMethod*),
-        HM_DEFAULT_HASHMAP_CAPACITY,
-        HM_DEFAULT_HASHMAP_LOAD_FACTOR,
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &in_class->method_id_to_method_ref_map
     );
