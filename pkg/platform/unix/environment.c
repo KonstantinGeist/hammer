@@ -17,10 +17,11 @@
 #include <core/stringbuilder.h>
 #include <platform/unix/common.h>
 
-#include <inttypes.h> /* for PRId32 */
-#include <stdio.h>    /* for fopen(..), fread(..), fclose(..) and sprintf(..) */
-#include <stdlib.h>   /* for getenv(..) */
-#include <unistd.h>   /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
+#include <inttypes.h>    /* for PRId32 */
+#include <stdio.h>       /* for fopen(..), fread(..), fclose(..) and sprintf(..) */
+#include <stdlib.h>      /* for getenv(..) */
+#include <sys/utsname.h> /* for uname(..) */
+#include <unistd.h>      /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
 
 #define HM_COMMAND_LINE_BUFFER_SIZE 1024
 #define HM_EXECUTABLE_FILE_PATH_BUFFER_SIZE 1024
@@ -149,6 +150,35 @@ HM_ON_FINALIZE
         err = hmCreateStringFromCString(allocator, buffer, in_file_path);
     }
     hmFree(allocator, buffer);
+    return err;
+}
+
+hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version)
+{
+    hmStringBuilder string_builder;
+    HM_TRY(hmCreateStringBuilder(allocator, &string_builder));
+    hmError err = HM_OK;
+    struct utsname os_name;
+    if (uname(&os_name) == -1) {
+        /* If for some reason we could not read it -- just print that it's a Unix. */
+        HM_TRY_OR_FINALIZE(err, hmStringBuilderAppendCString(&string_builder, "Unix"));
+    } else {
+        HM_TRY_OR_FINALIZE(err,
+            hmStringBuilderAppendCStrings(&string_builder,
+                (char*)&os_name.sysname[0],
+                " ",
+                (char*)&os_name.release[0],
+                " ",
+                (char*)&os_name.version[0],
+                " ",
+                (char*)&os_name.machine[0],
+                HM_NULL
+            )
+        );
+    }
+HM_ON_FINALIZE
+    err = hmMergeErrors(err, hmStringBuilderToString(&string_builder, allocator, in_os_version));
+    err = hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
     return err;
 }
 

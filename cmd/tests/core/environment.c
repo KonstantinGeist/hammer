@@ -58,8 +58,25 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_can_get_os_version()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    hmString os_version;
+    hmError err = hmGetOSVersion(&allocator, &os_version);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(hmStringGetLength(&os_version) > 0);
+HM_TEST_ON_FINALIZE
+    if (err == HM_OK) {
+        err = hmStringDispose(&os_version);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(environment)
     HM_TEST_RUN_WITHOUT_OOM(test_tick_count_grows_monotonically)
     HM_TEST_RUN_WITHOUT_OOM(test_can_get_processor_count)
-    HM_TEST_RUN(test_can_get_executable_file_path);
+    HM_TEST_RUN(test_can_get_executable_file_path)
+    HM_TEST_RUN(test_can_get_os_version)
 HM_TEST_SUITE_END()

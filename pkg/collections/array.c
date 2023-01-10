@@ -72,10 +72,14 @@ hmError hmArrayAddRange(hmArray* array, void* in_values, hm_nint count)
     hm_nint new_count = 0;
     HM_TRY(hmAddNint(array->count, count, &new_count));
     HM_TRY(hmArrayUpdateCapacityIfRequired(array, new_count));
+    hm_nint item_address = 0;
+    HM_TRY(hmAddMulNint(hmCastPointerToNint(array->items), array->count, array->item_size, &item_address));
+    hm_nint new_items_size = 0;
+    HM_TRY(hmMulNint(count, array->item_size, &new_items_size));
     hmCopyMemory(
-        array->items + array->count * array->item_size,
+        hmCastNintToPointer(item_address, char*),
         in_values,
-        count * array->item_size
+        new_items_size
     );
     array->count = new_count;
     return HM_OK;
@@ -164,6 +168,9 @@ static hmError hmArrayUpdateCapacityIfRequired(hmArray* array, hm_nint new_count
     }
     hm_nint new_capacity = 0;
     HM_TRY(hmMulNint(array->capacity, HM_ARRAY_GROWTH_FACTOR, &new_capacity));
+    if (new_capacity < new_count) {
+        new_capacity = new_count;
+    }
     hm_nint new_items_capacity = 0;
     HM_TRY(hmMulNint(array->item_size, new_capacity, &new_items_capacity));
     char* new_items = hmRealloc(

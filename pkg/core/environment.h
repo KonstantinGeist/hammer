@@ -38,5 +38,8 @@ hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* nam
    scripts, the path points to the script handler, not to the script. The returned value points to the actual exectuable
    and not a symlink. */
 hmError hmGetExecutableFilePath(struct _hmAllocator* allocator, hmString* in_file_path);
+/* Retrieves the name of the OS, for purely debugging/diagnostics purposes.
+   The exact nature of the returned string depends on the OS. */
+hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version);
 
 #endif /* HM_ENVIRONMENT_H */

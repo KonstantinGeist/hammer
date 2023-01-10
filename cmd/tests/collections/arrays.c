@@ -14,6 +14,8 @@
 #include "../common.h"
 #include <collections/array.h>
 
+#include <string.h> /* for strlen(..) */
+
 #define ARRAY_CAPACITY     4
 #define ARRAY_EXPAND_COUNT 100 /* big enough to also test reallocation */
 
@@ -258,6 +260,40 @@ HM_TEST_ON_FINALIZE
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_add_range_to_array_with_new_count_exceeding_capacity_greater_than_growth_factor()
+{
+    #define ITEM_OS_NAME "Linux"
+    #define ITEM_SPACE " "
+    #define ITEM_KERNEL_VERSION "5.15.0-57-generic"
+    #define ITEM_KERNEL_BUILD "#63~20.04.1-Ubuntu SMP Wed Nov 30 13:40:16 UTC 2022"
+    #define ITEM_KERNEL_ARCH "x86_64"
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    hmError err = hmArrayAddRange(&array, ITEM_OS_NAME, strlen(ITEM_OS_NAME));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_SPACE, strlen(ITEM_SPACE));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_KERNEL_VERSION, strlen(ITEM_KERNEL_VERSION));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_SPACE, strlen(ITEM_SPACE));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_KERNEL_BUILD, strlen(ITEM_KERNEL_BUILD));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_SPACE, strlen(ITEM_SPACE));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    err = hmArrayAddRange(&array, ITEM_KERNEL_ARCH, strlen(ITEM_KERNEL_ARCH));
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    hm_nint expected_length = strlen(ITEM_OS_NAME)
+        + strlen(ITEM_KERNEL_VERSION)
+        + strlen(ITEM_KERNEL_BUILD)
+        + strlen(ITEM_KERNEL_ARCH)
+        + strlen(ITEM_SPACE) * 3;
+    HM_TEST_ASSERT(hmArrayGetCount(&array) == expected_length);
+HM_TEST_ON_FINALIZE
+    dispose_array_and_allocator(&array, &allocator);
+}
+
 static void test_can_clear_array()
 {
     hmAllocator allocator;
@@ -265,7 +301,7 @@ static void test_can_clear_array()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     hm_nint item_dispose_sum_control = 0;
     item_dispose_sum = 0;
-    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: also checks reallocations */
+    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: the test also checks reallocations */
         testItem test_item;
         test_item.x = i*10;
         test_item.y = i*20;
@@ -293,5 +329,6 @@ HM_TEST_SUITE_BEGIN(arrays)
     HM_TEST_RUN(test_can_expand_array_with_expand_func)
     HM_TEST_RUN(test_can_set_array_item)
     HM_TEST_RUN(test_can_add_range_to_array)
+    HM_TEST_RUN(test_can_add_range_to_array_with_new_count_exceeding_capacity_greater_than_growth_factor)
     HM_TEST_RUN(test_can_clear_array)
 HM_TEST_SUITE_END()

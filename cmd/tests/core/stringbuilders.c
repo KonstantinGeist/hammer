@@ -105,12 +105,21 @@ static void test_can_append_multiple_c_strings_to_string_builder()
     hmError err = hmCreateStringBuilder(&allocator, &string_builder);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
-    err = hmStringBuilderAppendCStrings(&string_builder, "Hello, ", "World", "!", HM_NULL);
+    err = hmStringBuilderAppendCStrings(&string_builder,
+        "Linux",
+        " ",
+        "5.15.0-57-generic",
+        " ",
+        "#63~20.04.1-Ubuntu SMP Wed Nov 30 13:40:16 UTC 2022",
+        " ",
+        "x86_64",
+        HM_NULL
+    );
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString string;
     err = hmStringBuilderToString(&string_builder, HM_NULL, &string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "Hello, World!") == 0);
+    HM_TEST_ASSERT(strcmp(hmStringGetCString(&string), "Linux 5.15.0-57-generic #63~20.04.1-Ubuntu SMP Wed Nov 30 13:40:16 UTC 2022 x86_64") == 0);
     err = hmStringDispose(&string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
