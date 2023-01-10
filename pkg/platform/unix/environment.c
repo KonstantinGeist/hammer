@@ -26,6 +26,7 @@
 #define HM_COMMAND_LINE_BUFFER_SIZE 1024
 #define HM_EXECUTABLE_FILE_PATH_BUFFER_SIZE 1024
 #define HM_SYSTEM_FILE_NAME_BUFFER_SIZE 64
+#define HM_OS_VERSION_BUFFER_SIZE 512
 
 static hmError hmFormatWithCurrentProcessId(
     struct _hmAllocator* allocator,
@@ -155,8 +156,11 @@ HM_ON_FINALIZE
 
 hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version)
 {
+    char buffer_allocator_space[HM_OS_VERSION_BUFFER_SIZE];
+    hmAllocator buffer_allocator; /* note: not required to dispose */
+    HM_TRY(hmCreateBufferAllocator(buffer_allocator_space, sizeof(buffer_allocator_space), allocator, &buffer_allocator));
     hmStringBuilder string_builder;
-    HM_TRY(hmCreateStringBuilder(allocator, &string_builder));
+    HM_TRY(hmCreateStringBuilder(&buffer_allocator, &string_builder));
     hmError err = HM_OK;
     struct utsname os_name;
     if (uname(&os_name) == -1) {
@@ -178,8 +182,7 @@ hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version)
     }
 HM_ON_FINALIZE
     err = hmMergeErrors(err, hmStringBuilderToString(&string_builder, allocator, in_os_version));
-    err = hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
-    return err;
+    return hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
 }
 
 static hmError hmFormatWithCurrentProcessId(
