@@ -189,13 +189,16 @@ static hmError hmFormatWithCurrentProcessId(
     const char* after_part
 )
 {
+    char buffer_allocator_space[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];
+    hmAllocator buffer_allocator; /* note: not required to dispose */
+    HM_TRY(hmCreateBufferAllocator(buffer_allocator_space, sizeof(buffer_allocator_space), allocator, &buffer_allocator));
     hmStringBuilder string_builder;
-    HM_TRY(hmCreateStringBuilder(allocator, &string_builder));
+    HM_TRY(hmCreateStringBuilder(&buffer_allocator, &string_builder));
     hmError err = HM_OK;
     hmString format;
     hm_bool is_format_initialized = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmStringBuilderAppendCStrings(&string_builder, before_part, "%", PRId32, after_part, HM_NULL));
-    HM_TRY_OR_FINALIZE(err, hmStringBuilderToString(&string_builder, allocator, &format));
+    HM_TRY_OR_FINALIZE(err, hmStringBuilderToString(&string_builder, &buffer_allocator, &format));
     is_format_initialized = HM_TRUE;
     pid_t process_id = getpid();
     /* Not quite portable to cast pid_t to int32, but in GCC it's an integer and it's very unlikely

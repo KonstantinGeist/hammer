@@ -85,7 +85,9 @@ void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
    to the current stack frame (if the passed buffer is allocated on the stack).
    `buffer_size` must be at least the size of 4 pointers (to store internal state) plus HM_ALLOC_SIZE_ALIGNMENT;
    otherwise, HM_ERROR_INVALID_ARGUMENT is returned.
-   If `fallback_allocator` is specified (i.e., not HM_NULL), allocates from it if there's no more space in the provided buffer. */
+   If `fallback_allocator` is specified (i.e., not HM_NULL), allocates from it if there's no more space in the provided buffer.
+   It's not required to explicitly dispose the allocator because it fits entirely inside the provided buffer.
+   Its hmAllocatorDispose(..) function is a no-op. */
 hmError hmCreateBufferAllocator(char* buffer, hm_nint buffer_size, hmAllocator* fallback_allocator, hmAllocator* in_allocator);
 
 #endif /* HM_ALLOCATOR_H */
