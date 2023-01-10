@@ -39,7 +39,7 @@ hm_int32 hmGenerateSeed()
 #endif
         /* Makes it more likely that each new seed is different. Otherwise, if hmGenerateSeed(..) was called repeatedly,
            it would be possible to generate same seeds when based on the current tick count.
-           Increments only starting with the second attempt to make sure the most common case (when the seed generated is only
+           Sleeps only starting with the second attempt to make sure the most common case (when the seed is generated only
            once per process) has no delay on startup at all. */
         if (hmAtomicIncrement(&generate_seed_count) > 1) {
             HM_TRY(hmSleep(16));
