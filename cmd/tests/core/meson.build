@@ -6,6 +6,7 @@ test_core_sources = files(
     'math.c',
     'random.c',
     'strings.c',
+    'stringpools.c',
     'stringbuilders.c',
     'utils.c'
 )

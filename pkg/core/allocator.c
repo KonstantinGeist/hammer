@@ -101,7 +101,6 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
 /*    BumpPointerAllocator.    */
 /* *************************** */
 
-#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (256*1024) /* 256KB */
 #define HM_LARGE_OBJECT_SIZE_THRESHOLD (HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE/2)
 
 typedef struct _hmBumpPointerAllocatorSegment {
@@ -158,11 +157,9 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     }
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
     hm_nint new_index = 0;
-    if (cur_segment) {
-        err = hmAddNint(cur_segment->index, sz, &new_index);
-        if (err != HM_OK) {
-            return HM_NULL;
-        }
+    err = hmAddNint(cur_segment ? cur_segment->index : 0, sz, &new_index);
+    if (err != HM_OK) {
+        return HM_NULL;
     }
     if (!cur_segment || new_index > HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE) {
         hm_nint full_segment_size = sizeof(hmBumpPointerAllocatorSegment) + HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE - 1;

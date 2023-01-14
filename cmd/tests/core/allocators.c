@@ -13,6 +13,7 @@
 
 #include "../common.h"
 #include <core/allocator.h>
+#include <core/string.h>
 #include <core/utils.h>
 
 #include <string.h> /* for memset(..) */
@@ -95,6 +96,24 @@ static void test_realloc_accepts_smaller_size()
     mem = hmRealloc(&allocator, mem, 100, 50);
     hmFree(&allocator, mem);
     dispose_allocator(&allocator);
+}
+
+/* a test for a found bug */
+static void test_bump_pointer_allocator_works_with_small_objects()
+{
+    hmAllocator system_allocator;
+    hmAllocator bump_pointer_allocator;
+    create_bump_pointer_allocator(&system_allocator, BUMP_POINTER_ALLOCATOR_LIMIT_SIZE, &bump_pointer_allocator);
+    hmString original;
+    hmError err = hmCreateStringViewFromCString("Lorem ipsum", &original);
+    HM_TEST_ASSERT_OK(err);
+    hmString* duplicate = (hmString*)hmAlloc(&bump_pointer_allocator, sizeof(hmString));
+    HM_TEST_ASSERT(duplicate != HM_NULL);
+    err = hmStringDuplicate(&bump_pointer_allocator, &original, duplicate);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEquals(&original, duplicate));
+    dispose_allocator(&bump_pointer_allocator);
+    dispose_allocator(&system_allocator);
 }
 
 static void test_bump_pointer_allocator_works_with_large_objects()
@@ -307,6 +326,7 @@ HM_TEST_SUITE_BEGIN(allocators)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_system_allocator)
     HM_TEST_RUN_WITHOUT_OOM(test_can_alloc_realloc_and_free_from_bump_pointer_allocator)
     HM_TEST_RUN_WITHOUT_OOM(test_realloc_accepts_smaller_size)
+    HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_allocator_works_with_small_objects)
     HM_TEST_RUN_WITHOUT_OOM(test_bump_pointer_allocator_works_with_large_objects)
     HM_TEST_RUN_WITHOUT_OOM(test_stats_allocator_keeps_track_of_alloc_count)
     HM_TEST_RUN_WITHOUT_OOM(test_oom_allocator_returns_out_of_memory)

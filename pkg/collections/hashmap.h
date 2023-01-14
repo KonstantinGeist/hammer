@@ -44,7 +44,7 @@ typedef struct {
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
    Load factor should be in the range [0.5, 1.0] (preferred value is HM_HASHMAP_DEFAULT_LOAD_FACTOR).
-   Initial capacity can be set to HM_HASHMAP_DEFAULT_CAPACITY.
+   Initial capacity can be set to HM_HASHMAP_DEFAULT_CAPACITY. Returns HM_ERROR_INVALID_ARGUMENT if it's zero.
    key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
    hash_func and equals_func can be null (in that case, bitwise comparisons are made).
    hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for more details.
@@ -85,7 +85,8 @@ hmError hmCreateHashMapWithStringRefKeys(
 );
 hmError hmHashMapDispose(hmHashMap* hash_map);
 /* Puts a value in the map by the given key. Note that if dispose_func is provided, it's always called on the old value,
-   even if it's the same value -- which can lead to use-after-free if used without care. */
+   even if it's the same value -- which can lead to use-after-free if used without care.
+   `key` and `value` are pointers to values, not the values themselves. */
 hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value);
 /* Tries to retrieve an element from the map. Returns HM_ERROR_NOT_FOUND if no element by the given key is found.
    Never retains the key value (safe to use with views). The returned value is copied by value; that is, it's not safe

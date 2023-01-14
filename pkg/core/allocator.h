@@ -20,6 +20,7 @@
 
 /* BufferAllocator requires 4 pointers for internal state according to the documentation (see hmCreateBufferAllocator(..)) */
 #define HM_BUFFER_ALLOCATOR_INTERNAL_STATE_SIZE (4 * sizeof(void*))
+#define HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE (256*1024) /* 256KB */
 
 /* This header file and the accompanying source file contain several different allocators for different purposes
    which can be, however, interchangeable thanks to the hmAllocator interface. */
@@ -65,7 +66,9 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
    are no-ops. Useful for static objects which are allocated together and deleted at once (for example, class
    metadata). Note that this allocator is not thread-safe and shouldn't be used with hmThread.
    `memory_limit` specifies the memory limit in bytes, because otherwise a bump pointer allocator which never frees
-   could exhaust all memory in the system. If the limit is exceeded, always returns HM_NULL. */
+   could exhaust all memory in the system. If the limit is exceeded, always returns HM_NULL.
+   HM_NINT_MAX means there's practically no limit, however it may be limited by the base allocator's own limits.
+   The minimum amount of memory reserved for the allocator is HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE. */
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hm_nint memory_limit, hmAllocator* in_allocator);
 /* Creates an allocator which wraps another allocator and additionally keeps track of statistics. */
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);

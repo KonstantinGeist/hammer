@@ -30,6 +30,7 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(readers);
         HM_TEST_RUN_SUITE(arrays);
         HM_TEST_RUN_SUITE(strings);
+        HM_TEST_RUN_SUITE(string_pools);
         HM_TEST_RUN_SUITE(string_builders);
         HM_TEST_RUN_SUITE(utils);
         HM_TEST_RUN_SUITE(hashmaps);
