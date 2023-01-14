@@ -19,7 +19,7 @@
 #include <core/string.h>
 #include <collections/hashmap.h>
 
-#define HM_STRING_POOL_DEFAULT_CAPACITY /* an estimation by dividing HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE by sizeof(hmString) */
+#define HM_STRING_POOL_DEFAULT_CAPACITY 12000 /* an estimation by dividing HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE by sizeof(hmString) */
 
 typedef struct {
     hmAllocator string_allocator; /* All strings are allocated from this pool. */
