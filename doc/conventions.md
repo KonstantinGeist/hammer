@@ -29,6 +29,8 @@ There are several conventions to follow:
   Sometimes logic can guarantee a value will never practically overflow -- in that case, a comment must be written to
   explain why no safe math function is used.
 * Priorities: safety > simplicity > performance.
+* Use the buffer allocator (see hmCreateBufferAllocator(..)) for temporary objects whenever possible.
+  Allocate on stack whenever possible.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

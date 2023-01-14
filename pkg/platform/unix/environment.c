@@ -181,7 +181,9 @@ hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version)
         );
     }
 HM_ON_FINALIZE
-    err = hmMergeErrors(err, hmStringBuilderToString(&string_builder, allocator, in_os_version));
+    if (err == HM_OK) {
+        err = hmMergeErrors(err, hmStringBuilderToString(&string_builder, allocator, in_os_version));
+    }
     return hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
 }
 
@@ -206,7 +208,7 @@ static hmError hmFormatWithCurrentProcessId(
     pid_t process_id = getpid();
     /* Not quite portable to cast pid_t to int32, but in GCC it's an integer and it's very unlikely
        to be larger than int32. However, if this invariant is not upheld, we may end up reading arguments
-       of a different, unrelated process if there's a wraparound. Also, see hmGetCommandLineArguments(..) */
+       of a different, unrelated process if there's a wraparound. */
     sprintf(buffer, hmStringGetCString(&format), (hm_int32)process_id);
 HM_ON_FINALIZE
     if (is_format_initialized) {
