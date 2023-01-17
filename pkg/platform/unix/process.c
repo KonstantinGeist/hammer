@@ -208,7 +208,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
         }
         close(pipefds[0]);
         if (bytes_read) {
-            return HM_ERROR_PLATFORM_DEPENDENT;
+            return HM_ERROR_NOT_FOUND;
         }
         if (wait_for_exit) {
             int status;

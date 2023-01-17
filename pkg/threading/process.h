@@ -28,7 +28,7 @@ typedef struct {
 
 /* Represents an external process in the system. */
 typedef struct {
-    int     exit_code;
+    hm_nint exit_code;
     hm_bool has_exit_code; /* HM_TRUE only if wait_for_exit = HM_TRUE. */
 } hmProcess;
 

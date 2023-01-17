@@ -27,6 +27,7 @@ hm_bool is_process_test(hmAllocator* allocator)
     HM_TEST_ASSERT_OK(err);
     hm_bool result = hmStringEqualsToCString(&value, HM_PROCESS_TEST_ENV_VAR_VALUE);
     err = hmStringDispose(&value);
+    HM_TEST_ASSERT_OK(err);
     return result;
 }
 
@@ -64,13 +65,18 @@ static hmError create_env_vars_array(hmAllocator* allocator, hmHashMap* in_vars)
     return hmHashMapPut(in_vars, &env_var_key, &env_var_value);
 }
 
-static void test_can_start_process()
+static void test_can_start_process_impl(hm_bool is_success_scenario)
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
     HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
     hmString exe_path;
-    hmError err = hmGetExecutableFilePath(&allocator, &exe_path);
+    hmError err;
+    if (is_success_scenario) {
+        err = hmGetExecutableFilePath(&allocator, &exe_path);
+    } else {
+        err = hmCreateStringFromCString(&allocator, "non_existing", &exe_path);
+    }
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmArray args;
     err = create_args_array(&allocator, &args);
@@ -84,9 +90,14 @@ static void test_can_start_process()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmProcess process;
     err = hmStartProcess(&allocator, &exe_path, &args, &options, &process);
-    HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(process.has_exit_code == HM_TRUE);
-    HM_TEST_ASSERT(process.exit_code == HM_PROCESS_TEST_EXIT_CODE);
+    if (is_success_scenario) {
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+        HM_TEST_ASSERT(process.has_exit_code == HM_TRUE);
+        HM_TEST_ASSERT(process.exit_code == HM_PROCESS_TEST_EXIT_CODE);
+    } else {
+        HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND || err == HM_ERROR_OUT_OF_MEMORY);
+        HM_TEST_ASSERT(process.has_exit_code == HM_FALSE);
+    }
     err = hmProcessDispose(&process);
     HM_TEST_ASSERT(err == HM_OK || err == HM_ERROR_OUT_OF_MEMORY);
 HM_TEST_ON_FINALIZE
@@ -99,6 +110,17 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_can_start_process()
+{
+    test_can_start_process_impl(HM_TRUE);
+}
+
+static void test_cannot_start_process_which_cannot_be_found()
+{
+    test_can_start_process_impl(HM_FALSE);
+}
+
 HM_TEST_SUITE_BEGIN(processes)
     HM_TEST_RUN(test_can_start_process)
+    HM_TEST_RUN(test_cannot_start_process_which_cannot_be_found)
 HM_TEST_SUITE_END()

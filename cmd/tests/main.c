@@ -56,28 +56,30 @@ static void run_tests(hmTestSelector* test_selector)
 
 int main()
 {
+    int exit_code = 0;
     hmAllocator allocator;
-    hmArray args;
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
-    err = hmGetCommandLineArguments(&allocator, &args);
     if (is_process_test(&allocator)) {
-        return get_process_test_exit_code();
-    }
-    HM_TEST_ASSERT_OK(err);
-    hmTestSelector selector;
-    if (hmArrayGetCount(&args) == 1) {
-        hmString suite_name;
-        err = hmArrayGet(&args, 0, (void*)&suite_name);
-        HM_TEST_ASSERT_OK(err);
-        selector.test_suite_name = hmStringGetCString(&suite_name);
+        exit_code = get_process_test_exit_code();
     } else {
-        selector.test_suite_name = HM_NULL;
+        hmArray args;
+        err = hmGetCommandLineArguments(&allocator, &args);
+        HM_TEST_ASSERT_OK(err);
+        hmTestSelector selector;
+        if (hmArrayGetCount(&args) == 1) {
+            hmString suite_name;
+            err = hmArrayGet(&args, 0, (void*)&suite_name);
+            HM_TEST_ASSERT_OK(err);
+            selector.test_suite_name = hmStringGetCString(&suite_name);
+        } else {
+            selector.test_suite_name = HM_NULL;
+        }
+        run_tests(&selector);
+        err = hmArrayDispose(&args);
+        HM_TEST_ASSERT_OK(err);
     }
-    run_tests(&selector);
-    err = hmArrayDispose(&args);
-    HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&allocator);
     HM_TEST_ASSERT_OK(err);
-    return 0;
+    return exit_code;
 }
