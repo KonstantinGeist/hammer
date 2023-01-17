@@ -20,5 +20,6 @@ Feature ideas:
 * no null
 * zero downtime rollouts and hotfix support (without restarts)
 * arbitrary data embedding inside Hammer images
-* structural typing  
+* structural typing
+* high-precision decimal type for financial applications
   and more.

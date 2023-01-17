@@ -245,6 +245,19 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
     return HM_OK;
 }
 
+hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate_func, void* user_data)
+{
+    for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
+        hmHashMapEntry* bucket = hash_map->buckets[i];
+        for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
+            void* key = hmHashMapEntryGetKey(hash_map, entry);
+            void* value = hmHashMapEntryGetValue(hash_map, entry);
+            HM_TRY(enumerate_func(key, value, user_data));
+        }
+    }
+    return HM_OK;
+}
+
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 {
     hm_uint32 hash;

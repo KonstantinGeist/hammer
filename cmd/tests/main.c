@@ -33,7 +33,7 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(string_pools);
         HM_TEST_RUN_SUITE(string_builders);
         HM_TEST_RUN_SUITE(utils);
-        HM_TEST_RUN_SUITE(hashmaps);
+        HM_TEST_RUN_SUITE(hash_maps);
         HM_TEST_RUN_SUITE(hashes);
         HM_TEST_RUN_SUITE(errors);
         HM_TEST_RUN_SUITE(queues);
@@ -46,6 +46,7 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(mutexes);
         HM_TEST_RUN_SUITE(waitable_events);
         HM_TEST_RUN_SUITE(threads);
+        HM_TEST_RUN_SUITE(processes);
         HM_TEST_RUN_SUITE(workers);
     }
     HM_TEST_LOG("***************");

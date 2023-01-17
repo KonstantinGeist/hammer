@@ -12,7 +12,10 @@
 * ******************************************************************************/
 
 #include <core/stringbuilder.h>
+#include <core/allocator.h>
+#include <core/math.h>
 #include <core/string.h>
+#include <core/utils.h>
 
 #include <stdarg.h> /* for va_list, va_start(..), va_end(..) and va_arg(..) */
 #include <string.h> /* for strlen(..) */
@@ -64,6 +67,25 @@ hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAlloc
     const char* chars = hmArrayGetRaw(&string_builder->array, const char);
     hm_nint count = hmArrayGetCount(&string_builder->array);
     return hmCreateStringFromCStringWithLength(allocator, chars, count, in_string);
+}
+
+hmError hmStringBuilderToCString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, char** out_c_string)
+{
+    if (!allocator) {
+        allocator = string_builder->allocator;
+    }
+    const char* content = hmArrayGetRaw(&string_builder->array, const char);
+    hm_nint length = hmArrayGetCount(&string_builder->array);
+    hm_nint length_with_null = 0;
+    HM_TRY(hmAddNint(length, 1, &length_with_null));
+    char* content_copy = (char*)hmAlloc(allocator, length_with_null);
+    if (!content_copy) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hmCopyMemory(content_copy, content, length);
+    content_copy[length] = '\0'; /* null terminator */
+    *out_c_string = content_copy;
+    return HM_OK;
 }
 
 hmError hmStringBuilderClear(hmStringBuilder* string_builder)

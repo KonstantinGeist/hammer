@@ -33,7 +33,7 @@ typedef hm_atomic_nint hmThreadState;
 #define HM_THREAD_STATE_ABORT_REQUESTED ((hmThreadState)2)
 #define HM_THREAD_STATE_STOPPED         ((hmThreadState)3)
 
-typedef hmError(*hmThreadStartFunc)(void* user_data);
+typedef hmError (*hmThreadStartFunc)(void* user_data);
 
 typedef struct _hmThread {
     void*  platform_data; /* First, platform-specific data are hidden from header files.

@@ -40,6 +40,8 @@ hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, 
    `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
    will be reused. */
 hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, hmString* in_string);
+/* Same as hmStringBuilderToString, except creates a C string. */
+hmError hmStringBuilderToCString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, char** out_c_string);
 /* Clears the string builder, allowing the instance to be reused in a different case: the length is reset to 0
    and all the previous content is wiped out. */
 hmError hmStringBuilderClear(hmStringBuilder* string_builder);

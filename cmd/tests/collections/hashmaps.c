@@ -18,6 +18,7 @@
 
 #define ITERATION_COUNT 1000
 #define HASH_SALT 666
+#define ITERATION_STOP_INDEX (ITERATION_COUNT/2)
 
 typedef struct {
     int x, y;
@@ -266,7 +267,7 @@ HM_TEST_ON_FINALIZE
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
-static void test_hashmap_can_get_value_by_ref()
+static void test_hash_map_can_get_value_by_ref()
 {
     hmAllocator allocator;
     hmHashMap hash_map;
@@ -289,14 +290,53 @@ HM_TEST_ON_FINALIZE
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
-HM_TEST_SUITE_BEGIN(hashmaps)
+typedef struct {
+    hm_nint count;
+} test_hash_map_can_be_enumerated_context;
+
+static hmError test_hash_map_can_be_enumerated_func(void* key, void* value, void* user_data)
+{
+    test_hash_map_can_be_enumerated_context* context = (test_hash_map_can_be_enumerated_context*)user_data;
+    hm_nint key_int = *((hm_nint*)key);
+    hm_nint value_int = *((hm_nint*)value);
+    HM_TEST_ASSERT(value_int == key_int * 10);
+    context->count++;
+    if (context->count == ITERATION_STOP_INDEX) {
+        return HM_ERROR_NOT_FOUND;
+    }
+    return HM_OK;
+}
+
+static void test_hash_map_can_be_enumerated()
+{
+    hmAllocator allocator;
+    hmHashMap hash_map;
+    create_integer_hash_map_and_allocator(&hash_map, &allocator);
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
+        hm_nint key = i;
+        hm_nint value = i * 10;
+        hmError err = hmHashMapPut(&hash_map, &key, &value);
+        HM_TEST_ASSERT_OK(err);
+    }
+    test_hash_map_can_be_enumerated_context context;
+    context.count = 0;
+    hmError err = hmHashMapEnumerate(&hash_map, &test_hash_map_can_be_enumerated_func, &context);
+    HM_TEST_ASSERT(err == HM_OK || err == HM_ERROR_NOT_FOUND);
+    if (err == HM_ERROR_NOT_FOUND) {
+        HM_TEST_ASSERT(context.count == ITERATION_STOP_INDEX);
+    }
+    dispose_hash_map_and_allocator(&hash_map, &allocator);
+}
+
+HM_TEST_SUITE_BEGIN(hash_maps)
     HM_TEST_RUN(test_can_create_and_dispose_hash_map)
     HM_TEST_RUN(test_can_put_and_get_integers_from_hash_map)
+    HM_TEST_RUN_WITHOUT_OOM(test_hash_map_can_be_enumerated)
     HM_TEST_RUN(test_can_remove_integers_from_hash_map)
     HM_TEST_RUN(test_hash_map_returns_error_on_non_existing_key)
     HM_TEST_RUN(test_hash_map_reports_nothing_was_removed)
     HM_TEST_RUN(test_hash_map_reports_correct_count)
     HM_TEST_RUN_WITHOUT_OOM(test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func) /* without OOM: takes too much time */
     HM_TEST_RUN(test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs)
-    HM_TEST_RUN(test_hashmap_can_get_value_by_ref)
+    HM_TEST_RUN(test_hash_map_can_get_value_by_ref)
 HM_TEST_SUITE_END()

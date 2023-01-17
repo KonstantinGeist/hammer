@@ -60,11 +60,11 @@ hmError hmAllocatorDispose(hmAllocator* allocator);
 #define hmAllocOnStack(size) alloca(size)
 
 /* Creates a system allocator - it merely redirects to the OS or the standard library which implement alloc/free.
-   Memory alignment is OS-specific. This allocator is thread-safe and can be used with hmThread. */
+   Memory alignment is OS-specific. This allocator is thread-safe and can be used with hmThread/hmProcess. */
 hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
 /* Creates a simple, but fast bump pointer allocator. Allocations are fast (just a pointer is bumped), and frees
    are no-ops. Useful for static objects which are allocated together and deleted at once (for example, class
-   metadata). Note that this allocator is not thread-safe and shouldn't be used with hmThread.
+   metadata). Note that this allocator is not thread-safe and shouldn't be used with hmThread/hmProcess.
    `memory_limit` specifies the memory limit in bytes, because otherwise a bump pointer allocator which never frees
    could exhaust all memory in the system. If the limit is exceeded, always returns HM_NULL.
    HM_NINT_MAX means there's practically no limit, however it may be limited by the base allocator's own limits.

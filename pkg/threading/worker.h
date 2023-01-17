@@ -21,7 +21,7 @@
 
 struct _hmAllocator;
 
-typedef hmError(*hmWorkerFunc)(void* work_item);
+typedef hmError (*hmWorkerFunc)(void* work_item);
 
 typedef struct {
     struct _hmWorkerData* data;

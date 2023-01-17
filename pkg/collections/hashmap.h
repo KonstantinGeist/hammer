@@ -23,8 +23,9 @@
 struct _hmAllocator;
 struct _hmHashMapEntry;
 
-typedef hm_uint32(*hmHashMapHashFunc)(void* key, hm_uint32 salt);
-typedef hm_bool(*hmHashMapEqualsFunc)(void* value1, void* value2);
+typedef hm_uint32 (*hmHashMapHashFunc)(void* key, hm_uint32 salt);
+typedef hm_bool (*hmHashMapEqualsFunc)(void* value1, void* value2);
+typedef hmError (*hmHashMapEnumerateFunc)(void* key, void* value, void* user_data);
 
 typedef struct {
     struct _hmAllocator*       allocator;
@@ -45,8 +46,8 @@ typedef struct {
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
    Load factor should be in the range [0.5, 1.0] (preferred value is HM_HASHMAP_DEFAULT_LOAD_FACTOR).
    Initial capacity can be set to HM_HASHMAP_DEFAULT_CAPACITY. Returns HM_ERROR_INVALID_ARGUMENT if it's zero.
-   key_dispose_func and value_dispose_func can be null (nothing will be disposed in that case).
-   hash_func and equals_func can be null (in that case, bitwise comparisons are made).
+   key_dispose_func and value_dispose_func can be HM_NULL (nothing will be disposed in that case).
+   hash_func and equals_func can be HM_NULL (in that case, bitwise comparisons are made).
    hash_salt is used to salt hashes to prevent against hash DoS attacks, see hmHash(..) for more details.
    WARNING The default, bitwise comparison-based hashing is unsafe with structs because the compiler can
    add padding with uninitialized garbage. */
@@ -100,6 +101,12 @@ hm_bool hmHashMapContains(hmHashMap* hash_map, void* key);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);
+/* Enumerates all the keys and values in the map by calling function `enumerate_func`. The error returned from `enumerate_func`
+   is returned from hmHashMapEnumerate(..) as is. On any error other than HM_OK, enumeration is immediately terminated.
+   Use `user_data` to pass additional context to the callback.
+   Iteration order is not guaranteed.
+   WARNING Modifying the hashmap while enumerating its keys/values leads to corrupted data. */
+hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate_func, void* user_data);
 #define hmHashMapGetCount(hash_map) ((hash_map)->count)
 
 #endif /* HM_HASHMAP_H */
