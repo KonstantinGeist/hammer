@@ -16,28 +16,18 @@
 #include <core/math.h>
 #include <core/stringbuilder.h>
 
+#include <errno.h>    /* for errno */
+#include <fcntl.h>    /* fcntl(..) */
+#include <sys/wait.h> /* waitpid(..) */
+#include <unistd.h>   /* for fork() and pipe(..) */
+
 #define HM_UNIX_ARGS_BUFFER_SIZE 512
 
 static hmError hmConvertHammerProcessArgsToUnix(struct _hmAllocator* allocator, hmString* path, hmArray* hammer_args, char*** out_unix_args);
 static void hmDisposeUnixProcessArgs(struct _hmAllocator* allocator, char** unix_args);
 static hmError hmConvertHammerEnvironmentVarsToUnix(struct _hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars);
-static void hmDisposeUnixEnvironmentArgs(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count);
-
-/* TODO remove */
-#include <stdio.h>
-
-static void debugPrint(char** unix_args)
-{
-    if (!unix_args) {
-        return;
-    }
-    char* unix_arg;
-    while ((unix_arg = *unix_args)) {
-        printf("%s\n", unix_arg);
-        unix_args++;
-    }
-    printf("\n");
-}
+static void hmDisposeUnixEnvironmentVars(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count);
+static hmError hmStartUnixProcess(const char* path, char** unix_args, char** unix_env_vars, hm_bool wait_for_exit, hmProcess* in_process);
 
 hmError hmStartProcess(
     struct _hmAllocator* allocator,
@@ -50,6 +40,9 @@ hmError hmStartProcess(
     char unix_args_buffer[HM_UNIX_ARGS_BUFFER_SIZE];
     hmAllocator buffer_allocator; /* note: not required to dispose */
     HM_TRY(hmCreateBufferAllocator(unix_args_buffer, sizeof(unix_args_buffer), allocator, &buffer_allocator));
+    in_process->exit_code = 0;
+    in_process->has_exit_code = HM_FALSE;
+    const char* c_path = hmStringGetCString(path);
     char** unix_args = HM_NULL;
     char** unix_env_vars = HM_NULL;
     hmError err = HM_OK;
@@ -57,16 +50,13 @@ hmError hmStartProcess(
     if (options && options->environment_vars) {
         HM_TRY_OR_FINALIZE(err, hmConvertHammerEnvironmentVarsToUnix(&buffer_allocator, options->environment_vars, &unix_env_vars));
     }
-    /* TODO start process here */
-    debugPrint(unix_args);
-    debugPrint(unix_env_vars);
+    hm_bool wait_for_exit = options ? options->wait_for_exit : HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmStartUnixProcess(c_path, unix_args, unix_env_vars, wait_for_exit, in_process));
 HM_ON_FINALIZE
     /* cppcheck-suppress shadowFunction */
     /* cppcheck-suppress unreadVariable */
     hmDisposeUnixProcessArgs(&buffer_allocator, unix_args);
-    /* cppcheck-suppress shadowFunction */
-    /* cppcheck-suppress unreadVariable */
-    hmDisposeUnixEnvironmentArgs(&buffer_allocator, unix_env_vars, HM_NINT_MAX);
+    hmDisposeUnixEnvironmentVars(&buffer_allocator, unix_env_vars, HM_NINT_MAX);
     return err;
 }
 
@@ -154,14 +144,14 @@ HM_ON_FINALIZE
         err = hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
     }
     if (err != HM_OK) {
-        hmDisposeUnixEnvironmentArgs(allocator, unix_env_vars, context.unix_env_vars_index);
+        hmDisposeUnixEnvironmentVars(allocator, unix_env_vars, context.unix_env_vars_index);
     } else {
         *out_unix_env_vars = unix_env_vars;
     }
     return err;
 }
 
-static void hmDisposeUnixEnvironmentArgs(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count)
+static void hmDisposeUnixEnvironmentVars(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count)
 {
     if (!unix_env_vars) {
         return;
@@ -170,4 +160,68 @@ static void hmDisposeUnixEnvironmentArgs(struct _hmAllocator* allocator, char** 
         hmFree(allocator, unix_env_vars[i]);
     }
     hmFree(allocator, unix_env_vars);
+}
+
+static hmError hmStartUnixProcess(const char* path, char** unix_args, char** unix_env_vars, hm_bool wait_for_exit, hmProcess* in_process)
+{
+    /* The self-pipe trick for interprocess communication between the current process and
+       the started process (see below). */
+    int pipefds[2];
+    if (pipe(pipefds)) {
+        return HM_ERROR_PLATFORM_DEPENDENT;
+    }
+    if (fcntl(pipefds[1], F_SETFD, fcntl(pipefds[1], F_GETFD) | FD_CLOEXEC)) {
+        return HM_ERROR_PLATFORM_DEPENDENT;
+    }
+    /* Forks.
+     * WARNING No complex functions should be between fork() and execve(..)
+     * because it's not thread-safe when it comes to mutexes (potential deadlocks). */
+    pid_t pid = fork();
+    if (pid < 0) {
+        /* Here and below we don't check errors of close(..) to make sure as much resources are closed as possible
+           to avoid resource leaks. */
+        close(pipefds[0]);
+        close(pipefds[1]);
+        return HM_ERROR_PLATFORM_DEPENDENT;
+    }
+    if (pid == 0) { /* Child process. */
+        if (unix_env_vars) {
+            execve(path, unix_args, unix_env_vars);
+        } else {
+            execv(path, unix_args);
+        }
+        /* If we're here, that means we failed to launch the subprocess (otherwise, the address space would have been
+           replaced with a different image in execve(..) above). So, we write a byte to the pipe to signal to the parent
+           there was an error. */
+        write(pipefds[1], &errno, sizeof(int));
+        _exit(0);
+    } else { /* Parent process. */
+        /* Closes the write end, we don't need it in the parent. */
+        close(pipefds[1]);
+        /* Tries to read one byte from the pipe. If it's successful, that means the child process failed to launch. */
+        int bytes_read = 0;
+        int err;
+        while ((bytes_read = read(pipefds[0], &err, sizeof(errno))) == -1) {
+            if (errno != EAGAIN && errno != EINTR) {
+                break;
+            }
+        }
+        close(pipefds[0]);
+        if (bytes_read) {
+            return HM_ERROR_PLATFORM_DEPENDENT;
+        }
+        if (wait_for_exit) {
+            int status;
+            while (waitpid(pid, &status, 0) == -1) {
+                if (errno != EINTR) {
+                    return HM_ERROR_PLATFORM_DEPENDENT;
+                }
+            }
+            if (WIFEXITED(status)) {
+                in_process->exit_code = WEXITSTATUS(status);
+                in_process->has_exit_code = HM_TRUE;
+            }
+        }
+    }
+    return HM_OK;
 }

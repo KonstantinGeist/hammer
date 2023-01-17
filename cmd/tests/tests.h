@@ -34,3 +34,6 @@ HM_TEST_DECLARE_SUITE(environment)
 HM_TEST_DECLARE_SUITE(random)
 HM_TEST_DECLARE_SUITE(math)
 HM_TEST_DECLARE_SUITE(workers)
+
+hm_bool is_process_test(hmAllocator* allocator);
+int get_process_test_exit_code();

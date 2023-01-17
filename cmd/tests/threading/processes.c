@@ -13,11 +13,26 @@
 
 #include "../common.h"
 #include <threading/process.h>
+#include <core/environment.h>
 #include <collections/array.h>
 
-static hmError create_exe_path(hmAllocator* allocator, hmString* in_path)
+#define HM_PROCESS_TEST_ENV_VAR_KEY "HM_PROCESS_TEST"
+#define HM_PROCESS_TEST_ENV_VAR_VALUE "true"
+#define HM_PROCESS_TEST_EXIT_CODE 113
+
+hm_bool is_process_test(hmAllocator* allocator)
 {
-    return hmCreateStringFromCString(allocator, "exe_path", in_path);
+    hmString value;
+    hmError err = hmGetEnvironmentVariable(allocator, HM_PROCESS_TEST_ENV_VAR_KEY, &value);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool result = hmStringEqualsToCString(&value, HM_PROCESS_TEST_ENV_VAR_VALUE);
+    err = hmStringDispose(&value);
+    return result;
+}
+
+int get_process_test_exit_code()
+{
+    return HM_PROCESS_TEST_EXIT_CODE;
 }
 
 static hmError create_args_array(hmAllocator* allocator, hmArray* in_args)
@@ -42,8 +57,10 @@ static hmError create_env_vars_array(hmAllocator* allocator, hmHashMap* in_vars)
         in_vars
     ));
     hmString env_var_key, env_var_value;
-    HM_TRY(hmCreateStringFromCString(allocator, "KEY", &env_var_key));
-    HM_TRY(hmCreateStringFromCString(allocator, "VALUE", &env_var_value));
+    /* WARNING Don't remove this, or the tests executable (./hammer-tests) can become a fork bomb!
+       (The tests executable launches itself to check processes can be started correctly.) */
+    HM_TRY(hmCreateStringFromCString(allocator, HM_PROCESS_TEST_ENV_VAR_KEY, &env_var_key));
+    HM_TRY(hmCreateStringFromCString(allocator, HM_PROCESS_TEST_ENV_VAR_VALUE, &env_var_value));
     return hmHashMapPut(in_vars, &env_var_key, &env_var_value);
 }
 
@@ -53,7 +70,8 @@ static void test_can_start_process()
     HM_TEST_INIT_ALLOC(&allocator);
     HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
     hmString exe_path;
-    hmError err = create_exe_path(&allocator, &exe_path);
+    hmError err = hmGetExecutableFilePath(&allocator, &exe_path);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     hmArray args;
     err = create_args_array(&allocator, &args);
     HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -67,6 +85,8 @@ static void test_can_start_process()
     hmProcess process;
     err = hmStartProcess(&allocator, &exe_path, &args, &options, &process);
     HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(process.has_exit_code == HM_TRUE);
+    HM_TEST_ASSERT(process.exit_code == HM_PROCESS_TEST_EXIT_CODE);
     err = hmProcessDispose(&process);
     HM_TEST_ASSERT(err == HM_OK || err == HM_ERROR_OUT_OF_MEMORY);
 HM_TEST_ON_FINALIZE

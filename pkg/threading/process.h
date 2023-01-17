@@ -28,15 +28,16 @@ typedef struct {
 
 /* Represents an external process in the system. */
 typedef struct {
-    /* TODO */
-    int dummy;
+    int     exit_code;
+    hm_bool has_exit_code; /* HM_TRUE only if wait_for_exit = HM_TRUE. */
 } hmProcess;
 
 /* Starts a new process to use external tools installed in the system.
    The allocator must be thread-safe.
-   `path` is the path to the executable; the search algorithm depends on the OS.
+   `path` is the absolute path to the executable; we use absolute paths for security (relative paths are error-prone).
    `args` is the list of string arguments (hmArray<hmString>).
-   `options` represents additional options (can be HM_NULL); see hmStartProcessOptions. */
+   `options` represents additional options (can be HM_NULL); see hmStartProcessOptions.
+    Returns HM_ERROR_NOT_FOUND if failed to start a process because a valid executable file was not found. */
 hmError hmStartProcess(
     struct _hmAllocator* allocator,
     hmString* path,

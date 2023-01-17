@@ -61,6 +61,9 @@ int main()
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
     err = hmGetCommandLineArguments(&allocator, &args);
+    if (is_process_test(&allocator)) {
+        return get_process_test_exit_code();
+    }
     HM_TEST_ASSERT_OK(err);
     hmTestSelector selector;
     if (hmArrayGetCount(&args) == 1) {
