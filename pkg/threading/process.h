@@ -29,7 +29,7 @@ typedef struct {
 /* Represents an external process in the system. */
 typedef struct {
     hm_nint exit_code;
-    hm_bool has_exit_code; /* HM_TRUE only if wait_for_exit = HM_TRUE. */
+    hm_bool has_exited; /* So far, HM_TRUE only if wait_for_exit = HM_TRUE. */
 } hmProcess;
 
 /* Starts a new process to use external tools installed in the system.
@@ -48,5 +48,7 @@ hmError hmStartProcess(
 /* Disposes of the resources held by the representation of the external process inside the current process
    (i.e. doesn't kill the process). */
 hmError hmProcessDispose(hmProcess* process);
+#define hmProcessHasExited(process) ((process)->has_exited)
+#define hmProcessGetExitCode(process) ((process)->exit_code)
 
 #endif /* HM_PROCESS_H */

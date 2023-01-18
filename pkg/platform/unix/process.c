@@ -41,7 +41,7 @@ hmError hmStartProcess(
     hmAllocator buffer_allocator; /* note: not required to dispose */
     HM_TRY(hmCreateBufferAllocator(unix_args_buffer, sizeof(unix_args_buffer), allocator, &buffer_allocator));
     in_process->exit_code = 0;
-    in_process->has_exit_code = HM_FALSE;
+    in_process->has_exited = HM_FALSE;
     const char* c_path = hmStringGetCString(path);
     char** unix_args = HM_NULL;
     char** unix_env_vars = HM_NULL;
@@ -84,7 +84,7 @@ static hmError hmConvertHammerProcessArgsToUnix(struct _hmAllocator* allocator, 
         hmString* hammer_arg = &raw_hammer_strings[i];
         unix_args[i + 1] = (char*)hmStringGetCString(hammer_arg); /* no overflow-safe math for "i + 1" because prevalidated in alloc_size */
     }
-    unix_args[arg_count + 1] = HM_NULL;
+    unix_args[arg_count + 1] = HM_NULL; /* shouldn't overflow because arg_count < alloc_size, which was already validated */
     *out_unix_args = unix_args;
     return HM_OK;
 }
@@ -117,7 +117,6 @@ static hmError hmEnvironmentMapEnumerateFunc(void* key, void* value, void* user_
     return HM_OK;
 }
 
-/* Similar to hmConvertHammerProcessArgsToUnix(..) (see). */
 static hmError hmConvertHammerEnvironmentVarsToUnix(struct _hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars)
 {
     hm_nint env_var_count = hmHashMapGetCount(hammer_env_vars);
@@ -194,7 +193,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
            replaced with a different image in execve(..) above). So, we write a byte to the pipe to signal to the parent
            there was an error. */
         write(pipefds[1], &errno, sizeof(int));
-        _exit(0);
+        _exit(1);
     } else { /* Parent process. */
         /* Closes the write end, we don't need it in the parent. */
         close(pipefds[1]);
@@ -219,7 +218,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
             }
             if (WIFEXITED(status)) {
                 in_process->exit_code = WEXITSTATUS(status);
-                in_process->has_exit_code = HM_TRUE;
+                in_process->has_exited = HM_TRUE;
             }
         }
     }
