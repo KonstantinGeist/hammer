@@ -18,6 +18,7 @@
 
 #include <errno.h>    /* for errno */
 #include <fcntl.h>    /* fcntl(..) */
+#include <sys/stat.h> /* for stat(..) */
 #include <sys/wait.h> /* waitpid(..) */
 #include <unistd.h>   /* for fork() and pipe(..) */
 
@@ -161,8 +162,21 @@ static void hmDisposeUnixEnvironmentVars(struct _hmAllocator* allocator, char** 
     hmFree(allocator, unix_env_vars);
 }
 
+static hm_bool hmFileSystemPathExists(const char* path)
+{
+    /* TODO move to io::FileSystem */
+    struct stat stbuf;
+    return stat(path, &stbuf) != -1;
+}
+
 static hmError hmStartUnixProcess(const char* path, char** unix_args, char** unix_env_vars, hm_bool wait_for_exit, hmProcess* in_process)
 {
+    /* Preventively checks if the path exists, because otherwise Valgrind reports memory leaks during tests when a dying subprocess fails to find
+       the executable.
+       In the future, an overriden filesystem injected in the process' constructor can enforce sandboxing rules, for example. */
+    if (!hmFileSystemPathExists(path)) {
+        return HM_ERROR_NOT_FOUND;
+    }
     /* The self-pipe trick for interprocess communication between the current process and
        the started process (see below). */
     int pipefds[2];
