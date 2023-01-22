@@ -56,7 +56,7 @@ static void test_string_pool_can_be_filled_with_many_strings()
         err = hmCreateStringViewFromCString(test_strings[i], &string_view);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         hmString* interned_string = HM_NULL;
-        err = hmStringPoolGetString(&pool, &string_view, &interned_string);
+        err = hmStringPoolGet(&pool, &string_view, &interned_string);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string));
     }
@@ -81,7 +81,7 @@ static void test_string_pool_returns_same_string()
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString* interned_string = HM_NULL;
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
-        err = hmStringPoolGetString(&pool, &string_view, &interned_string);
+        err = hmStringPoolGet(&pool, &string_view, &interned_string);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string));
     }

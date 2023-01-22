@@ -52,7 +52,7 @@ hmError hmStringPoolDispose(hmStringPool* pool)
 
 /* Note: since the bump pointer allocator's memory space cannot be shrinked and hmFree(..) calls are no-ops (as per
    the documentation), we don't bother freeing strings on error here which simplifies the code. */
-hmError hmStringPoolGetString(hmStringPool* pool, hmString* in_string_view, hmString** out_string)
+hmError hmStringPoolGet(hmStringPool* pool, hmString* in_string_view, hmString** out_string)
 {
     hmError err = hmHashMapGet(&pool->pool, (void*)&in_string_view, &out_string);
     /* If the value is found -- just return it immediately. Also immediately returns if an unexpected error happened
