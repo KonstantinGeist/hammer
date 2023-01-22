@@ -20,7 +20,7 @@
 #include <stdarg.h> /* for va_list, va_start(..), va_end(..) and va_arg(..) */
 #include <string.h> /* for strlen(..) */
 
-hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* in_string_builder)
+hmError hmCreateStringBuilder(hmAllocator* allocator, hmStringBuilder* in_string_builder)
 {
     HM_TRY(hmCreateArray(allocator, sizeof(char), HM_ARRAY_DEFAULT_CAPACITY, HM_NULL, &in_string_builder->array));
     in_string_builder->allocator = allocator;
@@ -59,7 +59,7 @@ hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, 
     return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
 }
 
-hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, hmString* in_string)
+hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator, hmString* in_string)
 {
     if (!allocator) {
         allocator = string_builder->allocator;
@@ -69,7 +69,7 @@ hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAlloc
     return hmCreateStringFromCStringWithLength(allocator, chars, count, in_string);
 }
 
-hmError hmStringBuilderToCString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, char** out_c_string)
+hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator, char** out_c_string)
 {
     if (!allocator) {
         allocator = string_builder->allocator;

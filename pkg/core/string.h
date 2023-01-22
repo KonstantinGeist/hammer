@@ -15,25 +15,24 @@
 #define HM_STRING_H
 
 #include <core/common.h>
-
-struct _hmAllocator;
+#include <core/allocator.h>
 
 typedef struct {
-    hm_char*             content;
-    struct _hmAllocator* allocator;
-    hm_nint              length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
+    hm_char*     content;
+    hmAllocator* allocator;
+    hm_nint      length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
 } hmString;
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
    internal buffer when the object is disposed of. See also hmCreateStringViewFromCString.
    Strings are immutable. */
-hmError hmCreateStringFromCString(struct _hmAllocator* allocator, const char* content, hmString* in_string);
+hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string);
 /* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
    as an argument (the null terminator is not included in the length).
    It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
    the actual string. Empty strings with zero length are allowed.
    Strings are immutable. */
-hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
+hmError hmCreateStringFromCStringWithLength(hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string
    is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived
@@ -44,7 +43,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
    Strings are immutable. */
 hmError hmCreateEmptyStringView(hmString* in_string);
-hmError hmStringDuplicate(struct _hmAllocator* allocator, hmString* string, hmString* in_duplicate);
+hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);

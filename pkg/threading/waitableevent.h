@@ -15,21 +15,20 @@
 #define HM_WAITABLE_EVENT_H
 
 #include <core/common.h>
-
-struct _hmAllocator;
+#include <core/allocator.h>
 
 #define HM_WAITABLE_EVENT_MIN_TIMEOUT_MS 1
 #define HM_WAITABLE_EVENT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough */
 
 typedef struct {
-    struct _hmAllocator* allocator;
-    void*                platform_data; /* Platform-specific data are hidden from header files.
-                                           Also a pointer guards against moves/copies. */
+    hmAllocator* allocator;
+    void*        platform_data; /* Platform-specific data are hidden from header files.
+                                   Also a pointer guards against moves/copies. */
 } hmWaitableEvent;
 
 /* Creates a "waitable event" which allows to block the current thread until the waitable event's Signal() method is called.
    Useful for building queue consumers to avoid burning the CPU while waiting. */
-hmError hmCreateWaitableEvent(struct _hmAllocator* allocator, hmWaitableEvent* in_waitable_event);
+hmError hmCreateWaitableEvent(hmAllocator* allocator, hmWaitableEvent* in_waitable_event);
 hmError hmWaitableEventDispose(hmWaitableEvent* waitable_event);
 /* Blocks the current thread until the waitable event is "signaled" (gets Signal() called) or the interval `timeout_ms`
    (in milliseconds) elapses.

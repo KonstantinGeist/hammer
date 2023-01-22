@@ -21,7 +21,7 @@
 static hmError hmArrayUpdateCapacityIfRequired(hmArray* array, hm_nint new_count);
 
 hmError hmCreateArray(
-    struct _hmAllocator* allocator,
+    hmAllocator* allocator,
     hm_nint item_size,
     hm_nint initial_capacity,
     hmDisposeFunc item_dispose_func,

@@ -41,14 +41,14 @@ volatile
 static hmError hmWorkerThreadFunc(void* user_data);
 
 hmError hmCreateWorker(
-    struct _hmAllocator* allocator,
-    hmString* name,
-    hmWorkerFunc worker_func,
-    hm_nint item_size,
+    hmAllocator*  allocator,
+    hmString*     name,
+    hmWorkerFunc  worker_func,
+    hm_nint       item_size,
     hmDisposeFunc item_dispose_func,
-    hm_bool is_queue_bounded,
-    hm_nint queue_size,
-    hmWorker* in_worker
+    hm_bool       is_queue_bounded,
+    hm_nint       queue_size,
+    hmWorker*     in_worker
 )
 {
     if (!worker_func || item_size > HM_WORKER_MAX_ITEM_SIZE) {

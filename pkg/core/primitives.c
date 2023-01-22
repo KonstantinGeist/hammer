@@ -53,7 +53,7 @@ hm_bool hmUint32EqualsFunc(void* value1, void* value2)
     return a == b;
 }
 
-hmError hmInt32ToString(struct _hmAllocator* allocator, hm_int32 value, hmString* in_string)
+hmError hmInt32ToString(hmAllocator* allocator, hm_int32 value, hmString* in_string)
 {
     char buffer[64];
     sprintf(buffer, "%" PRId32, value);

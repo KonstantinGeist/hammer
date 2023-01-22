@@ -29,7 +29,7 @@
 #define HM_OS_VERSION_BUFFER_SIZE 512
 
 static hmError hmFormatWithCurrentProcessId(
-    struct _hmAllocator* allocator,
+    hmAllocator* allocator,
     char buffer[HM_SYSTEM_FILE_NAME_BUFFER_SIZE],
     const char* before_part,
     const char* after_part
@@ -54,7 +54,7 @@ hm_nint hmGetProcessorCount()
 #endif /* _SC_NPROCESSORS_ONLN */
 }
 
-hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* name, hmString* in_value)
+hmError hmGetEnvironmentVariable(hmAllocator* allocator, const char* name, hmString* in_value)
 {
     char* value = getenv(name);
     if (!value) {
@@ -63,7 +63,7 @@ hmError hmGetEnvironmentVariable(struct _hmAllocator* allocator, const char* nam
     return hmCreateStringFromCString(allocator, value, in_value);
 }
 
-hmError hmGetCommandLineArguments(struct _hmAllocator* allocator, hmArray* in_array)
+hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
 {
     char system_file_name[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];
     HM_TRY(hmFormatWithCurrentProcessId(allocator, system_file_name, "/proc/", "/cmdline"));
@@ -121,7 +121,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmGetExecutableFilePath(struct _hmAllocator* allocator, hmString* in_file_path)
+hmError hmGetExecutableFilePath(hmAllocator* allocator, hmString* in_file_path)
 {
     char system_file_name[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];
     HM_TRY(hmFormatWithCurrentProcessId(allocator, system_file_name, "/proc/", "/exe"));
@@ -154,7 +154,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmGetOSVersion(struct _hmAllocator* allocator, hmString* in_os_version)
+hmError hmGetOSVersion(hmAllocator* allocator, hmString* in_os_version)
 {
     char buffer_allocator_space[HM_OS_VERSION_BUFFER_SIZE];
     hmAllocator buffer_allocator; /* note: not required to dispose */
@@ -188,7 +188,7 @@ HM_ON_FINALIZE
 }
 
 static hmError hmFormatWithCurrentProcessId(
-    struct _hmAllocator* allocator,
+    hmAllocator* allocator,
     char buffer[HM_SYSTEM_FILE_NAME_BUFFER_SIZE],
     const char* before_part,
     const char* after_part

@@ -44,11 +44,11 @@ static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_dat
 static void* hmAdaptPosixThreadToHammer(void* arg);
 
 hmError hmCreateThread(
-    struct _hmAllocator* allocator,
-    hmString*            name,
-    hmThreadStartFunc    thread_func,
-    void*                user_data,
-    hmThread*            in_thread
+    hmAllocator*      allocator,
+    hmString*         name,
+    hmThreadStartFunc thread_func,
+    void*             user_data,
+    hmThread*         in_thread
 )
 {
     hmThreadPlatformData* platform_data = (hmThreadPlatformData*)hmAlloc(allocator, sizeof(hmThreadPlatformData));

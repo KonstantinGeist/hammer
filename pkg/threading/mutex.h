@@ -15,17 +15,16 @@
 #define HM_MUTEX_H
 
 #include <core/common.h>
-
-struct _hmAllocator;
+#include <core/allocator.h>
 
 typedef struct {
-    struct _hmAllocator* allocator;
-    void*                platform_data; /* Platform-specific data are hidden from header files.
-                                           Also a pointer guards against moves/copies. */
+    hmAllocator* allocator;
+    void*        platform_data; /* Platform-specific data are hidden from header files.
+                                   Also a pointer guards against moves/copies. */
 } hmMutex;
 
 /* Creates a recursive mutex. */
-hmError hmCreateMutex(struct _hmAllocator* allocator, hmMutex* in_mutex);
+hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex);
 /* It's undefined behavior when a mutex is destroyed while it's locked. */
 hmError hmMutexDispose(hmMutex* mutex);
 /* Begins to own a critical section of code which starts at this call and ends at the next call to hmMutexUnlock(..).

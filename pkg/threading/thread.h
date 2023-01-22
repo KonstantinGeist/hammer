@@ -18,10 +18,6 @@
 #include <core/string.h>
 #include <threading/atomic.h>
 
-struct _hmAllocator;
-struct _hmArray;
-struct _hmThread;
-
 #define HM_SLEEP_MIN_MS 1
 #define HM_SLEEP_MAX_MS (60*60*1000) /* 1 hour must be more than enough */
 #define HM_THREAD_JOIN_MIN_TIMEOUT_MS HM_SLEEP_MIN_MS
@@ -45,11 +41,11 @@ typedef struct _hmThread {
    `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
    using a thread-safe allocator; can be HM_NULL. */
 hmError hmCreateThread(
-    struct _hmAllocator* allocator,
-    hmString*            name,
-    hmThreadStartFunc    thread_func,
-    void*                user_data,
-    hmThread*            in_thread
+    hmAllocator*      allocator,
+    hmString*         name,
+    hmThreadStartFunc thread_func,
+    void*             user_data,
+    hmThread*         in_thread
 );
 /* Disposes of a thread. If the thread is still running, the thread will be automatically disposed when it finishes. */
 hmError hmThreadDispose(hmThread* thread);

@@ -24,18 +24,18 @@
 
 #define HM_UNIX_ARGS_BUFFER_SIZE 512
 
-static hmError hmConvertHammerProcessArgsToUnix(struct _hmAllocator* allocator, hmString* path, hmArray* hammer_args, char*** out_unix_args);
-static void hmDisposeUnixProcessArgs(struct _hmAllocator* allocator, char** unix_args);
-static hmError hmConvertHammerEnvironmentVarsToUnix(struct _hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars);
-static void hmDisposeUnixEnvironmentVars(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count);
+static hmError hmConvertHammerProcessArgsToUnix(hmAllocator* allocator, hmString* path, hmArray* hammer_args, char*** out_unix_args);
+static void hmDisposeUnixProcessArgs(hmAllocator* allocator, char** unix_args);
+static hmError hmConvertHammerEnvironmentVarsToUnix(hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars);
+static void hmDisposeUnixEnvironmentVars(hmAllocator* allocator, char** unix_env_vars, hm_nint count);
 static hmError hmStartUnixProcess(const char* path, char** unix_args, char** unix_env_vars, hm_bool wait_for_exit, hmProcess* in_process);
 
 hmError hmStartProcess(
-    struct _hmAllocator* allocator,
-    hmString* path,
-    hmArray* args,
+    hmAllocator*           allocator,
+    hmString*              path,
+    hmArray*               args,
     hmStartProcessOptions* options,
-    hmProcess* in_process
+    hmProcess*             in_process
 )
 {
     char unix_args_buffer[HM_UNIX_ARGS_BUFFER_SIZE];
@@ -68,7 +68,7 @@ hmError hmProcessDispose(hmProcess* process)
 
 /* Converts the arguments to the format specified by the `execv` family of functions (list of C strings terminated with a NULL).
    Note that the function assumes the unix arg array won't outlive the original array since it directly references the char buffers inside it. */
-static hmError hmConvertHammerProcessArgsToUnix(struct _hmAllocator* allocator, hmString* path, hmArray* hammer_args, char*** out_unix_args)
+static hmError hmConvertHammerProcessArgsToUnix(hmAllocator* allocator, hmString* path, hmArray* hammer_args, char*** out_unix_args)
 {
     hm_nint arg_count = hmArrayGetCount(hammer_args);
     hm_nint alloc_size = 0;
@@ -90,7 +90,7 @@ static hmError hmConvertHammerProcessArgsToUnix(struct _hmAllocator* allocator, 
     return HM_OK;
 }
 
-static void hmDisposeUnixProcessArgs(struct _hmAllocator* allocator, char** unix_args)
+static void hmDisposeUnixProcessArgs(hmAllocator* allocator, char** unix_args)
 {
     if (!unix_args) {
         return;
@@ -118,7 +118,7 @@ static hmError hmEnvironmentMapEnumerateFunc(void* key, void* value, void* user_
     return HM_OK;
 }
 
-static hmError hmConvertHammerEnvironmentVarsToUnix(struct _hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars)
+static hmError hmConvertHammerEnvironmentVarsToUnix(hmAllocator* allocator, hmHashMap* hammer_env_vars, char*** out_unix_env_vars)
 {
     hm_nint env_var_count = hmHashMapGetCount(hammer_env_vars);
     hm_nint alloc_size = 0;
@@ -151,7 +151,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-static void hmDisposeUnixEnvironmentVars(struct _hmAllocator* allocator, char** unix_env_vars, hm_nint count)
+static void hmDisposeUnixEnvironmentVars(hmAllocator* allocator, char** unix_env_vars, hm_nint count)
 {
     if (!unix_env_vars) {
         return;

@@ -15,21 +15,20 @@
 #define HM_ARRAY_H
 
 #include <core/common.h>
+#include <core/allocator.h>
 
 #define HM_ARRAY_DEFAULT_CAPACITY 16
 
-struct _hmAllocator;
-
 /* A general purpose array. */
 typedef struct {
-    struct _hmAllocator* allocator;
-    char*                items;             /* The list of entries in the array, a contiguous memory block of inlined values.
-                                               Typed to void* because that's how we achieve genericity. */
-    hmDisposeFunc        item_dispose_func; /* Dispose function: called on every item on container destruction. Can be HM_NULL. */
-    hm_nint              item_size;         /* Size of a single item (this is how we achieve genericity). */
-    hm_nint              capacity;          /* The capacity of the array: determines how many elements can be added
-                                               before the internal backing array is resized. */
-    hm_nint              count;             /* The count of objects in this array. */
+    hmAllocator*  allocator;
+    char*         items;             /* The list of entries in the array, a contiguous memory block of inlined values.
+                                        Typed to void* because that's how we achieve genericity. */
+    hmDisposeFunc item_dispose_func; /* Dispose function: called on every item on container destruction. Can be HM_NULL. */
+    hm_nint       item_size;         /* Size of a single item (this is how we achieve genericity). */
+    hm_nint       capacity;          /* The capacity of the array: determines how many elements can be added
+                                        before the internal backing array is resized. */
+    hm_nint       count;             /* The count of objects in this array. */
 } hmArray;
 
 /* Array expansion function. User_data is passed from hmArrayExpand(..) (see). */
@@ -38,7 +37,7 @@ typedef hmError (*hmArrayExpandFunc)(hmArray* array, hm_nint index, void* in_ite
 /* Creates a new array. When calling hmArrayAdd in a loop, make sure initial_capacity is set to a correct value
    so that we don't have to reallocate too often. */
 hmError hmCreateArray(
-    struct _hmAllocator* allocator,
+    hmAllocator* allocator,
     hm_nint item_size,
     hm_nint initial_capacity,
     hmDisposeFunc item_dispose_func,

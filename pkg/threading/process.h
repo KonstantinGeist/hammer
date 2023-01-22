@@ -18,8 +18,6 @@
 #include <core/string.h>
 #include <collections/hashmap.h>
 
-struct _hmAllocator;
-
 /* Specifies additional options when starting an external process. */
 typedef struct {
     hmHashMap* environment_vars; /* hmHashMap<hmString, hmString>. Can be HM_NULL if environment variables don't need to be overriden. */
@@ -39,11 +37,11 @@ typedef struct {
    `options` represents additional options (can be HM_NULL); see hmStartProcessOptions.
     Returns HM_ERROR_NOT_FOUND if failed to start a process because a valid executable file was not found. */
 hmError hmStartProcess(
-    struct _hmAllocator* allocator,
-    hmString* path,
-    hmArray* args,
+    hmAllocator*           allocator,
+    hmString*              path,
+    hmArray*               args,
     hmStartProcessOptions* options,
-    hmProcess* in_process
+    hmProcess*             in_process
 );
 /* Disposes of the resources held by the representation of the external process inside the current process
    (i.e. doesn't kill the process). */

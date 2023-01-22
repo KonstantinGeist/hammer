@@ -34,17 +34,17 @@ static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key);
 static hmError hmHashMapRehash(hmHashMap* hash_map);
 
 hmError hmCreateHashMap(
-    struct _hmAllocator* allocator,
-    hmHashMapHashFunc    hash_func,
-    hmHashMapEqualsFunc  equals_func,
-    hmDisposeFunc        key_dispose_func,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              key_size,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*        allocator,
+    hmHashMapHashFunc   hash_func,
+    hmHashMapEqualsFunc equals_func,
+    hmDisposeFunc       key_dispose_func,
+    hmDisposeFunc       value_dispose_func,
+    hm_nint             key_size,
+    hm_nint             value_size,
+    hm_nint             initial_capacity,
+    hm_float64          load_factor,
+    hm_uint32           hash_salt,
+    hmHashMap*          in_hashmap
 )
 {
     if (!initial_capacity || load_factor < 0.5 || load_factor > 1.0) {
@@ -73,13 +73,13 @@ hmError hmCreateHashMap(
 }
 
 hmError hmCreateHashMapWithStringKeys(
-    struct _hmAllocator* allocator,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*  allocator,
+    hmDisposeFunc value_dispose_func,
+    hm_nint       value_size,
+    hm_nint       initial_capacity,
+    hm_float64    load_factor,
+    hm_uint32     hash_salt,
+    hmHashMap*    in_hashmap
 )
 {
     return hmCreateHashMap(
@@ -98,13 +98,13 @@ hmError hmCreateHashMapWithStringKeys(
 }
 
 hmError hmCreateHashMapWithStringRefKeys(
-    struct _hmAllocator* allocator,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*  allocator,
+    hmDisposeFunc value_dispose_func,
+    hm_nint       value_size,
+    hm_nint       initial_capacity,
+    hm_float64    load_factor,
+    hm_uint32     hash_salt,
+    hmHashMap*    in_hashmap
 )
 {
     return hmCreateHashMap(

@@ -15,8 +15,7 @@
 #define HM_READER_H
 
 #include <core/common.h>
-
-struct _hmAllocator;
+#include <core/allocator.h>
 
 /* Generic structure for any reader. Readers can be used to read runtime metadata from disk, memory, etc. */
 typedef struct _hmReader {
@@ -35,6 +34,6 @@ hmError hmReaderClose(hmReader *reader);
 
 /* Creates a reader which reads from a given fixed memory block and initialized data pointed to by in_reader.
    Useful when, for example, runtime metadata is constructed in-memory. */
-hmError hmCreateMemoryReader(struct _hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader);
+hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader);
 
 #endif /* HM_READER_H */

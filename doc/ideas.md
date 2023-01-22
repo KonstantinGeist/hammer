@@ -22,4 +22,5 @@ Feature ideas:
 * arbitrary data embedding inside Hammer images
 * structural typing
 * high-precision decimal type for financial applications
+* built-in package manager
   and more.

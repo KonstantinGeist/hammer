@@ -15,12 +15,12 @@
 #define HM_HASHMAP_H
 
 #include <core/common.h>
+#include <core/allocator.h>
 #include <collections/array.h>
 
 #define HM_HASHMAP_DEFAULT_CAPACITY 16
 #define HM_HASHMAP_DEFAULT_LOAD_FACTOR 0.75
 
-struct _hmAllocator;
 struct _hmHashMapEntry;
 
 typedef hm_uint32 (*hmHashMapHashFunc)(void* key, hm_uint32 salt);
@@ -28,19 +28,19 @@ typedef hm_bool (*hmHashMapEqualsFunc)(void* value1, void* value2);
 typedef hmError (*hmHashMapEnumerateFunc)(void* key, void* value, void* user_data);
 
 typedef struct {
-    struct _hmAllocator*       allocator;
-    struct _hmHashMapEntry**   buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
-    hmHashMapHashFunc          hash_func;
-    hmHashMapEqualsFunc        equals_func;
-    hmDisposeFunc              key_dispose_func;   /* can be HM_NULL */
-    hmDisposeFunc              value_dispose_func; /* can be HM_NULL */
-    hm_nint                    key_size;
-    hm_nint                    value_size;
-    hm_nint                    count;
-    hm_nint                    bucket_count;
-    hm_float64                 threshold;
-    hm_float64                 load_factor;
-    hm_uint32                  hash_salt;
+    hmAllocator*              allocator;
+    struct _hmHashMapEntry**  buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
+    hmHashMapHashFunc         hash_func;
+    hmHashMapEqualsFunc       equals_func;
+    hmDisposeFunc             key_dispose_func;   /* can be HM_NULL */
+    hmDisposeFunc             value_dispose_func; /* can be HM_NULL */
+    hm_nint                   key_size;
+    hm_nint                   value_size;
+    hm_nint                   count;
+    hm_nint                   bucket_count;
+    hm_float64                threshold;
+    hm_float64                load_factor;
+    hm_uint32                 hash_salt;
 } hmHashMap;
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.
@@ -52,37 +52,37 @@ typedef struct {
    WARNING The default, bitwise comparison-based hashing is unsafe with structs because the compiler can
    add padding with uninitialized garbage. */
 hmError hmCreateHashMap(
-    struct _hmAllocator* allocator,
-    hmHashMapHashFunc    hash_func,
-    hmHashMapEqualsFunc  equals_func,
-    hmDisposeFunc        key_dispose_func,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              key_size,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*        allocator,
+    hmHashMapHashFunc   hash_func,
+    hmHashMapEqualsFunc equals_func,
+    hmDisposeFunc       key_dispose_func,
+    hmDisposeFunc       value_dispose_func,
+    hm_nint             key_size,
+    hm_nint             value_size,
+    hm_nint             initial_capacity,
+    hm_float64          load_factor,
+    hm_uint32           hash_salt,
+    hmHashMap*          in_hashmap
 );
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are strings (one of the most common cases). */
 hmError hmCreateHashMapWithStringKeys(
-    struct _hmAllocator* allocator,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*  allocator,
+    hmDisposeFunc value_dispose_func,
+    hm_nint       value_size,
+    hm_nint       initial_capacity,
+    hm_float64    load_factor,
+    hm_uint32     hash_salt,
+    hmHashMap*    in_hashmap
 );
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are string references (one of the most common cases). */
 hmError hmCreateHashMapWithStringRefKeys(
-    struct _hmAllocator* allocator,
-    hmDisposeFunc        value_dispose_func,
-    hm_nint              value_size,
-    hm_nint              initial_capacity,
-    hm_float64           load_factor,
-    hm_uint32            hash_salt,
-    hmHashMap*           in_hashmap
+    hmAllocator*  allocator,
+    hmDisposeFunc value_dispose_func,
+    hm_nint       value_size,
+    hm_nint       initial_capacity,
+    hm_float64    load_factor,
+    hm_uint32     hash_salt,
+    hmHashMap*    in_hashmap
 );
 hmError hmHashMapDispose(hmHashMap* hash_map);
 /* Puts a value in the map by the given key. Note that if dispose_func is provided, it's always called on the old value,

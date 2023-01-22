@@ -23,12 +23,12 @@ static hmError hmQueueDoubleQueue(hmQueue* queue);
 #define hmQueueIncrementIndex(queue, index) (((index) + 1) % (queue)->capacity)
 
 hmError hmCreateQueue(
-    struct _hmAllocator* allocator,
-    hm_nint item_size,
-    hm_nint initial_capacity,
+    hmAllocator*  allocator,
+    hm_nint       item_size,
+    hm_nint       initial_capacity,
     hmDisposeFunc item_dispose_func,
-    hm_bool is_bounded,
-    hmQueue* in_queue
+    hm_bool       is_bounded,
+    hmQueue*      in_queue
 )
 {
     if (!item_size || !initial_capacity) {

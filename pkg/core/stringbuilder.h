@@ -15,18 +15,17 @@
 #define HM_STRINGBUILDER_H
 
 #include <core/common.h>
+#include <core/allocator.h>
 #include <core/string.h>
 #include <collections/array.h>
 
-struct _hmAllocator;
-
 typedef struct {
-    struct _hmAllocator* allocator;
-    hmArray              array;
+    hmAllocator* allocator;
+    hmArray      array;
 } hmStringBuilder;
 
 /* Creates a string builder, which allows to efficiently construct strings. */
-hmError hmCreateStringBuilder(struct _hmAllocator* allocator, hmStringBuilder* in_string_builder);
+hmError hmCreateStringBuilder(hmAllocator* allocator, hmStringBuilder* in_string_builder);
 hmError hmStringBuilderDispose(hmStringBuilder* string_builder);
 /* Appends a C string to the end of the string being constructed. */
 hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char* c_string);
@@ -39,9 +38,9 @@ hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, 
 /* Creates a string from the string builder.
    `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
    will be reused. */
-hmError hmStringBuilderToString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, hmString* in_string);
+hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator, hmString* in_string);
 /* Same as hmStringBuilderToString, except creates a C string. */
-hmError hmStringBuilderToCString(hmStringBuilder* string_builder, struct _hmAllocator* allocator, char** out_c_string);
+hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator, char** out_c_string);
 /* Clears the string builder, allowing the instance to be reused in a different case: the length is reset to 0
    and all the previous content is wiped out. */
 hmError hmStringBuilderClear(hmStringBuilder* string_builder);

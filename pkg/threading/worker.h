@@ -19,8 +19,6 @@
 
 #define HM_WORKER_MAX_ITEM_SIZE 1024
 
-struct _hmAllocator;
-
 typedef hmError (*hmWorkerFunc)(void* work_item);
 
 typedef struct {
@@ -38,14 +36,14 @@ typedef struct {
    `worker_func` specifies the processing function. Note that any unexpected errors will immediately stop the worker.
     So if you instead would like to log errors and continue, then such errors should be processed inside worker_func. */
 hmError hmCreateWorker(
-    struct _hmAllocator* allocator,
-    hmString* name,
-    hmWorkerFunc worker_func,
-    hm_nint item_size,
+    hmAllocator*  allocator,
+    hmString*     name,
+    hmWorkerFunc  worker_func,
+    hm_nint       item_size,
     hmDisposeFunc item_dispose_func,
-    hm_bool is_queue_bounded,
-    hm_nint queue_size,
-    hmWorker* in_worker
+    hm_bool       is_queue_bounded,
+    hm_nint       queue_size,
+    hmWorker*     in_worker
 );
 /* Before disposing of the worker, it should be stopped and awaited with hmWorkerStop(..) and hmWorkerWait(..)
    Returns HM_ERROR_INVALID_STATE if the worker isn't fully stopped. */

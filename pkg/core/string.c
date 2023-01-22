@@ -38,7 +38,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     return HM_OK;
 }
 
-hmError hmCreateStringFromCStringWithLength(struct _hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string)
+hmError hmCreateStringFromCStringWithLength(hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string)
 {
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;

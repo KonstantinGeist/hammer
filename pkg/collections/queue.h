@@ -15,32 +15,31 @@
 #define HM_QUEUE_H
 
 #include <core/common.h>
-
-struct _hmAllocator;
+#include <core/allocator.h>
 
 #define HM_QUEUE_DEFAULT_CAPACITY 16
 
 typedef struct {
-    struct _hmAllocator* allocator;
-    char*                items;
-    hmDisposeFunc        item_dispose_func;
-    hm_nint              item_size;
-    hm_nint              capacity;
-    hm_nint              count;
-    hm_nint              read_index;
-    hm_nint              write_index;
-    hm_bool              is_bounded;
+    hmAllocator*  allocator;
+    char*         items;
+    hmDisposeFunc item_dispose_func;
+    hm_nint       item_size;
+    hm_nint       capacity;
+    hm_nint       count;
+    hm_nint       read_index;
+    hm_nint       write_index;
+    hm_bool       is_bounded;
 } hmQueue;
 
 /* Creates a ring buffer-based queue. Arguments and the semantics are similar to those of hmArray (see).
    item_dispose_func can be HM_NULL. */
 hmError hmCreateQueue(
-    struct _hmAllocator* allocator,
-    hm_nint item_size,
-    hm_nint initial_capacity,
+    hmAllocator*  allocator,
+    hm_nint       item_size,
+    hm_nint       initial_capacity,
     hmDisposeFunc item_dispose_func,
-    hm_bool is_bounded, /* A bounded queue returns HM_ERROR_LIMIT_EXCEEDED if the queue is full, instead of increasing the capacity. */
-    hmQueue* in_queue
+    hm_bool       is_bounded, /* A bounded queue returns HM_ERROR_LIMIT_EXCEEDED if the queue is full, instead of increasing the capacity. */
+    hmQueue*      in_queue
 );
 /* Disposes of the queue and calls item_dispose_func (if any) on all the items still in the queue. */
 hmError hmQueueDispose(hmQueue* queue);

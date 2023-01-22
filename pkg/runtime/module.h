@@ -20,8 +20,6 @@
 #include <collections/hashmap.h>
 #include <runtime/common.h>
 
-struct _hmAllocator;
-
 /* Modules store classes, and classes store methods, by using hashmaps. It's not superperformant per se (each lookup
    involves searching in a hashmap), however, high-level (HL) bytecode will be translated to low-level (LL) bytecode where
    pointers are directly stored in the LL bytecode, so it's not an issue at runtime (no dispatch will happen). Storing objects inside
@@ -35,11 +33,11 @@ typedef struct {
 } hmMethodBody;
 
 typedef struct {
-    struct _hmAllocator* allocator;
-    hmString             name;           /* The name of the method which should be unique in a given class. */
-    hmString             signature_desc; /* Signature desc: unresolved desc as stored in the image; it will be resolved during method resolution. */
-    hmMethodBody         hl_body;        /* High-level bytecode: it will be compiled to low-level bytecode during method resolution. */
-    hm_metadata_id       method_id;
+    hmAllocator*   allocator;
+    hmString       name;           /* The name of the method which should be unique in a given class. */
+    hmString       signature_desc; /* Signature desc: unresolved desc as stored in the image; it will be resolved during method resolution. */
+    hmMethodBody   hl_body;        /* High-level bytecode: it will be compiled to low-level bytecode during method resolution. */
+    hm_metadata_id method_id;
 } hmMethod;
 
 typedef struct {
@@ -58,16 +56,16 @@ typedef struct {
 } hmModule;
 
 typedef struct {
-    struct _hmAllocator* allocator;
-    hmHashMap            name_to_module_map;          /* hmHashMap<hmString, hmModule>, for reflection */
-    hmHashMap            module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
+    hmAllocator* allocator;
+    hmHashMap    name_to_module_map;          /* hmHashMap<hmString, hmModule>, for reflection */
+    hmHashMap    module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
 } hmModuleRegistry;
 
 /* A module registry is where all modules and their classes are registered and stored. Typically, there should
    be only one module registry per runtime instance.
    Thread safety: as a registry can be shared by multiple concurrent theads of execution, it should not be modified
    when user code is running, unless otherwise noted. */
-hmError hmCreateModuleRegistry(struct _hmAllocator* allocator, hmModuleRegistry* in_registry);
+hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry);
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
 /* Loads a module from a Hammer image denoted by the path on disk. After registering, all classes in the module
    are immediately usable. */
