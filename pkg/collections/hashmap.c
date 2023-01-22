@@ -20,8 +20,8 @@
 
 #define HM_HASHMAP_GROWTH_FACTOR 2
 
-typedef struct _hmHashMapEntry {
-    struct _hmHashMapEntry* next;
+typedef struct hmHashMapEntry_ {
+    struct hmHashMapEntry_* next;
     char                    payload[1]; /* the size afterwards depends on key_size + value_size */
 } hmHashMapEntry;
 

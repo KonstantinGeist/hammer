@@ -103,8 +103,8 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
 
 #define HM_LARGE_OBJECT_SIZE_THRESHOLD (HM_BUMP_POINTER_ALLOCATOR_SEGMENT_SIZE/2)
 
-typedef struct _hmBumpPointerAllocatorSegment {
-    struct _hmBumpPointerAllocatorSegment* next;
+typedef struct hmBumpPointerAllocatorSegment_ {
+    struct hmBumpPointerAllocatorSegment_* next;
 
     hm_nint index;
     char    data[1];

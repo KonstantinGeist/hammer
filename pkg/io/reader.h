@@ -18,10 +18,10 @@
 #include <core/allocator.h>
 
 /* Generic structure for any reader. Readers can be used to read runtime metadata from disk, memory, etc. */
-typedef struct _hmReader {
-    hmError (*read)(struct _hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read); /* Reads sz number of bytes to buf, returns out_bytes_read. */
-    hmError (*seek)(struct _hmReader* reader, hm_nint offset); /* Moves the file pointer to a specific offset denoted by `offset`. */
-    hmError (*close)(struct _hmReader* reader);
+typedef struct hmReader_ {
+    hmError (*read)(struct hmReader_* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read); /* Reads sz number of bytes to buf, returns out_bytes_read. */
+    hmError (*seek)(struct hmReader_* reader, hm_nint offset); /* Moves the file pointer to a specific offset denoted by `offset`. */
+    hmError (*close)(struct hmReader_* reader);
     void*     data;                                            /* Reader-specific data. */
 } hmReader;
 

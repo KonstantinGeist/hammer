@@ -29,12 +29,12 @@
    how memory is actually allocated, to allow fast, interchangeable implementations, or implementations specific
    to a certain case. For example, runtime metadata is allocated using a fast bump pointer allocator which can
    be deallocated all at once. */
-typedef struct _hmAllocator {
-    void* (*alloc)(struct _hmAllocator* allocator, hm_nint sz); /* Allocating function. Returns HM_NULL if out of memory. */
-    void  (*free)(struct _hmAllocator* allocator, void* mem);   /* Frees a given block of memory. Behavior is undefined if memory
+typedef struct hmAllocator_ {
+    void* (*alloc)(struct hmAllocator_* allocator, hm_nint sz); /* Allocating function. Returns HM_NULL if out of memory. */
+    void  (*free)(struct hmAllocator_* allocator, void* mem);   /* Frees a given block of memory. Behavior is undefined if memory
                                                                    not belonging to this allocator is passed to it. Generally should
                                                                    ignore errors (preferably by logging errors). Safe to pass HM_NULL to it. */
-    hmError (*dispose)(struct _hmAllocator* allocator);  /* Function to delete the allocator itself, including all of its
+    hmError (*dispose)(struct hmAllocator_* allocator);  /* Function to delete the allocator itself, including all of its
                                                             bookkeeping data. Behavior is undefined if there are still pointers
                                                             to objects allocated through this allocator. */
     void* data;                                          /* Pointer to data specific to the implementation (initialized in

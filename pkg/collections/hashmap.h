@@ -21,7 +21,7 @@
 #define HM_HASHMAP_DEFAULT_CAPACITY 16
 #define HM_HASHMAP_DEFAULT_LOAD_FACTOR 0.75
 
-struct _hmHashMapEntry;
+struct hmHashMapEntry_;
 
 typedef hm_uint32 (*hmHashMapHashFunc)(void* key, hm_uint32 salt);
 typedef hm_bool (*hmHashMapEqualsFunc)(void* value1, void* value2);
@@ -29,7 +29,7 @@ typedef hmError (*hmHashMapEnumerateFunc)(void* key, void* value, void* user_dat
 
 typedef struct {
     hmAllocator*             allocator;
-    struct _hmHashMapEntry** buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
+    struct hmHashMapEntry_** buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
     hmHashMapHashFunc        hash_func;
     hmHashMapEqualsFunc      equals_func;
     hmDisposeFunc            key_dispose_func;   /* can be HM_NULL */

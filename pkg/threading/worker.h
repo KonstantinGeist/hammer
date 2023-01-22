@@ -22,7 +22,7 @@
 typedef hmError (*hmWorkerFunc)(void* work_item);
 
 typedef struct {
-    struct _hmWorkerData* data;
+    struct hmWorkerData_* data;
 } hmWorker;
 
 /* A worker allows to process work items on a separate thread.

@@ -25,8 +25,8 @@ typedef hm_uint8 hmTypeKind;
 
 /* A typeref is a reference to a type, which can be a primitive type or an object of a certain class. */
 typedef struct {
-    struct __hmClass*   class;     /* This value is non-null only if type_kind == HM_TYPEKIND_CLASS. */
-    hmTypeKind          type_kind; /* Specifies the type kind of the value this typeref refers to. */
+    struct hmClass_*   hm_class;  /* This value is non-null only if type_kind == HM_TYPEKIND_CLASS. */
+    hmTypeKind         type_kind; /* Specifies the type kind of the value this typeref refers to. */
 } hmTypeRef;
 
 #endif /* HM_TYPE_H */

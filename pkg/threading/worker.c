@@ -24,7 +24,7 @@
    if we want to stop the worker, it will eventually reactivate and stop in any case. */
 #define HM_WORKER_THREAD_WAIT_TIMEOUT_MS 4000
 
-typedef struct _hmWorkerData {
+typedef struct hmWorkerData_ {
     hmAllocator*    allocator;
     hmThread        thread;
     hmQueue         queue;
