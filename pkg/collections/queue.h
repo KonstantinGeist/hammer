@@ -22,7 +22,7 @@
 typedef struct {
     hmAllocator*  allocator;
     char*         items;
-    hmDisposeFunc item_dispose_func;
+    hmDisposeFunc item_dispose_func_opt;
     hm_nint       item_size;
     hm_nint       capacity;
     hm_nint       count;
@@ -37,7 +37,7 @@ hmError hmCreateQueue(
     hmAllocator*  allocator,
     hm_nint       item_size,
     hm_nint       initial_capacity,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_bounded, /* A bounded queue returns HM_ERROR_LIMIT_EXCEEDED if the queue is full, instead of increasing the capacity. */
     hmQueue*      in_queue
 );

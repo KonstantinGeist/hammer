@@ -35,10 +35,10 @@ static hmError hmHashMapRehash(hmHashMap* hash_map);
 
 hmError hmCreateHashMap(
     hmAllocator*        allocator,
-    hmHashMapHashFunc   hash_func,
-    hmHashMapEqualsFunc equals_func,
-    hmDisposeFunc       key_dispose_func,
-    hmDisposeFunc       value_dispose_func,
+    hmHashMapHashFunc   hash_func_opt,
+    hmHashMapEqualsFunc equals_func_opt,
+    hmDisposeFunc       key_dispose_func_opt,
+    hmDisposeFunc       value_dispose_func_opt,
     hm_nint             key_size,
     hm_nint             value_size,
     hm_nint             initial_capacity,
@@ -57,10 +57,10 @@ hmError hmCreateHashMap(
         return HM_ERROR_OUT_OF_MEMORY;
     }
     in_hashmap->allocator = allocator;
-    in_hashmap->hash_func = hash_func;
-    in_hashmap->equals_func = equals_func;
-    in_hashmap->key_dispose_func = key_dispose_func;
-    in_hashmap->value_dispose_func = value_dispose_func;
+    in_hashmap->hash_func_opt = hash_func_opt;
+    in_hashmap->equals_func_opt = equals_func_opt;
+    in_hashmap->key_dispose_func_opt = key_dispose_func_opt;
+    in_hashmap->value_dispose_func_opt = value_dispose_func_opt;
     in_hashmap->key_size = key_size;
     in_hashmap->value_size = value_size;
     in_hashmap->count = 0;
@@ -74,7 +74,7 @@ hmError hmCreateHashMap(
 
 hmError hmCreateHashMapWithStringKeys(
     hmAllocator*  allocator,
-    hmDisposeFunc value_dispose_func,
+    hmDisposeFunc value_dispose_func_opt,
     hm_nint       value_size,
     hm_nint       initial_capacity,
     hm_float64    load_factor,
@@ -86,8 +86,8 @@ hmError hmCreateHashMapWithStringKeys(
         allocator,
         &hmStringHashFunc,
         &hmStringEqualsFunc,
-        &hmStringDisposeFunc, /* key_dispose_func */
-        value_dispose_func,
+        &hmStringDisposeFunc, /* key_dispose_func_opt */
+        value_dispose_func_opt,
         sizeof(hmString),
         value_size,
         initial_capacity,
@@ -99,7 +99,7 @@ hmError hmCreateHashMapWithStringKeys(
 
 hmError hmCreateHashMapWithStringRefKeys(
     hmAllocator*  allocator,
-    hmDisposeFunc value_dispose_func,
+    hmDisposeFunc value_dispose_func_opt,
     hm_nint       value_size,
     hm_nint       initial_capacity,
     hm_float64    load_factor,
@@ -112,7 +112,7 @@ hmError hmCreateHashMapWithStringRefKeys(
         &hmStringRefHashFunc,
         &hmStringRefEqualsFunc,
         HM_NULL,
-        value_dispose_func,
+        value_dispose_func_opt,
         sizeof(hmString*),
         value_size,
         initial_capacity,
@@ -129,13 +129,13 @@ hmError hmHashMapDispose(hmHashMap* hash_map)
         hmHashMapEntry* entry = hash_map->buckets[i];
         hmHashMapEntry* next_entry = HM_NULL;
         while (entry) {
-            if (hash_map->key_dispose_func) {
+            if (hash_map->key_dispose_func_opt) {
                 void* key = hmHashMapEntryGetKey(hash_map, entry);
-                err = hmMergeErrors(err, hash_map->key_dispose_func(key));
+                err = hmMergeErrors(err, hash_map->key_dispose_func_opt(key));
             }
-            if (hash_map->value_dispose_func) {
+            if (hash_map->value_dispose_func_opt) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                err = hmMergeErrors(err, hash_map->value_dispose_func(value));
+                err = hmMergeErrors(err, hash_map->value_dispose_func_opt(value));
             }
             next_entry = entry->next;
             hmFree(hash_map->allocator, entry);
@@ -155,8 +155,8 @@ hmError hmHashMapPut(hmHashMap* hash_map, void* key, void* value)
     hmHashMapEntry* entry = hmHashMapEntryFindByBucketIndexAndKey(hash_map, bucket_index, key);
     if (entry) {
         void* value_dest = hmHashMapEntryGetValue(hash_map, entry);
-        if (hash_map->value_dispose_func) {
-            HM_TRY(hash_map->value_dispose_func(value_dest));
+        if (hash_map->value_dispose_func_opt) {
+            HM_TRY(hash_map->value_dispose_func_opt(value_dest));
         }
         hmCopyMemory(value_dest, value, hash_map->value_size);
         return HM_OK;
@@ -217,12 +217,12 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
     while (entry) {
         void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
         if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
-            if (hash_map->key_dispose_func) {
-                HM_TRY(hash_map->key_dispose_func(key_candidate));
+            if (hash_map->key_dispose_func_opt) {
+                HM_TRY(hash_map->key_dispose_func_opt(key_candidate));
             }
-            if (hash_map->value_dispose_func) {
+            if (hash_map->value_dispose_func_opt) {
                 void* value = hmHashMapEntryGetValue(hash_map, entry);
-                HM_TRY(hash_map->value_dispose_func(value));
+                HM_TRY(hash_map->value_dispose_func_opt(value));
             }
             if (prev_entry) {
                 prev_entry->next = entry->next;
@@ -261,8 +261,8 @@ hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 {
     hm_uint32 hash;
-    if (hash_map->hash_func) {
-        hash = hash_map->hash_func(key, hash_map->hash_salt);
+    if (hash_map->hash_func_opt) {
+        hash = hash_map->hash_func_opt(key, hash_map->hash_salt);
     } else {
         hash = hmHash(key, hash_map->key_size, hash_map->hash_salt);
     }
@@ -271,8 +271,8 @@ static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 
 static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* value2)
 {
-    if (hash_map->equals_func) {
-        return hash_map->equals_func(value1, value2);
+    if (hash_map->equals_func_opt) {
+        return hash_map->equals_func_opt(value1, value2);
     }
     return hmCompareMemory(value1, value2, hash_map->key_size) == 0;
 }

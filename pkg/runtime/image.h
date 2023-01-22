@@ -54,9 +54,9 @@ typedef hmError (*hmEnumMethodMetadataInImageFunc)(hmMethodMetadata* metadata, v
    `user_data` can be used to pass additional context to the callbacks. */
 hmError hmEnumMetadataInImage(
     hmString*                       image_path,
-    hmEnumModuleMetadataInImageFunc enum_modules_func,
-    hmEnumClassMetadataInImageFunc  enum_classes_func,
-    hmEnumMethodMetadataInImageFunc enum_methods_func,
+    hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
+    hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
+    hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
     void* user_data
 );
 

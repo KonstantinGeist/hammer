@@ -45,7 +45,7 @@ static void* hmAdaptPosixThreadToHammer(void* arg);
 
 hmError hmCreateThread(
     hmAllocator*      allocator,
-    hmString*         name,
+    hmString*         name_opt,
     hmThreadStartFunc thread_func,
     void*             user_data,
     hmThread*         in_thread
@@ -57,8 +57,8 @@ hmError hmCreateThread(
     }
     hmError err = HM_OK;
     hm_bool is_string_duplicated = HM_FALSE;
-    if (name) {
-        HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, name, &platform_data->name));
+    if (name_opt) {
+        HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, name_opt, &platform_data->name));
     } else {
         HM_TRY_OR_FINALIZE(err, hmCreateStringViewFromCString("", &platform_data->name));
     }

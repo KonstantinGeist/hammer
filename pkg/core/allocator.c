@@ -38,19 +38,19 @@ void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
     return r;
 }
 
-void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new_size)
+void* hmRealloc(hmAllocator* allocator, void* mem_opt, hm_nint old_size, hm_nint new_size)
 {
     new_size = hmAlignSize(new_size);
     if (new_size <= old_size) {
-        return mem;
+        return mem_opt;
     }
     void* new_mem = allocator->alloc(allocator, new_size);
     if (!new_mem) {
         return HM_NULL;
     }
-    if (mem) {
-        hmCopyMemory(new_mem, mem, old_size);
-        allocator->free(allocator, mem);
+    if (mem_opt) {
+        hmCopyMemory(new_mem, mem_opt, old_size);
+        allocator->free(allocator, mem_opt);
     }
     return new_mem;
 }

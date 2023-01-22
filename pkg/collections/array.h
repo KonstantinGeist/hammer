@@ -22,13 +22,13 @@
 /* A general purpose array. */
 typedef struct {
     hmAllocator*  allocator;
-    char*         items;             /* The list of entries in the array, a contiguous memory block of inlined values.
-                                        Typed to void* because that's how we achieve genericity. */
-    hmDisposeFunc item_dispose_func; /* Dispose function: called on every item on container destruction. Can be HM_NULL. */
-    hm_nint       item_size;         /* Size of a single item (this is how we achieve genericity). */
-    hm_nint       capacity;          /* The capacity of the array: determines how many elements can be added
-                                        before the internal backing array is resized. */
-    hm_nint       count;             /* The count of objects in this array. */
+    char*         items;                  /* The list of entries in the array, a contiguous memory block of inlined values.
+                                             Typed to void* because that's how we achieve genericity. */
+    hmDisposeFunc item_dispose_func_opt; /* Dispose function: called on every item on container destruction. Can be HM_NULL. */
+    hm_nint       item_size;             /* Size of a single item (this is how we achieve genericity). */
+    hm_nint       capacity;              /* The capacity of the array: determines how many elements can be added
+                                             before the internal backing array is resized. */
+    hm_nint       count;                 /* The count of objects in this array. */
 } hmArray;
 
 /* Array expansion function. User_data is passed from hmArrayExpand(..) (see). */
@@ -40,7 +40,7 @@ hmError hmCreateArray(
     hmAllocator*  allocator,
     hm_nint       item_size,
     hm_nint       initial_capacity,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hmArray*      in_array
 );
 hmError hmArrayDispose(hmArray* array);

@@ -30,7 +30,7 @@ typedef struct hmWorkerData_ {
     hmQueue         queue;
     hmWaitableEvent waitable_event;
     hmMutex         queue_mutex;
-    hmDisposeFunc   item_dispose_func;
+    hmDisposeFunc   item_dispose_func_opt;
     hmWorkerFunc    worker_func;
     hm_nint         item_size;
 volatile
@@ -42,10 +42,10 @@ static hmError hmWorkerThreadFunc(void* user_data);
 
 hmError hmCreateWorker(
     hmAllocator*  allocator,
-    hmString*     name,
+    hmString*     name_opt,
     hmWorkerFunc  worker_func,
     hm_nint       item_size,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
     hm_nint       queue_size,
     hmWorker*     in_worker
@@ -66,7 +66,7 @@ hmError hmCreateWorker(
         allocator,
         queue_size,
         queue_size,
-        item_dispose_func,
+        item_dispose_func_opt,
         is_queue_bounded,
         &data->queue
     ));
@@ -75,9 +75,9 @@ hmError hmCreateWorker(
     waitable_event_initialized = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmCreateMutex(allocator, &data->queue_mutex));
     mutex_initialized = HM_TRUE;
-    HM_TRY_OR_FINALIZE(err, hmCreateThread(allocator, name, &hmWorkerThreadFunc, data, &data->thread));
+    HM_TRY_OR_FINALIZE(err, hmCreateThread(allocator, name_opt, &hmWorkerThreadFunc, data, &data->thread));
     data->allocator = allocator;
-    data->item_dispose_func = item_dispose_func;
+    data->item_dispose_func_opt = item_dispose_func_opt;
     data->worker_func = worker_func;
     data->item_size = item_size;
     hmAtomicStore(&data->should_drain_queue, HM_FALSE);
@@ -178,8 +178,8 @@ static hmError hmWorkerProcessNewItems(hmWorkerData* data)
     void* work_item = hmAllocOnStack(hmAlignSize(data->item_size));
     while (hmWorkerShouldProcessQueue(data) && (err = hmWorkerDequeueWorkItem(data, work_item)) == HM_OK) {
         err = data->worker_func(work_item);
-        if (data->item_dispose_func) {
-            err = hmMergeErrors(err, data->item_dispose_func(work_item));
+        if (data->item_dispose_func_opt) {
+            err = hmMergeErrors(err, data->item_dispose_func_opt(work_item));
         }
         HM_TRY(err);
     }

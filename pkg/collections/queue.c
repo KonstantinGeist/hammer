@@ -26,7 +26,7 @@ hmError hmCreateQueue(
     hmAllocator*  allocator,
     hm_nint       item_size,
     hm_nint       initial_capacity,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_bounded,
     hmQueue*      in_queue
 )
@@ -42,7 +42,7 @@ hmError hmCreateQueue(
     }
     in_queue->allocator = allocator;
     in_queue->items = items;
-    in_queue->item_dispose_func = item_dispose_func;
+    in_queue->item_dispose_func_opt = item_dispose_func_opt;
     in_queue->item_size = item_size;
     in_queue->capacity = initial_capacity;
     in_queue->count = 0;
@@ -55,10 +55,10 @@ hmError hmCreateQueue(
 hmError hmQueueDispose(hmQueue* queue)
 {
     hmError err = HM_OK;
-    if (queue->item_dispose_func) {
+    if (queue->item_dispose_func_opt) {
         for(hm_nint i = 0; i < queue->count; i++, queue->read_index = hmQueueIncrementIndex(queue, queue->read_index)) {
             /* No safe math operations here because it was prevalidated before. */
-            err = hmMergeErrors(err, queue->item_dispose_func(queue->items + queue->item_size * queue->read_index));
+            err = hmMergeErrors(err, queue->item_dispose_func_opt(queue->items + queue->item_size * queue->read_index));
         }
     }
     hmFree(queue->allocator, queue->items);

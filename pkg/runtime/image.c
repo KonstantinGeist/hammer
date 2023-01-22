@@ -24,9 +24,9 @@ static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int colum
 
 hmError hmEnumMetadataInImage(
     hmString*                       image_path,
-    hmEnumModuleMetadataInImageFunc enum_modules_func,
-    hmEnumClassMetadataInImageFunc  enum_classes_func,
-    hmEnumMethodMetadataInImageFunc enum_methods_func,
+    hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
+    hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
+    hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
     void* user_data
 )
 {
@@ -39,14 +39,14 @@ hmError hmEnumMetadataInImage(
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }
-    if (enum_modules_func) {
-        err = hmEnumModulesInImage(db, enum_modules_func, user_data);
+    if (enum_modules_func_opt) {
+        err = hmEnumModulesInImage(db, enum_modules_func_opt, user_data);
     }
-    if (enum_classes_func) {
-        err = hmMergeErrors(err, hmEnumClassesInImage(db, enum_classes_func, user_data));
+    if (enum_classes_func_opt) {
+        err = hmMergeErrors(err, hmEnumClassesInImage(db, enum_classes_func_opt, user_data));
     }
-    if (enum_methods_func) {
-        err = hmMergeErrors(err, hmEnumMethodsInImage(db, enum_methods_func, user_data));
+    if (enum_methods_func_opt) {
+        err = hmMergeErrors(err, hmEnumMethodsInImage(db, enum_methods_func_opt, user_data));
     }
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
@@ -92,28 +92,28 @@ HM_ON_FINALIZE \
     } \
     return err;
 
-static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data)
+static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT module_id, name FROM module")
         hmModuleMetadata metadata;
         HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.module_id));
         HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 1, &metadata.name));
-        HM_TRY_OR_FINALIZE(err, enum_modules_func(&metadata, user_data));
+        HM_TRY_OR_FINALIZE(err, enum_modules_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
 
-static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data)
+static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT class_id, module_id, name FROM class")
         hmClassMetadata metadata;
         HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.class_id));
         HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 1, &metadata.module_id));
         HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 2, &metadata.name));
-        HM_TRY_OR_FINALIZE(err, enum_classes_func(&metadata, user_data));
+        HM_TRY_OR_FINALIZE(err, enum_classes_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
 
-static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func, void* user_data)
+static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT method_id, class_id, module_id, name, signature, code, length(code) AS code_length FROM method")
         hmMethodMetadata metadata;
@@ -124,7 +124,7 @@ static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc
         HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 4, &metadata.signature));
         HM_TRY_OR_FINALIZE(err, hmGetBlobFromStatement(db, stmt, 5, &metadata.body.opcodes));
         HM_TRY_OR_FINALIZE(err, hmGetMethodSizeFromStatement(db, stmt, 6, &metadata.body.size));
-        HM_TRY_OR_FINALIZE(err, enum_methods_func(&metadata, user_data));
+        HM_TRY_OR_FINALIZE(err, enum_methods_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
 

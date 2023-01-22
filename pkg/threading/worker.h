@@ -29,18 +29,18 @@ typedef struct {
    The allocator should be thread-safe, as it will allocate/deallocate on different threads.
    The work queue can be made bounded. If it's bounded, the queue will never grow (see also hmWorkerEnqueueItem(..)).
    `item_size` specifies the size of a work item; returns HM_ERROR_INVALID_ARGUMENT if it's bigger than HM_WORKER_MAX_ITEM_SIZE.
-   `item_dispose_func` specifies how items are disposed when they're removed from the queue after being processed. The
+   `item_dispose_func_opt` specifies how items are disposed when they're removed from the queue after being processed. The
    function should be thread-safe, because it will be accessed on different threads. Can be HM_NULL.
-   `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
+   `name_opt` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
    using a thread-safe allocator; can be HM_NULL.
    `worker_func` specifies the processing function. Note that any unexpected errors will immediately stop the worker.
     So if you instead would like to log errors and continue, then such errors should be processed inside worker_func. */
 hmError hmCreateWorker(
     hmAllocator*  allocator,
-    hmString*     name,
+    hmString*     name_opt,
     hmWorkerFunc  worker_func,
     hm_nint       item_size,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
     hm_nint       queue_size,
     hmWorker*     in_worker

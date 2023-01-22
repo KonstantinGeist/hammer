@@ -31,6 +31,8 @@ There are several conventions to follow:
 * Priorities: safety > simplicity > performance.
 * Use the buffer allocator (see hmCreateBufferAllocator(..)) for temporary objects whenever possible.
   Allocate on stack whenever possible.
+* Add _opt suffix to optional values.
+* Don't start symbols with an underscore.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

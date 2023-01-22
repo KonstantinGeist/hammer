@@ -48,7 +48,7 @@ void* hmAlloc(hmAllocator* allocator, hm_nint sz);
 void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz);
 /* Reallocates the given memory block: allocates a new array, copies old data to it, and frees the old memory block.
    The memory block can be HM_NULL, in that case it's equivalent to hmAlloc. */
-void* hmRealloc(hmAllocator* allocator, void* mem, hm_nint old_size, hm_nint new_size);
+void* hmRealloc(hmAllocator* allocator, void* mem_opt, hm_nint old_size, hm_nint new_size);
 /* Frees memory given the allocator and the pointer to the memory block. Behavior is undefined if memory not belonging to
    this allocator is passed to it. Safe to pass NULL to it */
 void hmFree(hmAllocator* allocator, void* mem);

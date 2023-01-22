@@ -42,7 +42,7 @@ typedef struct {
    using a thread-safe allocator; can be HM_NULL. */
 hmError hmCreateThread(
     hmAllocator*      allocator,
-    hmString*         name,
+    hmString*         name_opt,
     hmThreadStartFunc thread_func,
     void*             user_data,
     hmThread*         in_thread

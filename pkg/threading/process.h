@@ -20,8 +20,8 @@
 
 /* Specifies additional options when starting an external process. */
 typedef struct {
-    hmHashMap* environment_vars; /* hmHashMap<hmString, hmString>. Can be HM_NULL if environment variables don't need to be overriden. */
-    hm_bool    wait_for_exit;    /* If HM_TRUE, blocks the current thread until the process finishes. By default, it's HM_TRUE. */
+    hmHashMap* environment_vars_opt; /* hmHashMap<hmString, hmString>. Can be HM_NULL if environment variables don't need to be overriden. */
+    hm_bool    wait_for_exit;        /* If HM_TRUE, blocks the current thread until the process finishes. By default, it's HM_TRUE. */
 } hmStartProcessOptions;
 
 /* Represents an external process in the system. */
@@ -40,7 +40,7 @@ hmError hmStartProcess(
     hmAllocator*           allocator,
     hmString*              path,
     hmArray*               args,
-    hmStartProcessOptions* options,
+    hmStartProcessOptions* options_opt,
     hmProcess*             in_process
 );
 /* Disposes of the resources held by the representation of the external process inside the current process

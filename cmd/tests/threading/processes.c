@@ -85,7 +85,7 @@ static void test_can_start_process_impl(hm_bool is_success_scenario)
     err = create_env_vars_array(&allocator, &environment_vars);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmStartProcessOptions options;
-    options.environment_vars = &environment_vars;
+    options.environment_vars_opt = &environment_vars;
     options.wait_for_exit = HM_TRUE;
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmProcess process;
@@ -103,7 +103,7 @@ static void test_can_start_process_impl(hm_bool is_success_scenario)
     err = hmProcessDispose(&process);
     HM_TEST_ASSERT(err == HM_OK || err == HM_ERROR_OUT_OF_MEMORY);
 HM_TEST_ON_FINALIZE
-    err = hmHashMapDispose(options.environment_vars);
+    err = hmHashMapDispose(options.environment_vars_opt);
     HM_TEST_ASSERT_OK(err);
     err = hmArrayDispose(&args);
     HM_TEST_ASSERT_OK(err);

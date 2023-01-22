@@ -24,7 +24,7 @@ hmError hmCreateArray(
     hmAllocator*  allocator,
     hm_nint       item_size,
     hm_nint       initial_capacity,
-    hmDisposeFunc item_dispose_func,
+    hmDisposeFunc item_dispose_func_opt,
     hmArray*      in_array)
 {
     if (!item_size || !initial_capacity) {
@@ -38,7 +38,7 @@ hmError hmCreateArray(
     }
     in_array->items = items;
     in_array->allocator = allocator;
-    in_array->item_dispose_func = item_dispose_func;
+    in_array->item_dispose_func_opt = item_dispose_func_opt;
     in_array->item_size = item_size;
     in_array->capacity = initial_capacity;
     in_array->count = 0;
@@ -110,10 +110,10 @@ hmError hmArraySet(hmArray* array, hm_nint index, void* in_value)
 hmError hmArrayClear(hmArray* array)
 {
     hmError err = HM_OK;
-    if (array->item_dispose_func) {
+    if (array->item_dispose_func_opt) {
         char* item = array->items;
         for (hm_nint i = 0; i < array->count; i++) {
-            err = hmMergeErrors(err, array->item_dispose_func(item));
+            err = hmMergeErrors(err, array->item_dispose_func_opt(item));
             /* No hmAddNint because if we were able to add this many elements, it must have been valid. */
             item += array->item_size;
         }

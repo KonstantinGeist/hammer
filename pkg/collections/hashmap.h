@@ -30,10 +30,10 @@ typedef hmError (*hmHashMapEnumerateFunc)(void* key, void* value, void* user_dat
 typedef struct {
     hmAllocator*             allocator;
     struct hmHashMapEntry_** buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
-    hmHashMapHashFunc        hash_func;
-    hmHashMapEqualsFunc      equals_func;
-    hmDisposeFunc            key_dispose_func;   /* can be HM_NULL */
-    hmDisposeFunc            value_dispose_func; /* can be HM_NULL */
+    hmHashMapHashFunc        hash_func_opt;
+    hmHashMapEqualsFunc      equals_func_opt;
+    hmDisposeFunc            key_dispose_func_opt;   /* can be HM_NULL */
+    hmDisposeFunc            value_dispose_func_opt; /* can be HM_NULL */
     hm_nint                  key_size;
     hm_nint                  value_size;
     hm_nint                  count;
@@ -53,10 +53,10 @@ typedef struct {
    add padding with uninitialized garbage. */
 hmError hmCreateHashMap(
     hmAllocator*        allocator,
-    hmHashMapHashFunc   hash_func,
-    hmHashMapEqualsFunc equals_func,
-    hmDisposeFunc       key_dispose_func,
-    hmDisposeFunc       value_dispose_func,
+    hmHashMapHashFunc   hash_func_opt,
+    hmHashMapEqualsFunc equals_func_opt,
+    hmDisposeFunc       key_dispose_func_opt,
+    hmDisposeFunc       value_dispose_func_opt,
     hm_nint             key_size,
     hm_nint             value_size,
     hm_nint             initial_capacity,
@@ -67,7 +67,7 @@ hmError hmCreateHashMap(
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are strings (one of the most common cases). */
 hmError hmCreateHashMapWithStringKeys(
     hmAllocator*  allocator,
-    hmDisposeFunc value_dispose_func,
+    hmDisposeFunc value_dispose_func_opt,
     hm_nint       value_size,
     hm_nint       initial_capacity,
     hm_float64    load_factor,
@@ -77,7 +77,7 @@ hmError hmCreateHashMapWithStringKeys(
 /* A helper function over hmCreateHashMap to create a hashmap whose keys are string references (one of the most common cases). */
 hmError hmCreateHashMapWithStringRefKeys(
     hmAllocator*  allocator,
-    hmDisposeFunc value_dispose_func,
+    hmDisposeFunc value_dispose_func_opt,
     hm_nint       value_size,
     hm_nint       initial_capacity,
     hm_float64    load_factor,
@@ -100,7 +100,7 @@ hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value);
 hm_bool hmHashMapContains(hmHashMap* hash_map, void* key);
 /* Removes an item from the map, by the given key. Returns out_removed, if the element was actually removed.
    out_removed can be HM_NULL. */
-hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed);
+hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed_opt);
 /* Enumerates all the keys and values in the map by calling function `enumerate_func`. The error returned from `enumerate_func`
    is returned from hmHashMapEnumerate(..) as is. On any error other than HM_OK, enumeration is immediately terminated.
    Use `user_data` to pass additional context to the callback.

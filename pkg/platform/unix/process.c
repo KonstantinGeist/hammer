@@ -34,7 +34,7 @@ hmError hmStartProcess(
     hmAllocator*           allocator,
     hmString*              path,
     hmArray*               args,
-    hmStartProcessOptions* options,
+    hmStartProcessOptions* options_opt,
     hmProcess*             in_process
 )
 {
@@ -48,10 +48,10 @@ hmError hmStartProcess(
     char** unix_env_vars = HM_NULL;
     hmError err = HM_OK;
     HM_TRY_OR_FINALIZE(err, hmConvertHammerProcessArgsToUnix(&buffer_allocator, path, args, &unix_args));
-    if (options && options->environment_vars) {
-        HM_TRY_OR_FINALIZE(err, hmConvertHammerEnvironmentVarsToUnix(&buffer_allocator, options->environment_vars, &unix_env_vars));
+    if (options_opt && options_opt->environment_vars_opt) {
+        HM_TRY_OR_FINALIZE(err, hmConvertHammerEnvironmentVarsToUnix(&buffer_allocator, options_opt->environment_vars_opt, &unix_env_vars));
     }
-    hm_bool wait_for_exit = options ? options->wait_for_exit : HM_TRUE;
+    hm_bool wait_for_exit = options_opt ? options_opt->wait_for_exit : HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmStartUnixProcess(c_path, unix_args, unix_env_vars, wait_for_exit, in_process));
 HM_ON_FINALIZE
     /* cppcheck-suppress shadowFunction */
