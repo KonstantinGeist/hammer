@@ -189,9 +189,9 @@ HM_ON_FINALIZE
 
 static hmError hmFormatWithCurrentProcessId(
     hmAllocator* allocator,
-    char buffer[HM_SYSTEM_FILE_NAME_BUFFER_SIZE],
-    const char* before_part,
-    const char* after_part
+    char         buffer[HM_SYSTEM_FILE_NAME_BUFFER_SIZE],
+    const char*  before_part,
+    const char*  after_part
 )
 {
     char buffer_allocator_space[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];

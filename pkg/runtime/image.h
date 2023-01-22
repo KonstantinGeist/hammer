@@ -53,9 +53,9 @@ typedef hmError (*hmEnumMethodMetadataInImageFunc)(hmMethodMetadata* metadata, v
    All callbacks can be HM_NULL if enumerating a specific object type (module, class or method) is not required.
    `user_data` can be used to pass additional context to the callbacks. */
 hmError hmEnumMetadataInImage(
-    hmString* image_path,
+    hmString*                       image_path,
     hmEnumModuleMetadataInImageFunc enum_modules_func,
-    hmEnumClassMetadataInImageFunc enum_classes_func,
+    hmEnumClassMetadataInImageFunc  enum_classes_func,
     hmEnumMethodMetadataInImageFunc enum_methods_func,
     void* user_data
 );

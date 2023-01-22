@@ -37,11 +37,11 @@ typedef hmError (*hmArrayExpandFunc)(hmArray* array, hm_nint index, void* in_ite
 /* Creates a new array. When calling hmArrayAdd in a loop, make sure initial_capacity is set to a correct value
    so that we don't have to reallocate too often. */
 hmError hmCreateArray(
-    hmAllocator* allocator,
-    hm_nint item_size,
-    hm_nint initial_capacity,
+    hmAllocator*  allocator,
+    hm_nint       item_size,
+    hm_nint       initial_capacity,
     hmDisposeFunc item_dispose_func,
-    hmArray* in_array
+    hmArray*      in_array
 );
 hmError hmArrayDispose(hmArray* array);
 /* Adds a new value to the array. in_value must be a reference to the actual value. An object is stored in an array

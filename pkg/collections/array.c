@@ -21,11 +21,11 @@
 static hmError hmArrayUpdateCapacityIfRequired(hmArray* array, hm_nint new_count);
 
 hmError hmCreateArray(
-    hmAllocator* allocator,
-    hm_nint item_size,
-    hm_nint initial_capacity,
+    hmAllocator*  allocator,
+    hm_nint       item_size,
+    hm_nint       initial_capacity,
     hmDisposeFunc item_dispose_func,
-    hmArray* in_array)
+    hmArray*      in_array)
 {
     if (!item_size || !initial_capacity) {
         return HM_ERROR_INVALID_ARGUMENT;

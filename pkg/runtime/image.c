@@ -23,9 +23,9 @@ static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int
 static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob);
 
 hmError hmEnumMetadataInImage(
-    hmString* image_path,
+    hmString*                       image_path,
     hmEnumModuleMetadataInImageFunc enum_modules_func,
-    hmEnumClassMetadataInImageFunc enum_classes_func,
+    hmEnumClassMetadataInImageFunc  enum_classes_func,
     hmEnumMethodMetadataInImageFunc enum_methods_func,
     void* user_data
 )

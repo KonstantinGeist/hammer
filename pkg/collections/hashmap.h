@@ -28,19 +28,19 @@ typedef hm_bool (*hmHashMapEqualsFunc)(void* value1, void* value2);
 typedef hmError (*hmHashMapEnumerateFunc)(void* key, void* value, void* user_data);
 
 typedef struct {
-    hmAllocator*              allocator;
-    struct _hmHashMapEntry**  buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
-    hmHashMapHashFunc         hash_func;
-    hmHashMapEqualsFunc       equals_func;
-    hmDisposeFunc             key_dispose_func;   /* can be HM_NULL */
-    hmDisposeFunc             value_dispose_func; /* can be HM_NULL */
-    hm_nint                   key_size;
-    hm_nint                   value_size;
-    hm_nint                   count;
-    hm_nint                   bucket_count;
-    hm_float64                threshold;
-    hm_float64                load_factor;
-    hm_uint32                 hash_salt;
+    hmAllocator*             allocator;
+    struct _hmHashMapEntry** buckets;  /* A list of buckets which contain linked lists of entries of size key_size + value_size. */
+    hmHashMapHashFunc        hash_func;
+    hmHashMapEqualsFunc      equals_func;
+    hmDisposeFunc            key_dispose_func;   /* can be HM_NULL */
+    hmDisposeFunc            value_dispose_func; /* can be HM_NULL */
+    hm_nint                  key_size;
+    hm_nint                  value_size;
+    hm_nint                  count;
+    hm_nint                  bucket_count;
+    hm_float64               threshold;
+    hm_float64               load_factor;
+    hm_uint32                hash_salt;
 } hmHashMap;
 
 /* Creates a hash map, with provided hash_func, equals_func, key/value sizes.

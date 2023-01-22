@@ -31,7 +31,7 @@ typedef hm_atomic_nint hmThreadState;
 
 typedef hmError (*hmThreadStartFunc)(void* user_data);
 
-typedef struct _hmThread {
+typedef struct {
     void*  platform_data; /* First, platform-specific data are hidden from header files.
                              Second, an additional redirection allows to decouple a running thread's lifetime
                              from its variable's lifetime (for example, a thread is still running, but hmThreadDispose was called). */
