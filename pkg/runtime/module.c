@@ -33,7 +33,7 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         sizeof(hmModule),
         HM_HASHMAP_DEFAULT_CAPACITY,
         HM_HASHMAP_DEFAULT_LOAD_FACTOR,
-        0, /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
+        0,                    /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_registry->name_to_module_map
     ));
     hmError err = hmCreateHashMap(
@@ -343,13 +343,32 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     return hmModuleStoreClass(module_ref, metadata->class_id, &name, &hm_class);
 }
 
-static hmError hmValidateSignature(hmString* signature)
+static hmError hmValidateSignature(hmString* signature) /* TDOO refactor */
 {
     hm_bool is_valid = hmIsValidSignatureDesc(signature);
     if (!is_valid) {
         return HM_ERROR_INVALID_IMAGE;
     }
     return HM_OK;
+}
+
+static hmError hmCreateSignature(hmAllocator* allocator, hmString* desc, hmSignature* in_signature)
+{
+    HM_TRY(hmValidateSignature(desc));
+    HM_TRY(hmCreateArray(allocator, sizeof(hmClass*), HM_ARRAY_DEFAULT_CAPACITY, HM_NULL, &in_signature->param_classes));
+    hmError err = hmStringDuplicate(allocator, desc, &in_signature->desc);
+    if (err != HM_OK) {
+        return hmMergeErrors(err, hmArrayDispose(&in_signature->param_classes));
+    }
+    in_signature->return_class = HM_NULL;
+    in_signature->is_resolved = HM_FALSE;
+    return HM_OK;
+}
+
+static hmError hmSignatureDispose(hmSignature* signature)
+{
+    hmError err = hmArrayDispose(&signature->param_classes);
+    return hmMergeErrors(err, hmStringDispose(&signature->desc));
 }
 
 static hmError hmCreateMethod(
@@ -363,28 +382,41 @@ static hmError hmCreateMethod(
 )
 {
     HM_TRY(hmValidateMetadataName(name));
-    HM_TRY(hmValidateSignature(signature));
     hm_uint8* opcodes_copy = hmAlloc(allocator, sizeof(hm_uint8) * size);
     if (!opcodes_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
+    hmError err = HM_OK;
+    hm_bool is_name_initialized = HM_FALSE,
+            is_signature_initialized = HM_FALSE;
+    HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, name, &in_method->name));
+    is_name_initialized = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmCreateSignature(allocator, signature, &in_method->signature));
+    is_signature_initialized = HM_TRUE;
+    /* No overflow-safe math because it must be below the limit if `opcodes` was successfully allocated before. */
     hmCopyMemory(opcodes_copy, opcodes, sizeof(hm_uint8) * size);
-    hmError err = hmStringDuplicate(allocator, name, &in_method->name);
-    if (err != HM_OK) {
-        hmFree(allocator, opcodes_copy);
-        return err;
-    }
     in_method->allocator = allocator;
     in_method->method_id = method_id;
     in_method->hl_body.opcodes = opcodes_copy;
     in_method->hl_body.size = size;
-    return HM_OK;
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        if (is_name_initialized) {
+            err = hmMergeErrors(err, hmStringDispose(&in_method->name));
+        }
+        if (is_signature_initialized) {
+            err = hmMergeErrors(err, hmSignatureDispose(&in_method->signature));
+        }
+        hmFree(allocator, opcodes_copy);
+    }
+    return err;
 }
 
 static hmError hmMethodDispose(hmMethod* method)
 {
     hmFree(method->allocator, method->hl_body.opcodes);
-    return hmStringDispose(&method->name);
+    hmError err = hmStringDispose(&method->name);
+    return hmMergeErrors(err, hmSignatureDispose(&method->signature));
 }
 
 static hmError hmMethodDisposeFunc(void* object)

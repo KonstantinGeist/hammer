@@ -20,6 +20,6 @@
 /* Verifies that the signature is valid syntactically.
    It's a quick verification for faster loading (without trying to resolve class references or validate class names);
    full verification is done separately during method body verification. */
-hm_bool hmIsValidSignatureDesc(hmString* signature_desc);
+hm_bool hmIsValidSignatureDesc(hmString* signature_desc); /* TDOO refactor */
 
 #endif /* HM_SIGNATURE_H */

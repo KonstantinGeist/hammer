@@ -24,8 +24,18 @@
    involves searching in a hashmap), however, high-level (HL) bytecode will be translated to low-level (LL) bytecode where
    pointers are directly stored in the LL bytecode, so it's not an issue at runtime (no dispatch will happen). Storing objects inside
    hashmaps has an advantage of it being more flexible: there can be "holes" in ID sequences which can happen if bytecode is patched.
-   A disadvantage is that loading an image is slower (all the hashmaps must be populated) -- we can revisit it later if
-   it proves to be too slow. */
+   A disadvantage is that loading an image is slower (all the hashmaps must be populated and searched) -- we can revisit it later if
+   it proves to be too slow. We also assume our runtime is used in servers where startup is not as important as request processing speed.
+   Note also that our pattern to embed allocator references in every struct inflates structure sizes considerably, which makes
+   our code more flexible but is bad for memory locality; however we assume that at runtime, metadata will be rarely touched. */
+
+typedef struct {
+    struct hmClass_* return_class;
+    hmArray          param_classes; /* hmArray<hmClass*> */
+    hmString         desc;          /* Unresolved signature description in the text form as stored in the image. */
+    hm_bool          is_resolved;   /* Initially, it's HM_FALSE. If HM_TRUE (after resolution), values in `param_classes`
+                                       and `return_class` are meaningful. */
+} hmSignature;
 
 typedef struct {
     hm_uint8*      opcodes;
@@ -34,13 +44,13 @@ typedef struct {
 
 typedef struct {
     hmAllocator*   allocator;
-    hmString       name;           /* The name of the method which should be unique in a given class. */
-    hmString       signature_desc; /* Signature desc: unresolved desc as stored in the image; it will be resolved during method resolution. */
-    hmMethodBody   hl_body;        /* High-level bytecode: it will be compiled to low-level bytecode during method resolution. */
+    hmString       name;      /* The name of the method which should be unique in a given class. */
+    hmSignature    signature; /* Describes the parameters and the return type. */
+    hmMethodBody   hl_body;   /* High-level bytecode: it will be compiled to low-level bytecode during method resolution. */
     hm_metadata_id method_id;
 } hmMethod;
 
-typedef struct {
+typedef struct hmClass_ {
     hmString       name;    /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
                                should be unique in a given module. */
     hmHashMap      name_to_method_map;          /* hmHashMap<hmString, hmMethod>, for reflection */

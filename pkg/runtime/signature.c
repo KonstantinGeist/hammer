@@ -21,7 +21,7 @@
                                                       for example: "{core.StringBuilder}" */
 #define HM_SIGNATURE_CLASS_DESC_END   HM_CHAR('}')
 
-/* TODO clean up */
+/* TDOO refactor */
 hm_bool hmIsValidSignatureDesc(hmString* signature_desc)
 {
     hm_nint length = hmStringGetLength(signature_desc);
