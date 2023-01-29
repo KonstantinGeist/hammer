@@ -24,6 +24,8 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
 static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
 static hmError hmMethodDisposeFunc(void* object);
+static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_metadata_id module_id, hmModule** out_module);
+static hmError hmModuleResolve(hmModule* module);
 
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
@@ -36,7 +38,10 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         0,                    /* hash map keys are not user-controlled, OK to leave seed as 0 here and below */
         &in_registry->name_to_module_map
     ));
-    hmError err = hmCreateHashMap(
+    hmError err = HM_OK;
+    hm_bool is_module_id_to_module_ref_map_initialized = HM_FALSE,
+            is_modules_to_resolve_initialized = HM_FALSE;
+    HM_TRY_OR_FINALIZE(err, hmCreateHashMap(
         allocator,
         &hmMetadataIDHashFunc,
         &hmMetadataIDEqualsFunc,
@@ -48,29 +53,71 @@ hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_regi
         HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         0,
         &in_registry->module_id_to_module_ref_map
-    );
-    if (err != HM_OK) {
-        return hmMergeErrors(err, hmHashMapDispose(&in_registry->name_to_module_map));
-    }
+    ));
+    is_module_id_to_module_ref_map_initialized = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmCreateArray(
+        allocator,
+        sizeof(hmModule*),
+        HM_ARRAY_DEFAULT_CAPACITY,
+        HM_NULL,
+        &in_registry->module_ids_to_resolve
+    ));
+    is_modules_to_resolve_initialized = HM_TRUE;
     in_registry->allocator = allocator;
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        err = hmMergeErrors(err, hmHashMapDispose(&in_registry->name_to_module_map));
+        if (is_module_id_to_module_ref_map_initialized) {
+            err = hmMergeErrors(err, hmHashMapDispose(&in_registry->module_id_to_module_ref_map));
+        }
+        if (is_modules_to_resolve_initialized) {
+            err = hmMergeErrors(err, hmArrayDispose(&in_registry->module_ids_to_resolve));
+        }
+    }
     return HM_OK;
 }
 
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 {
     hmError err = hmHashMapDispose(&registry->name_to_module_map);
-    return hmMergeErrors(err, hmHashMapDispose(&registry->module_id_to_module_ref_map));
+    err = hmMergeErrors(err, hmHashMapDispose(&registry->module_id_to_module_ref_map));
+    return hmMergeErrors(err, hmArrayDispose(&registry->module_ids_to_resolve));
 }
 
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
 {
-    return hmEnumMetadataInImage(
+    HM_TRY(hmEnumMetadataInImage(
         image_path,
-        &hmModuleRegistry_enumModulesFunc,
+        &hmModuleRegistry_enumModulesFunc, /* populates `module_ids_to_resolve` */
         &hmModuleRegistry_enumClassesFunc,
         &hmModuleRegistry_enumMethodsFunc,
         registry
-    );
+    ));
+    hmError err = HM_OK;
+    hm_nint module_count_to_resolve = hmArrayGetCount(&registry->module_ids_to_resolve);
+    hm_metadata_id* module_ids_to_resolve = hmArrayGetRaw(&registry->module_ids_to_resolve, hm_metadata_id);
+    for (hm_nint i = 0; i < module_count_to_resolve; i++) {
+        hm_metadata_id module_id = module_ids_to_resolve[i];
+        hmModule* module_ref_to_resolve;
+        HM_TRY_OR_FINALIZE(err, hmModuleRegistryGetModuleRefByID(registry, module_id, &module_ref_to_resolve));
+        HM_TRY_OR_FINALIZE(err, hmModuleResolve(module_ref_to_resolve));
+    }
+HM_ON_FINALIZE
+    /* Note: we want our metadata loading to be atomic, i.e. either everything is loaded correctly, or nothing at all.
+       We don't want to get a module which is half-resolved. Hence, on error, we remove all modules we added previously. */
+    if (err != HM_OK) {
+        for (hm_nint i = 0; i < module_count_to_resolve; i++) {
+            hm_metadata_id module_id = module_ids_to_resolve[i];
+            hmModule* module_ref_to_resolve;
+            hmError module_ref_err = hmModuleRegistryGetModuleRefByID(registry, module_id, &module_ref_to_resolve);
+            if (module_ref_err != HM_OK) { /* should never happen, just in case */
+                continue;
+            }
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->module_id_to_module_ref_map, &module_id, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->name_to_module_map, &module_ref_to_resolve->name, HM_NULL));
+        }
+    }
+    return hmMergeErrors(err, hmArrayClear(&registry->module_ids_to_resolve));
 }
 
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module)
@@ -196,20 +243,21 @@ static hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, 
 static hmError hmModuleRegistryStoreModule(hmModuleRegistry* registry, hm_metadata_id module_id, hmString* name, hmModule* module)
 {
     hmError err = HM_OK;
-    hm_bool name_and_module_are_saved_to_map = HM_TRUE;
+    hm_bool name_and_module_are_saved_to_map = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&registry->name_to_module_map, name, module));
-    name_and_module_are_saved_to_map = HM_FALSE;
+    name_and_module_are_saved_to_map = HM_TRUE;
     void* module_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&registry->name_to_module_map, name, &module_ref));
-    err = hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, &module_ref);
+    HM_TRY_OR_FINALIZE(err, hmHashMapPut(&registry->module_id_to_module_ref_map, &module_id, &module_ref));
+    err = hmArrayAdd(&registry->module_ids_to_resolve, &module->module_id);
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (name_and_module_are_saved_to_map) {
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->module_id_to_module_ref_map, &module_id, HM_NULL));
+            err = hmMergeErrors(err, hmHashMapRemove(&registry->name_to_module_map, name, HM_NULL));
+        } else {
             err = hmMergeErrors(err, hmStringDispose(name));
             err = hmMergeErrors(err, hmModuleDispose(module));
-        } else {
-            err = hmMergeErrors(err, hmHashMapRemove(&registry->name_to_module_map, name, HM_NULL));
-            err = hmMergeErrors(err, hmHashMapRemove(&registry->module_id_to_module_ref_map, &module_id, HM_NULL));
         }
     }
     return err;
@@ -500,4 +548,9 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
     }
     /* hm_class, name are moved to hmModuleStoreMethod(..) */
     return hmModuleStoreMethod(class_ref, metadata->method_id, &name, &method);
+}
+
+static hmError hmModuleResolve(hmModule* module)
+{
+    return HM_OK;
 }

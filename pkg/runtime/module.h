@@ -69,6 +69,8 @@ typedef struct {
     hmAllocator* allocator;
     hmHashMap    name_to_module_map;          /* hmHashMap<hmString, hmModule>, for reflection */
     hmHashMap    module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
+    hmArray      module_ids_to_resolve;       /* hmArray<hm_metadata_id>, a list of modules to resolve (populated during
+                                                 image loading, accounted for during resolution). */
 } hmModuleRegistry;
 
 /* A module registry is where all modules and their classes are registered and stored. Typically, there should
