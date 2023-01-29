@@ -25,7 +25,7 @@ static hmError hmModuleDisposeFunc(void* object);
 static hmError hmClassDisposeFunc(void* object);
 static hmError hmMethodDisposeFunc(void* object);
 static hmError hmModuleRegistryGetModuleRefByID(hmModuleRegistry* registry, hm_metadata_id module_id, hmModule** out_module);
-static hmError hmModuleResolve(hmModule* module);
+static hmError hmModuleResolve(hmModule* module, hmModuleRegistry* module_registry);
 
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry)
 {
@@ -86,6 +86,7 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
 
 hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
 {
+    /* First step: load modules. */
     HM_TRY(hmEnumMetadataInImage(
         image_path,
         &hmModuleRegistry_enumModulesFunc, /* populates `module_ids_to_resolve` */
@@ -93,6 +94,7 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* imag
         &hmModuleRegistry_enumMethodsFunc,
         registry
     ));
+    /* Second step: resolve modules. */
     hmError err = HM_OK;
     hm_nint module_count_to_resolve = hmArrayGetCount(&registry->module_ids_to_resolve);
     hm_metadata_id* module_ids_to_resolve = hmArrayGetRaw(&registry->module_ids_to_resolve, hm_metadata_id);
@@ -100,8 +102,9 @@ hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* imag
         hm_metadata_id module_id = module_ids_to_resolve[i];
         hmModule* module_ref_to_resolve;
         HM_TRY_OR_FINALIZE(err, hmModuleRegistryGetModuleRefByID(registry, module_id, &module_ref_to_resolve));
-        HM_TRY_OR_FINALIZE(err, hmModuleResolve(module_ref_to_resolve));
+        HM_TRY_OR_FINALIZE(err, hmModuleResolve(module_ref_to_resolve, registry));
     }
+    /* Third step: clean up. */
 HM_ON_FINALIZE
     /* Note: we want our metadata loading to be atomic, i.e. either everything is loaded correctly, or nothing at all.
        We don't want to get a module which is half-resolved. Hence, on error, we remove all modules we added previously. */
@@ -550,7 +553,32 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
     return hmModuleStoreMethod(class_ref, metadata->method_id, &name, &method);
 }
 
-static hmError hmModuleResolve(hmModule* module)
+static hmError hmSignatureResolve(hmSignature* signature, hmModuleRegistry* module_registry)
 {
     return HM_OK;
+}
+
+static hmError hmMethodResolve(hmMethod* method, hmModuleRegistry* module_registry)
+{
+    return hmSignatureResolve(&method->signature, module_registry);
+}
+
+static hmError hmClassResolve_enumMethodsFunc(void* key, void* value, void* user_data)
+{
+    return hmMethodResolve((hmMethod*)value, (hmModuleRegistry*)user_data);
+}
+
+static hmError hmClassResolve(hmClass* hm_class, hmModuleRegistry* module_registry)
+{
+    return hmHashMapEnumerate(&hm_class->name_to_method_map, &hmClassResolve_enumMethodsFunc, module_registry);
+}
+
+static hmError hmModuleResolve_enumClassesFunc(void* key, void* value, void* user_data)
+{
+    return hmClassResolve((hmClass*)value, (hmModuleRegistry*)user_data);
+}
+
+static hmError hmModuleResolve(hmModule* module, hmModuleRegistry* module_registry)
+{
+    return hmHashMapEnumerate(&module->name_to_class_map, &hmModuleResolve_enumClassesFunc, module_registry);
 }
