@@ -228,34 +228,42 @@ hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate
     return HM_OK;
 }
 
-hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_map)
+hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_hash_map)
 {
     hmError err = HM_OK;
+    /* Validation (keys in the dest hashmap should not conflict with the keys in the source hashmap). */
     for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
         hmHashMapEntry* bucket = hash_map->buckets[i];
         for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
             void* key = hmHashMapEntryGetKey(hash_map, entry);
-            hm_bool key_exists = hmHashMapContains(in_dest_map, key);
+            hm_bool key_exists = hmHashMapContains(in_dest_hash_map, key);
             if (key_exists) {
-                err = HM_ERROR_INVALID_ARGUMENT;
-                HM_FINALIZE;
+                return HM_ERROR_INVALID_ARGUMENT;
             }
+        }
+    }
+    /* Moving. */
+    for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
+        hmHashMapEntry* bucket = hash_map->buckets[i];
+        for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
+            void* key = hmHashMapEntryGetKey(hash_map, entry);
             void* value = hmHashMapEntryGetValue(hash_map, entry);
-            HM_TRY_OR_FINALIZE(err, hmHashMapPut(in_dest_map, key, value));
+            HM_TRY_OR_FINALIZE(err, hmHashMapPut(in_dest_hash_map, key, value));
         }
     }
 HM_ON_FINALIZE
+    /* Rollback/cleanup. */
     hmHashMap *hash_map_to_iterate = HM_NULL,
               *hash_map_to_clear = HM_NULL;
     if (err == HM_OK) {
         /* On success, we want to remove all copied items from the old map. */
-        hash_map_to_iterate = in_dest_map;
+        hash_map_to_iterate = in_dest_hash_map;
         hash_map_to_clear = hash_map;
     } else {
         /* On error, we want to undo everything we've done so far. So we iterate over the old hashmap again and remove everything
            which has been added to the dest map. */
         hash_map_to_iterate = hash_map;
-        hash_map_to_clear = in_dest_map;
+        hash_map_to_clear = in_dest_hash_map;
     }
     for (hm_nint i = 0; i < hash_map_to_iterate->bucket_count; i++) {
         hmHashMapEntry* bucket = hash_map_to_iterate->buckets[i];

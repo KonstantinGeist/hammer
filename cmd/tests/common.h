@@ -44,18 +44,19 @@ typedef struct {
 
 #define HM_TEST_ASSERT(expr) assert(expr); hm_assert_count++
 #define HM_TEST_ASSERT_OK(err) assert((err) == HM_OK); hm_assert_count++
-#define HM_TEST_ASSERT_OK_OR_OOM(err) \
+#define HM_TEST_ASSERT_ERROR_OR_OOM(expected_err, actual_err) \
     if (!hm_test_is_oom_mode) { \
-        assert((err) == HM_OK); \
+        assert((actual_err) == (expected_err)); \
         hm_assert_count++; \
     } else { \
-        if (hmOOMAllocatorIsOutOfMEmory(hm_test_oom_allocator) && err == HM_ERROR_OUT_OF_MEMORY) { \
+        if (hmOOMAllocatorIsOutOfMEmory(hm_test_oom_allocator) && (actual_err) == HM_ERROR_OUT_OF_MEMORY) { \
             hm_test_is_oom = HM_TRUE; \
             goto hm_test_on_finalize; \
         } \
-        assert((err) == HM_OK); \
+        assert((actual_err) == (expected_err)); \
         hm_assert_count++; \
     }
+#define HM_TEST_ASSERT_OK_OR_OOM(err) HM_TEST_ASSERT_ERROR_OR_OOM(HM_OK, err)
 
 #define HM_TEST_IS_OOM() (hm_test_is_oom_mode && hm_test_is_oom)
 

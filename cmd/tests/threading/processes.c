@@ -97,11 +97,11 @@ static void test_can_start_process_impl(hm_bool is_success_scenario)
             HM_TEST_ASSERT(hmProcessGetExitCode(&process) == HM_PROCESS_TEST_EXIT_CODE);
         }
     } else {
-        HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND || err == HM_ERROR_OUT_OF_MEMORY);
+        HM_TEST_ASSERT_ERROR_OR_OOM(HM_ERROR_NOT_FOUND, err);
         HM_TEST_ASSERT(!hmProcessHasExited(&process));
     }
     err = hmProcessDispose(&process);
-    HM_TEST_ASSERT(err == HM_OK || err == HM_ERROR_OUT_OF_MEMORY);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
 HM_TEST_ON_FINALIZE
     err = hmHashMapDispose(options.environment_vars_opt);
     HM_TEST_ASSERT_OK(err);

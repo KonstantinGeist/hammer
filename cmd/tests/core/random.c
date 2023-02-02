@@ -82,7 +82,7 @@ static void test_can_generate_seed()
         err = hmHashMapPut(&hash_map, &seed, &seed);
         HM_TEST_ASSERT_OK(err);
     }
-    /* If there are duplicates, the hash map will report fewer elements. */
+    /* If there are duplicates, the hashmap will report fewer elements. */
     HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) >= SEED_N - SEED_M);
     err = hmHashMapDispose(&hash_map);
     HM_TEST_ASSERT_OK(err);

@@ -113,8 +113,7 @@ hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate
    and moved to the final map only if the whole operation (which may include different data structures) is successful.
    The operation is guaranteed to fully complete (it's rolled back on an error).
    Both `hash_map` and `in_dest_hash_map` must store the same key/value types and same dispose functions, or crashes/memory leaks
-   may occur.
-   If some of the keys in `in_dest_hash_map` also exist in `hash_map` before the operation, HM_ERROR_INVALID_ARGUMENT
+   may occur. If some of the keys in `in_dest_hash_map` also exist in `hash_map` before the operation, HM_ERROR_INVALID_ARGUMENT
    is returned. */
 hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_hash_map);
 #define hmHashMapGetCount(hash_map) ((hash_map)->count)
