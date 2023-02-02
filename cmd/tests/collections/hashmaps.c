@@ -84,45 +84,9 @@ static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* ha
     HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
 
-static void create_2_string_hash_maps_and_allocator_with_dispose_func(hmHashMap* hash_map1, hmHashMap* hash_map2, hmAllocator* allocator)
-{
-    HM_TEST_INIT_ALLOC(allocator);
-    HM_TEST_TRACK_OOM(allocator, HM_FALSE);
-    hmError err = hmCreateHashMapWithStringKeys(
-        allocator,
-        &hmStringDisposeFunc, /* value_dispose_func */
-        sizeof(hmString),
-        HM_HASHMAP_DEFAULT_CAPACITY,
-        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
-        HASH_SALT,
-        hash_map1
-    );
-    HM_TEST_ASSERT_OK(err);
-    err = hmCreateHashMapWithStringKeys(
-        allocator,
-        &hmStringDisposeFunc, /* value_dispose_func */
-        sizeof(hmString),
-        HM_HASHMAP_DEFAULT_CAPACITY,
-        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
-        HASH_SALT,
-        hash_map2
-    );
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
-}
-
 static void dispose_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator* allocator)
 {
     hmError err = hmHashMapDispose(hash_map);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_DEINIT_ALLOC(allocator);
-}
-
-static void dispose_2_hash_maps_and_allocator(hmHashMap* hash_map1, hmHashMap* hash_map2, hmAllocator* allocator)
-{
-    hmError err = hmHashMapDispose(hash_map1);
-    HM_TEST_ASSERT_OK(err);
-    err = hmHashMapDispose(hash_map2);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_DEINIT_ALLOC(allocator);
 }
@@ -370,16 +334,38 @@ static void test_hash_map_keys_values_can_be_moved()
     hmError err = HM_OK;
     hmAllocator allocator;
     hmHashMap src_hash_map, dest_hash_map;
-    create_2_string_hash_maps_and_allocator_with_dispose_func(&src_hash_map, &dest_hash_map, &allocator);
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    err = hmCreateHashMapWithStringKeys(
+        &allocator,
+        &hmStringDisposeFunc, /* value_dispose_func */
+        sizeof(hmString),
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
+        HASH_SALT,
+        &src_hash_map
+    );
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateHashMapWithStringKeys(
+        &allocator,
+        &hmStringDisposeFunc, /* value_dispose_func */
+        sizeof(hmString),
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
+        HASH_SALT,
+        &dest_hash_map
+    );
+    HM_TEST_ASSERT_OK(err);
     for (hm_nint i = 0; i < SMALL_ITERATION_COUNT; i++) {
         hmString str_key, str_value;
         hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
-        HM_TEST_ASSERT_OK_OR_OOM(err);
+        HM_TEST_ASSERT_OK(err);
         err = hmInt32ToString(&allocator, (hm_int32)(i * 2), &str_value);
-        HM_TEST_ASSERT_OK_OR_OOM(err);
+        HM_TEST_ASSERT_OK(err);
         err = hmHashMapPut(&src_hash_map, &str_key, &str_value);
-        HM_TEST_ASSERT_OK_OR_OOM(err);
+        HM_TEST_ASSERT_OK(err);
     }
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == SMALL_ITERATION_COUNT);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 0);
     err = hmHashMapMoveTo(&src_hash_map, &dest_hash_map);
@@ -398,7 +384,11 @@ HM_TEST_ON_FINALIZE
         HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == SMALL_ITERATION_COUNT);
         HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 0);
     }
-    dispose_2_hash_maps_and_allocator(&src_hash_map, &dest_hash_map, &allocator);
+    err = hmHashMapDispose(&src_hash_map);
+    HM_TEST_ASSERT_OK(err);
+    err = hmHashMapDispose(&dest_hash_map);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
 HM_TEST_SUITE_BEGIN(hash_maps)
