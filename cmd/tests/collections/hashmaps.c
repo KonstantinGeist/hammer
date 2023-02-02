@@ -19,6 +19,7 @@
 #define ITERATION_COUNT 1000
 #define HASH_SALT 666
 #define ITERATION_STOP_INDEX (ITERATION_COUNT/2)
+#define SMALL_ITERATION_COUNT 100
 
 typedef struct {
     int x, y;
@@ -83,9 +84,45 @@ static void create_string_hash_map_and_allocator_with_dispose_func(hmHashMap* ha
     HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
 
+static void create_2_string_hash_maps_and_allocator_with_dispose_func(hmHashMap* hash_map1, hmHashMap* hash_map2, hmAllocator* allocator)
+{
+    HM_TEST_INIT_ALLOC(allocator);
+    HM_TEST_TRACK_OOM(allocator, HM_FALSE);
+    hmError err = hmCreateHashMapWithStringKeys(
+        allocator,
+        &hmStringDisposeFunc, /* value_dispose_func */
+        sizeof(hmString),
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
+        HASH_SALT,
+        hash_map1
+    );
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateHashMapWithStringKeys(
+        allocator,
+        &hmStringDisposeFunc, /* value_dispose_func */
+        sizeof(hmString),
+        HM_HASHMAP_DEFAULT_CAPACITY,
+        HM_HASHMAP_DEFAULT_LOAD_FACTOR,
+        HASH_SALT,
+        hash_map2
+    );
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(allocator, HM_TRUE);
+}
+
 static void dispose_hash_map_and_allocator(hmHashMap* hash_map, hmAllocator* allocator)
 {
     hmError err = hmHashMapDispose(hash_map);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(allocator);
+}
+
+static void dispose_2_hash_maps_and_allocator(hmHashMap* hash_map1, hmHashMap* hash_map2, hmAllocator* allocator)
+{
+    hmError err = hmHashMapDispose(hash_map1);
+    HM_TEST_ASSERT_OK(err);
+    err = hmHashMapDispose(hash_map2);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_DEINIT_ALLOC(allocator);
 }
@@ -104,7 +141,7 @@ static void test_can_put_and_get_integers_from_hash_map()
     hmHashMap hash_map;
     create_integer_hash_map_and_allocator(&hash_map, &allocator);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* also tests rehashing */
-        hm_nint value = i*2;
+        hm_nint value = i * 2;
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         hm_nint retrieved_value;
@@ -122,7 +159,7 @@ static void test_can_remove_integers_from_hash_map()
     hmHashMap hash_map;
     create_integer_hash_map_and_allocator(&hash_map, &allocator);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
-        hm_nint value = i*2;
+        hm_nint value = i * 2;
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
@@ -184,7 +221,7 @@ static void test_hash_map_reports_correct_count()
     create_integer_hash_map_and_allocator(&hash_map, &allocator);
     HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == 0);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
-        hm_nint value = i*2;
+        hm_nint value = i * 2;
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
@@ -211,7 +248,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
         hmString str_key, str_value;
         hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
         HM_TEST_ASSERT_OK_OR_OOM(err);
-        err = hmInt32ToString(&allocator, (hm_int32)i*2, &str_value);
+        err = hmInt32ToString(&allocator, (hm_int32)(i * 2), &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         err = hmHashMapPut(&hash_map, &str_key, &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -254,8 +291,8 @@ static void test_can_put_remove_and_get_strings_from_hash_map_without_hash_equal
     create_point_hash_map_and_allocator(&hash_map, &allocator);
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* also tests rehashing */
         Point value;
-        value.x = i*20;
-        value.y = i*30;
+        value.x = i * 20;
+        value.y = i * 30;
         hmError err = hmHashMapPut(&hash_map, &value, &i);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         hm_nint retrieved_value;
@@ -328,6 +365,42 @@ static void test_hash_map_can_be_enumerated()
     dispose_hash_map_and_allocator(&hash_map, &allocator);
 }
 
+static void test_hash_map_keys_values_can_be_moved()
+{
+    hmError err = HM_OK;
+    hmAllocator allocator;
+    hmHashMap src_hash_map, dest_hash_map;
+    create_2_string_hash_maps_and_allocator_with_dispose_func(&src_hash_map, &dest_hash_map, &allocator);
+    for (hm_nint i = 0; i < SMALL_ITERATION_COUNT; i++) {
+        hmString str_key, str_value;
+        hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+        err = hmInt32ToString(&allocator, (hm_int32)(i * 2), &str_value);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+        err = hmHashMapPut(&src_hash_map, &str_key, &str_value);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+    }
+    HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == SMALL_ITERATION_COUNT);
+    HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 0);
+    err = hmHashMapMoveTo(&src_hash_map, &dest_hash_map);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == 0);
+    HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == SMALL_ITERATION_COUNT);
+    hmString nth_element_key;
+    err = hmCreateStringViewFromCString("10", &nth_element_key);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    void* retrieved_dest_value = HM_NULL;
+    err = hmHashMapGetRef(&dest_hash_map, &nth_element_key, &retrieved_dest_value);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString((hmString*)retrieved_dest_value, "20"));
+HM_TEST_ON_FINALIZE
+    if (err != HM_OK) {
+        HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == SMALL_ITERATION_COUNT);
+        HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 0);
+    }
+    dispose_2_hash_maps_and_allocator(&src_hash_map, &dest_hash_map, &allocator);
+}
+
 HM_TEST_SUITE_BEGIN(hash_maps)
     HM_TEST_RUN(test_can_create_and_dispose_hash_map)
     HM_TEST_RUN(test_can_put_and_get_integers_from_hash_map)
@@ -339,4 +412,5 @@ HM_TEST_SUITE_BEGIN(hash_maps)
     HM_TEST_RUN_WITHOUT_OOM(test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func) /* without OOM: takes too much time */
     HM_TEST_RUN(test_can_put_remove_and_get_strings_from_hash_map_without_hash_equals_funcs)
     HM_TEST_RUN(test_hash_map_can_get_value_by_ref)
+    HM_TEST_RUN(test_hash_map_keys_values_can_be_moved)
 HM_TEST_SUITE_END()

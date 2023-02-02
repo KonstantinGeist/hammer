@@ -32,6 +32,7 @@ static hm_bool hmHashMapAreKeysEqual(hmHashMap* hash_map, void* value1, void* va
 static hmHashMapEntry* hmHashMapEntryFindByBucketIndexAndKey(hmHashMap* hash_map, hm_nint bucket_index, void* key);
 static hmHashMapEntry* hmHashMapEntryFindByKey(hmHashMap* hash_map, void* key);
 static hmError hmHashMapRehash(hmHashMap* hash_map);
+static hmError hmHashMapRemoveImpl(hmHashMap* hash_map, void* key, hm_bool* out_removed, hm_bool use_dispose_funcs);
 
 hmError hmCreateHashMap(
     hmAllocator*        allocator,
@@ -211,38 +212,7 @@ hm_bool hmHashMapContains(hmHashMap* hash_map, void* key)
 
 hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed)
 {
-    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
-    hmHashMapEntry* entry = hash_map->buckets[bucket_index];
-    hmHashMapEntry* prev_entry = HM_NULL;
-    while (entry) {
-        void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
-        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
-            if (hash_map->key_dispose_func_opt) {
-                HM_TRY(hash_map->key_dispose_func_opt(key_candidate));
-            }
-            if (hash_map->value_dispose_func_opt) {
-                void* value = hmHashMapEntryGetValue(hash_map, entry);
-                HM_TRY(hash_map->value_dispose_func_opt(value));
-            }
-            if (prev_entry) {
-                prev_entry->next = entry->next;
-            } else {
-                hash_map->buckets[bucket_index] = entry->next;
-            }
-            hmFree(hash_map->allocator, entry);
-            hash_map->count--;
-            if (out_removed) {
-                *out_removed = HM_TRUE;
-            }
-            return HM_OK;
-        }
-        prev_entry = entry;
-        entry = entry->next;
-    }
-    if (out_removed) {
-        *out_removed = HM_FALSE;
-    }
-    return HM_OK;
+    return hmHashMapRemoveImpl(hash_map, key, out_removed, HM_TRUE); /* use_dispose_funcs = HM_TRUE */
 }
 
 hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate_func, void* user_data)
@@ -256,6 +226,46 @@ hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate
         }
     }
     return HM_OK;
+}
+
+hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_map)
+{
+    hmError err = HM_OK;
+    for (hm_nint i = 0; i < hash_map->bucket_count; i++) {
+        hmHashMapEntry* bucket = hash_map->buckets[i];
+        for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
+            void* key = hmHashMapEntryGetKey(hash_map, entry);
+            hm_bool key_exists = hmHashMapContains(in_dest_map, key);
+            if (key_exists) {
+                err = HM_ERROR_INVALID_ARGUMENT;
+                HM_FINALIZE;
+            }
+            void* value = hmHashMapEntryGetValue(hash_map, entry);
+            HM_TRY_OR_FINALIZE(err, hmHashMapPut(in_dest_map, key, value));
+        }
+    }
+HM_ON_FINALIZE
+    hmHashMap *hash_map_to_iterate = HM_NULL,
+              *hash_map_to_clear = HM_NULL;
+    if (err == HM_OK) {
+        /* On success, we want to remove all copied items from the old map. */
+        hash_map_to_iterate = in_dest_map;
+        hash_map_to_clear = hash_map;
+    } else {
+        /* On error, we want to undo everything we've done so far. So we iterate over the old hashmap again and remove everything
+           which has been added to the dest map. */
+        hash_map_to_iterate = hash_map;
+        hash_map_to_clear = in_dest_map;
+    }
+    for (hm_nint i = 0; i < hash_map_to_iterate->bucket_count; i++) {
+        hmHashMapEntry* bucket = hash_map_to_iterate->buckets[i];
+        for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
+            void* key = hmHashMapEntryGetKey(hash_map_to_iterate, entry);
+            /* use_dispose_funcs = HM_FALSE, because we don't the dispose functions to be called, as the values are still alive, just moved */
+            err = hmMergeErrors(err, hmHashMapRemoveImpl(hash_map_to_clear, key, HM_NULL, HM_FALSE));
+        }
+    }
+    return err;
 }
 
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
@@ -331,5 +341,41 @@ static hmError hmHashMapRehash(hmHashMap* hash_map)
         }
     }
     hmFree(hash_map->allocator, old_buckets);
+    return HM_OK;
+}
+
+static hmError hmHashMapRemoveImpl(hmHashMap* hash_map, void* key, hm_bool* out_removed, hm_bool use_dispose_funcs)
+{
+    hm_nint bucket_index = hmHashMapGetBucketIndex(hash_map, key);
+    hmHashMapEntry* entry = hash_map->buckets[bucket_index];
+    hmHashMapEntry* prev_entry = HM_NULL;
+    while (entry) {
+        void* key_candidate = hmHashMapEntryGetKey(hash_map, entry);
+        if (hmHashMapAreKeysEqual(hash_map, key, key_candidate)) {
+            if (use_dispose_funcs && hash_map->key_dispose_func_opt) {
+                HM_TRY(hash_map->key_dispose_func_opt(key_candidate));
+            }
+            if (use_dispose_funcs && hash_map->value_dispose_func_opt) {
+                void* value = hmHashMapEntryGetValue(hash_map, entry);
+                HM_TRY(hash_map->value_dispose_func_opt(value));
+            }
+            if (prev_entry) {
+                prev_entry->next = entry->next;
+            } else {
+                hash_map->buckets[bucket_index] = entry->next;
+            }
+            hmFree(hash_map->allocator, entry);
+            hash_map->count--;
+            if (out_removed) {
+                *out_removed = HM_TRUE;
+            }
+            return HM_OK;
+        }
+        prev_entry = entry;
+        entry = entry->next;
+    }
+    if (out_removed) {
+        *out_removed = HM_FALSE;
+    }
     return HM_OK;
 }

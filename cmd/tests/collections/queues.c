@@ -188,7 +188,7 @@ static void test_returns_limit_exceeded_when_queue_is_full()
     hmQueue queue;
     hmAllocator allocator;
     create_integer_queue_and_allocator(HM_TRUE, &queue, &allocator);
-    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY+1; i++) {
+    for (hm_nint i = 0; i < HM_QUEUE_DEFAULT_CAPACITY + 1; i++) {
         hm_nint value = i * 2;
         hmError err = hmQueueEnqueue(&queue, &value);
         if (i < HM_QUEUE_DEFAULT_CAPACITY) {

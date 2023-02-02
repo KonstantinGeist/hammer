@@ -55,7 +55,7 @@ static void test_can_alloc_realloc_and_free_from_allocator(hmAllocator* allocato
 {
     for (hm_nint i = 1; i < 100; i++) {
         hm_nint mem_size = i;
-        hm_nint new_mem_size = i*2;
+        hm_nint new_mem_size = i * 2;
         void* mem = hmAlloc(allocator, mem_size);
         HM_TEST_ASSERT(mem != HM_NULL);
         touch_memory(mem, mem_size);

@@ -355,20 +355,20 @@ static hmError hmClassDisposeFunc(void* object)
 static hmError hmModuleStoreClass(hmModule* module, hm_metadata_id class_id, hmString* name, hmClass* hm_class)
 {
     hmError err = HM_OK;
-    hm_bool name_and_class_owned = HM_TRUE;
+    hm_bool name_and_class_saved_to_map = HM_FALSE;
     HM_TRY_OR_FINALIZE(err, hmHashMapPut(&module->name_to_class_map, name, hm_class));
-    name_and_class_owned = HM_FALSE;
+    name_and_class_saved_to_map = HM_TRUE;
     void* class_ref;
     HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&module->name_to_class_map, name, &class_ref));
     err = hmHashMapPut(&module->class_id_to_class_ref_map, &class_id, &class_ref);
 HM_ON_FINALIZE
     if (err != HM_OK) {
-        if (name_and_class_owned) {
-            err = hmMergeErrors(err, hmStringDispose(name));
-            err = hmMergeErrors(err, hmClassDispose(hm_class));
-        } else {
+        if (name_and_class_saved_to_map) {
             err = hmMergeErrors(err, hmHashMapRemove(&module->name_to_class_map, name, HM_NULL));
             err = hmMergeErrors(err, hmHashMapRemove(&module->class_id_to_class_ref_map, &class_id, HM_NULL));
+        } else {
+            err = hmMergeErrors(err, hmStringDispose(name));
+            err = hmMergeErrors(err, hmClassDispose(hm_class));
         }
     }
     return err;

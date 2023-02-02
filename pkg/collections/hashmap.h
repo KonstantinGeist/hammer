@@ -107,6 +107,16 @@ hmError hmHashMapRemove(hmHashMap* hash_map, void* key, hm_bool* out_removed_opt
    Iteration order is not guaranteed.
    WARNING Modifying the hashmap while enumerating its keys/values leads to corrupted data. */
 hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate_func, void* user_data);
+/* Moves all key/value pairs of the hashmap to `in_dest_hash_map`. The original hashmap becomes empty. No user-defined
+   dispose functions are called because the values are still alive (just ownership changed).
+   Useful for implementing atomic operations "everything or nothing", i.e. keys/values are stored in a temporary map
+   and moved to the final map only if the whole operation (which may include different data structures) is successful.
+   The operation is guaranteed to fully complete (it's rolled back on an error).
+   Both `hash_map` and `in_dest_hash_map` must store the same key/value types and same dispose functions, or crashes/memory leaks
+   may occur.
+   If some of the keys in `in_dest_hash_map` also exist in `hash_map` before the operation, HM_ERROR_INVALID_ARGUMENT
+   is returned. */
+hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_hash_map);
 #define hmHashMapGetCount(hash_map) ((hash_map)->count)
 
 #endif /* HM_HASHMAP_H */

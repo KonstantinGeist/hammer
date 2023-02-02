@@ -47,10 +47,10 @@ static void test_array_can_create_add_get_dispose_without_item_dispose_func()
     hmAllocator allocator;
     hmArray array;
     create_array_and_allocator(&array, &allocator, HM_NULL);
-    for (hm_nint i = 0; i < ARRAY_CAPACITY+5; i++) { /* note: also checks reallocations */
+    for (hm_nint i = 0; i < ARRAY_CAPACITY + 5; i++) { /* note: also checks reallocations */
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         testItem retrieved_item;
@@ -77,10 +77,10 @@ static void test_array_can_create_add_get_dispose_with_item_dispose_func()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     hm_nint item_dispose_sum_control = 0;
     item_dispose_sum = 0;
-    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: also checks reallocations */
+    for (hm_nint i = 0; i < ARRAY_CAPACITY * 2 + 1; i++) { /* note: also checks reallocations */
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         item_dispose_sum_control += test_item.x+test_item.y;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -128,16 +128,16 @@ static void test_can_iterate_over_raw_array()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
     testItem* raw_items = hmArrayGetRaw(&array, testItem);
     for (hm_nint i = 0; i < hmArrayGetCount(&array); i++) {
         testItem control_item;
-        control_item.x = i*10;
-        control_item.y = i*20;
+        control_item.x = i * 10;
+        control_item.y = i * 20;
         testItem retrieved_item = raw_items[i];
         HM_TEST_ASSERT(control_item.x == retrieved_item.x);
         HM_TEST_ASSERT(control_item.y == retrieved_item.y);
@@ -153,8 +153,8 @@ static void test_can_expand_array_without_expand_func()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
@@ -175,8 +175,8 @@ static hmError array_expand_func(hmArray* array, hm_nint index, void* in_item, v
 {
     testItem* test_item = (testItem*)in_item;
     hm_nint base_int = *((hm_nint*)user_data);
-    test_item->x = base_int+index*10;
-    test_item->y = base_int+index*20;
+    test_item->x = base_int + index * 10;
+    test_item->y = base_int + index * 20;
     return HM_OK;
 }
 
@@ -187,8 +187,8 @@ static void test_can_expand_array_with_expand_func()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
@@ -198,8 +198,8 @@ static void test_can_expand_array_with_expand_func()
     HM_TEST_ASSERT(hmArrayGetCount(&array) == ARRAY_CAPACITY+ARRAY_EXPAND_COUNT);
     testItem* test_item = hmArrayGetRaw(&array, testItem)+ARRAY_CAPACITY;
     for (hm_nint i = 0; i < ARRAY_EXPAND_COUNT; i++) {
-        HM_TEST_ASSERT(test_item->x == base_int+(i+ARRAY_CAPACITY)*10);
-        HM_TEST_ASSERT(test_item->y == base_int+(i+ARRAY_CAPACITY)*20);
+        HM_TEST_ASSERT(test_item->x == base_int + (i + ARRAY_CAPACITY) * 10);
+        HM_TEST_ASSERT(test_item->y == base_int + (i + ARRAY_CAPACITY) * 20);
         test_item++;
     }
 HM_TEST_ON_FINALIZE
@@ -301,10 +301,10 @@ static void test_can_clear_array()
     create_array_and_allocator(&array, &allocator, &item_dispose_func);
     hm_nint item_dispose_sum_control = 0;
     item_dispose_sum = 0;
-    for (hm_nint i = 0; i < ARRAY_CAPACITY*2+1; i++) { /* note: the test also checks reallocations */
+    for (hm_nint i = 0; i < ARRAY_CAPACITY * 2 + 1; i++) { /* note: the test also checks reallocations */
         testItem test_item;
-        test_item.x = i*10;
-        test_item.y = i*20;
+        test_item.x = i * 10;
+        test_item.y = i * 20;
         item_dispose_sum_control += test_item.x+test_item.y;
         hmError err = hmArrayAdd(&array, &test_item);
         HM_TEST_ASSERT_OK_OR_OOM(err);
