@@ -19,6 +19,7 @@
 #include <collections/array.h>
 #include <collections/hashmap.h>
 #include <runtime/common.h>
+#include <runtime/image.h>
 
 /* Modules store classes, and classes store methods, by using hashmaps. It's not superperformant per se (each lookup
    involves searching in a hashmap), however, high-level (HL) bytecode will be translated to low-level (LL) bytecode where
@@ -79,9 +80,9 @@ typedef struct {
    when user code is running, unless otherwise noted. */
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry);
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
-/* Loads a module from a Hammer image denoted by the path on disk. After registering, all classes in the module
+/* Loads a module from a Hammer image using the provided image loader. After registering, all classes in the module
    are immediately usable. */
-hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path);
+hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmImageLoader* image_loader);
 /* Returns a pointer to a module by its name in out_module. Returns HM_NULL if no module was found.
    Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module);

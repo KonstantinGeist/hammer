@@ -48,12 +48,25 @@ typedef hmError (*hmEnumModuleMetadataInImageFunc)(hmModuleMetadata* metadata, v
 typedef hmError (*hmEnumClassMetadataInImageFunc)(hmClassMetadata* metadata, void* user_data);
 typedef hmError (*hmEnumMethodMetadataInImageFunc)(hmMethodMetadata* metadata, void* user_data);
 
-/* Enumerates metadata in a given Hammer image on disk and calls provided callbacks in the order of the arguments.
+typedef struct hmImageLoader_ {
+    hmError (*enumMetadata)(struct hmImageLoader_*          loader,
+                            hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
+                            hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
+                            hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
+                            void*                           user_data);
+    hmError (*dispose)(struct hmImageLoader_* loader);
+    void* data; /* Loader-specific data. */
+} hmImageLoader;
+
+/* Creates an image loader which can load an image from a file specified by `image_path`. */
+hmError hmCreateFileImageLoader(hmAllocator* allocator, hmString* image_path, hmImageLoader* in_image_loader);
+hmError hmImageLoaderDispose(hmImageLoader* image_loader);
+/* Enumerates metadata and calls provided callbacks in the order of the arguments.
    Can be used for constructing new modules, for inspecting metadata, etc.
    All callbacks can be HM_NULL if enumerating a specific object type (module, class or method) is not required.
    `user_data` can be used to pass additional context to the callbacks. */
-hmError hmEnumMetadataInImage(
-    hmString*                       image_path,
+hmError hmImageLoaderEnumMetadata(
+    hmImageLoader*                  image_loader,
     hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
     hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
     hmEnumMethodMetadataInImageFunc enum_methods_func_opt,

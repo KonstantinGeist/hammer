@@ -228,7 +228,7 @@ hmError hmHashMapEnumerate(hmHashMap* hash_map, hmHashMapEnumerateFunc enumerate
     return HM_OK;
 }
 
-hmError hmHashMapMoveTo(hmHashMap* hash_map, hmHashMap* in_dest_hash_map)
+hmError hmHashMapMove(hmHashMap* hash_map, hmHashMap* in_dest_hash_map)
 {
     hmError err = HM_OK;
     /* Validation (keys in the dest hashmap should not conflict with the keys in the source hashmap). */
@@ -269,7 +269,8 @@ HM_ON_FINALIZE
         hmHashMapEntry* bucket = hash_map_to_iterate->buckets[i];
         for (hmHashMapEntry* entry = bucket; entry; entry = entry->next) {
             void* key = hmHashMapEntryGetKey(hash_map_to_iterate, entry);
-            /* use_dispose_funcs = HM_FALSE, because we don't the dispose functions to be called, as the values are still alive, just moved */
+            /* use_dispose_funcs = HM_FALSE, because we don't want the dispose functions to be called, as the values are
+               still alive, just moved */
             err = hmMergeErrors(err, hmHashMapRemoveImpl(hash_map_to_clear, key, HM_NULL, HM_FALSE));
         }
     }

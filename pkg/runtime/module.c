@@ -84,11 +84,11 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
     return hmMergeErrors(err, hmArrayDispose(&registry->module_ids_to_resolve));
 }
 
-hmError hmModuleRegistryLoadFromImage(hmModuleRegistry* registry, hmString* image_path)
+hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmImageLoader* image_loader)
 {
     /* First step: load modules. */
-    HM_TRY(hmEnumMetadataInImage(
-        image_path,
+    HM_TRY(hmImageLoaderEnumMetadata(
+        image_loader,
         &hmModuleRegistry_enumModulesFunc, /* populates `module_ids_to_resolve` */
         &hmModuleRegistry_enumClassesFunc,
         &hmModuleRegistry_enumMethodsFunc,

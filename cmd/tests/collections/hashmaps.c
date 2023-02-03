@@ -368,7 +368,7 @@ static void test_hash_map_keys_values_can_be_moved()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == SMALL_ITERATION_COUNT);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 0);
-    err = hmHashMapMoveTo(&src_hash_map, &dest_hash_map);
+    err = hmHashMapMove(&src_hash_map, &dest_hash_map);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == 0);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == SMALL_ITERATION_COUNT);
@@ -431,7 +431,7 @@ static void test_hash_map_cannot_be_moved_if_keys_already_exist_in_dest_map()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == 1);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 1);
-    err = hmHashMapMoveTo(&src_hash_map, &dest_hash_map);
+    err = hmHashMapMove(&src_hash_map, &dest_hash_map);
     HM_TEST_ASSERT_ERROR_OR_OOM(HM_ERROR_INVALID_ARGUMENT, err);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == 1);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == 1);

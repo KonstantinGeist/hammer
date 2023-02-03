@@ -14,39 +14,106 @@
 #include <runtime/image.h>
 #include <vendor/sqlite3/sqlite3.h>
 
-static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data);
-static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data);
-static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func, void* user_data);
-static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id);
-static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size);
-static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view);
-static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob);
+hmError hmImageLoaderDispose(hmImageLoader* image_loader)
+{
+    return image_loader->dispose(image_loader);
+}
 
-hmError hmEnumMetadataInImage(
-    hmString*                       image_path,
+hmError hmImageLoaderEnumMetadata(
+    hmImageLoader*                  image_loader,
     hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
     hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
     hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
     void* user_data
 )
 {
+    return image_loader->enumMetadata(
+        image_loader,
+        enum_modules_func_opt,
+        enum_classes_func_opt,
+        enum_methods_func_opt,
+        user_data
+    );
+}
+
+/* ************************ */
+/*      FileImageLoader.    */
+/* ************************ */
+
+typedef struct {
+    hmAllocator* allocator;
+    hmString     image_path;
+} hmFileImageLoaderData;
+
+static hmError hmFileImageLoaderEnumModules(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func, void* user_data);
+static hmError hmFileImageLoaderEnumClasses(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func, void* user_data);
+static hmError hmFileImageLoaderEnumMethods(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func, void* user_data);
+static hmError hmFileImageLoaderGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id);
+static hmError hmFileImageLoaderGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size);
+static hmError hmFileImageLoaderGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view);
+static hmError hmFileImageLoaderGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob);
+static hmError hmFileImageLoader_enumMetadata(
+    hmImageLoader*                  image_loader,
+    hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
+    hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
+    hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
+    void* user_data
+);
+static hmError hmFileImageLoader_dispose(hmImageLoader* image_loader);
+
+hmError hmCreateFileImageLoader(hmAllocator* allocator, hmString* image_path, hmImageLoader* in_image_loader)
+{
     if (!image_path) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
+    hmFileImageLoaderData* data = (hmFileImageLoaderData*)hmAlloc(allocator, sizeof(hmFileImageLoaderData));
+    if (!data) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hmError err = HM_OK;
+    HM_TRY_OR_FINALIZE(err, hmStringDuplicate(allocator, image_path, &data->image_path));
+    data->allocator = allocator;
+    in_image_loader->enumMetadata = &hmFileImageLoader_enumMetadata;
+    in_image_loader->dispose = hmFileImageLoader_dispose;
+    in_image_loader->data = data;
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        hmFree(allocator, data);
+    }
+    return err;
+}
+
+static hmError hmFileImageLoader_dispose(hmImageLoader* image_loader)
+{
+    hmFileImageLoaderData* data = (hmFileImageLoaderData*)image_loader->data;
+    hmError err = hmStringDispose(&data->image_path);
+    hmFree(data->allocator, data);
+    return err;
+}
+
+static hmError hmFileImageLoader_enumMetadata(
+    hmImageLoader*                  image_loader,
+    hmEnumModuleMetadataInImageFunc enum_modules_func_opt,
+    hmEnumClassMetadataInImageFunc  enum_classes_func_opt,
+    hmEnumMethodMetadataInImageFunc enum_methods_func_opt,
+    void* user_data
+)
+{
+    hmFileImageLoaderData* data = (hmFileImageLoaderData*)image_loader->data;
     hmError err = HM_OK;
     sqlite3* db;
-    int sqlite_err = sqlite3_open_v2(hmStringGetCString(image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
+    int sqlite_err = sqlite3_open_v2(hmStringGetCString(&data->image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;
     }
     if (enum_modules_func_opt) {
-        err = hmEnumModulesInImage(db, enum_modules_func_opt, user_data);
+        err = hmFileImageLoaderEnumModules(db, enum_modules_func_opt, user_data);
     }
     if (enum_classes_func_opt) {
-        err = hmMergeErrors(err, hmEnumClassesInImage(db, enum_classes_func_opt, user_data));
+        err = hmMergeErrors(err, hmFileImageLoaderEnumClasses(db, enum_classes_func_opt, user_data));
     }
     if (enum_methods_func_opt) {
-        err = hmMergeErrors(err, hmEnumMethodsInImage(db, enum_methods_func_opt, user_data));
+        err = hmMergeErrors(err, hmFileImageLoaderEnumMethods(db, enum_methods_func_opt, user_data));
     }
     sqlite_err = sqlite3_close(db);
     if (sqlite_err != SQLITE_OK) {
@@ -92,38 +159,38 @@ HM_ON_FINALIZE \
     } \
     return err;
 
-static hmError hmEnumModulesInImage(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func_opt, void* user_data)
+static hmError hmFileImageLoaderEnumModules(sqlite3* db, hmEnumModuleMetadataInImageFunc enum_modules_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT module_id, name FROM module")
         hmModuleMetadata metadata;
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.module_id));
-        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 1, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 0, &metadata.module_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetStringViewFromStatement(db, stmt, 1, &metadata.name));
         HM_TRY_OR_FINALIZE(err, enum_modules_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
 
-static hmError hmEnumClassesInImage(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func_opt, void* user_data)
+static hmError hmFileImageLoaderEnumClasses(sqlite3* db, hmEnumClassMetadataInImageFunc enum_classes_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT class_id, module_id, name FROM class")
         hmClassMetadata metadata;
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.class_id));
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 1, &metadata.module_id));
-        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 2, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 0, &metadata.class_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 1, &metadata.module_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetStringViewFromStatement(db, stmt, 2, &metadata.name));
         HM_TRY_OR_FINALIZE(err, enum_classes_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
 
-static hmError hmEnumMethodsInImage(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func_opt, void* user_data)
+static hmError hmFileImageLoaderEnumMethods(sqlite3* db, hmEnumMethodMetadataInImageFunc enum_methods_func_opt, void* user_data)
 {
     HM_BEGIN_SQLITE3_QUERY("SELECT method_id, class_id, module_id, name, signature, code, length(code) AS code_length FROM method")
         hmMethodMetadata metadata;
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 0, &metadata.method_id));
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 1, &metadata.class_id));
-        HM_TRY_OR_FINALIZE(err, hmGetMetadataIdFromStatement(db, stmt, 2, &metadata.module_id));
-        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 3, &metadata.name));
-        HM_TRY_OR_FINALIZE(err, hmGetStringViewFromStatement(db, stmt, 4, &metadata.signature));
-        HM_TRY_OR_FINALIZE(err, hmGetBlobFromStatement(db, stmt, 5, &metadata.body.opcodes));
-        HM_TRY_OR_FINALIZE(err, hmGetMethodSizeFromStatement(db, stmt, 6, &metadata.body.size));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 0, &metadata.method_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 1, &metadata.class_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMetadataIdFromStatement(db, stmt, 2, &metadata.module_id));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetStringViewFromStatement(db, stmt, 3, &metadata.name));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetStringViewFromStatement(db, stmt, 4, &metadata.signature));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetBlobFromStatement(db, stmt, 5, &metadata.body.opcodes));
+        HM_TRY_OR_FINALIZE(err, hmFileImageLoaderGetMethodSizeFromStatement(db, stmt, 6, &metadata.body.size));
         HM_TRY_OR_FINALIZE(err, enum_methods_func_opt(&metadata, user_data));
     HM_END_SQLITE3_QUERY()
 }
@@ -133,7 +200,7 @@ static hm_bool hmHasSqlite3ErrorOccurred(sqlite3* db) {
     return error_code != SQLITE_OK && error_code != SQLITE_ROW && error_code != SQLITE_DONE;
 }
 
-static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id)
+static hmError hmFileImageLoaderGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_metadata_id* out_id)
 {
     sqlite3_int64 id = sqlite3_column_int64(stmt, column_index);
     if (!id && hmHasSqlite3ErrorOccurred(db)) {
@@ -146,7 +213,7 @@ static hmError hmGetMetadataIdFromStatement(sqlite3* db, sqlite3_stmt* stmt, int
     return HM_OK;
 }
 
-static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size)
+static hmError hmFileImageLoaderGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hm_method_size* out_size)
 {
     sqlite3_int64 size = sqlite3_column_int64(stmt, column_index);
     if (!size && hmHasSqlite3ErrorOccurred(db)) {
@@ -159,7 +226,7 @@ static hmError hmGetMethodSizeFromStatement(sqlite3* db, sqlite3_stmt* stmt, int
     return HM_OK;
 }
 
-static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view)
+static hmError hmFileImageLoaderGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, hmString* in_string_view)
 {
     const char* name = (const char*)sqlite3_column_text(stmt, column_index);
     if (!name) {
@@ -168,7 +235,7 @@ static hmError hmGetStringViewFromStatement(sqlite3* db, sqlite3_stmt* stmt, int
     return hmCreateStringViewFromCString(name, in_string_view);
 }
 
-static hmError hmGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob)
+static hmError hmFileImageLoaderGetBlobFromStatement(sqlite3* db, sqlite3_stmt* stmt, int column_index, const hm_uint8** out_blob)
 {
     const hm_uint8* blob = (const hm_uint8*)sqlite3_column_blob(stmt, column_index);
     if (!blob) {
