@@ -11,24 +11,21 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_MODULE_H
-#define HM_MODULE_H
+#ifndef HM_CLASS_H
+#define HM_CLASS_H
 
-#include <core/common.h>
 #include <core/string.h>
 #include <collections/hashmap.h>
 #include <runtime/common.h>
 
-typedef struct {
-    hmString       name;    /* The name of the module. Should be unique in a given module registry. */
-    hmHashMap      classes; /* hmHashMap<hm_metadata_id, hmClass*> */
-    hm_metadata_id module_id;
-} hmModule;
+typedef struct hmClass_ {
+    hmString       name;    /* The name of the class (NOT fully qualified, for example: "StringBuilder"). The name
+                               should be unique in a given module. */
+    hmHashMap      methods; /* hmHashMap<hm_metadata_id, hmMethod*> */
+    hm_metadata_id class_id;
+} hmClass;
 
-hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, hmString* name, hmModule* in_module);
-hmError hmModuleDispose(hmModule* module);
-hmError hmModuleDisposeFunc(void* object);
-#define hmModuleGetName(module) &(module)->name
-#define hmModuleGetID(module) (module)->module_id
+#define hmClassGetName(hm_class) (hm_class)->name
+#define hmClassGetID(hm_class) (hm_class)->class_id
 
-#endif /* HM_MODULE_H */
+#endif /* HM_CLASS_H */

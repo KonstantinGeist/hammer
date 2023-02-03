@@ -58,6 +58,11 @@ typedef struct hmMetadataLoader_ {
     void* data; /* Loader-specific data. */
 } hmMetadataLoader;
 
+/* Validates that the name is allowed as a name for a metadata object (module, class, method).
+   We have very strict naming rules to make sure metadata names don't conflict with anything (signatures, emitted C code, etc.)
+   Only 'a-Z', 'A-Z', digits, and '_' are allowed; additionally, a name can't start with a digit.
+   Made public for tests (at least). */
+hm_bool hmValidateMetadataName(hmString* name);
 /* Creates a metadata loader which can load metadata from an image file specified by `image_path`. */
 hmError hmCreateImageFileMetadataLoader(hmAllocator* allocator, hmString* image_path, hmMetadataLoader* in_metadata_loader);
 hmError hmMetadataLoaderDispose(hmMetadataLoader* metadata_loader);

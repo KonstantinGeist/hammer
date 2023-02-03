@@ -14,6 +14,17 @@
 #include <runtime/metadata.h>
 #include <vendor/sqlite3/sqlite3.h>
 
+static hm_bool hmIsValidMetadataName(hmString* name);
+
+hm_bool hmValidateMetadataName(hmString* name)
+{
+    hm_bool is_valid = hmIsValidMetadataName(name);
+    if (!is_valid) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    return HM_OK;
+}
+
 hmError hmMetadataLoaderDispose(hmMetadataLoader* metadata_loader)
 {
     return metadata_loader->dispose(metadata_loader);
@@ -34,6 +45,30 @@ hmError hmMetadataLoaderEnumMetadata(
         enum_methods_func_opt,
         user_data
     );
+}
+
+static hm_bool hmIsValidMetadataName(hmString* name)
+{
+    hm_nint length = hmStringGetLength(name);
+    if (!length) {
+        return HM_FALSE;
+    }
+    hm_char* chars = hmStringGetChars(name);
+    for (hm_nint i = 0; i < length; i++) {
+        hm_char c = chars[i];
+        hm_bool is_digit = (c >= '0' && c <= '9');
+        hm_bool is_valid = (c >= 'a' && c <= 'z')
+                        || (c >= 'A' && c <= 'Z')
+                        || is_digit
+                        || c == '_';
+        if (!is_valid) {
+            return HM_FALSE;
+        }
+        if (is_digit && i == 0) {
+            return HM_FALSE;
+        }
+    }
+    return HM_TRUE;
 }
 
 /* ******************************** */

@@ -11,24 +11,27 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_MODULE_H
-#define HM_MODULE_H
+#ifndef HM_METHOD_H
+#define HM_METHOD_H
 
 #include <core/common.h>
 #include <core/string.h>
-#include <collections/hashmap.h>
 #include <runtime/common.h>
+#include <runtime/signature.h>
 
 typedef struct {
-    hmString       name;    /* The name of the module. Should be unique in a given module registry. */
-    hmHashMap      classes; /* hmHashMap<hm_metadata_id, hmClass*> */
-    hm_metadata_id module_id;
-} hmModule;
+    hm_uint8*      opcodes;
+    hm_method_size size;
+} hmMethodBody;
 
-hmError hmCreateModule(hmAllocator* allocator, hm_metadata_id module_id, hmString* name, hmModule* in_module);
-hmError hmModuleDispose(hmModule* module);
-hmError hmModuleDisposeFunc(void* object);
-#define hmModuleGetName(module) &(module)->name
-#define hmModuleGetID(module) (module)->module_id
+typedef struct {
+    hmString       name;      /* The name of the method which should be unique in a given class. */
+    hmSignature    signature; /* Describes the parameters and the return type. */
+    hmMethodBody   hl_body;   /* High-level bytecode as stored in metadata. */
+    hm_metadata_id method_id;
+} hmMethod;
 
-#endif /* HM_MODULE_H */
+#define hmMethodGetName(method) (method)->name
+#define hmMethodGetID(method) (method)->method_id
+
+#endif /* HM_METHOD_H */

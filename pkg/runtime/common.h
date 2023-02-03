@@ -15,6 +15,7 @@
 #define HM_RUNTIME_COMMON_H
 
 #include <core/common.h>
+#include <core/primitives.h>
 
 typedef hm_uint32 hm_metadata_id;
 #define HM_MIN_METADATA_ID 0

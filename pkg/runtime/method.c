@@ -11,14 +11,4 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_SIGNATURE_H
-#define HM_SIGNATURE_H
-
-#include <collections/array.h>
-
-typedef struct {
-    struct hmClass_* return_class;
-    hmArray          param_classes; /* hmArray<hmClass*> */
-} hmSignature;
-
-#endif /* HM_SIGNATURE_H */
+#include <runtime/method.h>
