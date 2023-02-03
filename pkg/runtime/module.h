@@ -19,13 +19,13 @@
 #include <collections/array.h>
 #include <collections/hashmap.h>
 #include <runtime/common.h>
-#include <runtime/image.h>
+#include <runtime/metadata.h>
 
 /* Modules store classes, and classes store methods, by using hashmaps. It's not superperformant per se (each lookup
    involves searching in a hashmap), however, high-level (HL) bytecode will be translated to low-level (LL) bytecode where
-   pointers are directly stored in the LL bytecode, so it's not an issue at runtime (no dispatch will happen). Storing objects inside
+   pointers will be directly stored in the LL bytecode, so it's not an issue at runtime (no dispatch will happen). Storing objects inside
    hashmaps has an advantage of it being more flexible: there can be "holes" in ID sequences which can happen if bytecode is patched.
-   A disadvantage is that loading an image is slower (all the hashmaps must be populated and searched) -- we can revisit it later if
+   A disadvantage is that loading metadata is slower (all the hashmaps must be populated and searched) -- we can revisit it later if
    it proves to be too slow. We also assume our runtime is used in servers where startup is not as important as request processing speed.
    Note also that our pattern to embed allocator references in every struct inflates structure sizes considerably, which makes
    our code more flexible but is bad for memory locality; however we assume that at runtime, metadata will be rarely touched. */
@@ -33,7 +33,7 @@
 typedef struct {
     struct hmClass_* return_class;
     hmArray          param_classes; /* hmArray<hmClass*> */
-    hmString         desc;          /* Unresolved signature description in the text form as stored in the image. */
+    hmString         desc;          /* Unresolved signature description in the text form as stored in the metadata. */
     hm_bool          is_resolved;   /* Initially, it's HM_FALSE. If HM_TRUE (after resolution), values in `param_classes`
                                        and `return_class` are meaningful. */
 } hmSignature;
@@ -71,7 +71,7 @@ typedef struct {
     hmHashMap    name_to_module_map;          /* hmHashMap<hmString, hmModule>, for reflection */
     hmHashMap    module_id_to_module_ref_map; /* hmHashMap<hm_metadata_id, hmModule*>, for linking */
     hmArray      module_ids_to_resolve;       /* hmArray<hm_metadata_id>, a list of modules to resolve (populated during
-                                                 image loading, accounted for during resolution). */
+                                                 metadata loading, accounted for during resolution). */
 } hmModuleRegistry;
 
 /* A module registry is where all modules and their classes are registered and stored. Typically, there should
@@ -80,9 +80,9 @@ typedef struct {
    when user code is running, unless otherwise noted. */
 hmError hmCreateModuleRegistry(hmAllocator* allocator, hmModuleRegistry* in_registry);
 hmError hmModuleRegistryDispose(hmModuleRegistry* registry);
-/* Loads a module from a Hammer image using the provided image loader. After registering, all classes in the module
-   are immediately usable. */
-hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmImageLoader* image_loader);
+/* Loads a module using the provided metadata loader. After registering, all classes in the module are immediately usable.
+   Note that this method is not thread-safe, so workers must be suspended before calling it. */
+hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmMetadataLoader* metadata_loader);
 /* Returns a pointer to a module by its name in out_module. Returns HM_NULL if no module was found.
    Note that the owner of the module is the registry, do not attempt to dispose of the module or modify it. */
 hmError hmModuleRegistryGetModuleRefByName(hmModuleRegistry* registry, hmString* name, hmModule** out_module);

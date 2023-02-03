@@ -38,14 +38,14 @@ static void dispose_module_registry_and_allocator(hmModuleRegistry* module_regis
     HM_TEST_DEINIT_ALLOC(allocator);
 }
 
-static hmError load_image(hmModuleRegistry* module_registry, hmAllocator* allocator)
+static hmError load_metadata(hmModuleRegistry* module_registry, hmAllocator* allocator)
 {
     hmString image_path;
     HM_TRY(hmCreateStringViewFromCString("../cmd/tests/data/modules.hmi", &image_path));
-    hmImageLoader image_loader;
-    HM_TRY(hmCreateFileImageLoader(allocator, &image_path, &image_loader));
-    hmError err = hmModuleRegistryLoad(module_registry, &image_loader);
-    return hmMergeErrors(err, hmImageLoaderDispose(&image_loader));
+    hmMetadataLoader metadata_loader;
+    HM_TRY(hmCreateImageFileMetadataLoader(allocator, &image_path, &metadata_loader));
+    hmError err = hmModuleRegistryLoad(module_registry, &metadata_loader);
+    return hmMergeErrors(err, hmMetadataLoaderDispose(&metadata_loader));
 }
 
 static void test_can_load_existing_module_class_and_method()
@@ -53,7 +53,7 @@ static void test_can_load_existing_module_class_and_method()
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry_and_allocator(&module_registry, &allocator);
-    hmError err = load_image(&module_registry, &allocator);
+    hmError err = load_metadata(&module_registry, &allocator);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString core_module_name;
     err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &core_module_name);
@@ -91,7 +91,7 @@ static void test_cannot_load_non_existing_module()
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry_and_allocator(&module_registry, &allocator);
-    hmError err = load_image(&module_registry, &allocator);
+    hmError err = load_metadata(&module_registry, &allocator);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString non_existing_module_name;
     err = hmCreateStringViewFromCString(NON_EXISTING_MODULE_NAME, &non_existing_module_name);
@@ -109,7 +109,7 @@ static void test_cannot_load_non_existing_class()
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry_and_allocator(&module_registry, &allocator);
-    hmError err = load_image(&module_registry, &allocator);
+    hmError err = load_metadata(&module_registry, &allocator);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString core_module_name;
     err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &core_module_name);
@@ -136,7 +136,7 @@ static void test_cannot_load_non_existing_method()
     hmAllocator allocator;
     hmModuleRegistry module_registry;
     create_module_registry_and_allocator(&module_registry, &allocator);
-    hmError err = load_image(&module_registry, &allocator);
+    hmError err = load_metadata(&module_registry, &allocator);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     hmString core_module_name;
     err = hmCreateStringViewFromCString(CORE_MODULE_NAME, &core_module_name);

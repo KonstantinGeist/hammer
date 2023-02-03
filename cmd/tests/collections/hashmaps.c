@@ -358,7 +358,7 @@ static void test_hash_map_keys_values_can_be_moved()
     HM_TEST_ASSERT_OK(err);
     for (hm_nint i = 0; i < SMALL_ITERATION_COUNT; i++) {
         hmString str_key, str_value;
-        hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
+        err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
         HM_TEST_ASSERT_OK(err);
         err = hmInt32ToString(&allocator, (hm_int32)(i * 2), &str_value);
         HM_TEST_ASSERT_OK(err);
@@ -420,7 +420,7 @@ static void test_hash_map_cannot_be_moved_if_keys_already_exist_in_dest_map()
     HM_TEST_ASSERT_OK(err);
     for (hm_nint i = 0; i < 2; i++) {
         hmString str_key, str_value;
-        hmError err = hmInt32ToString(&allocator, 1, &str_key);
+        err = hmInt32ToString(&allocator, 1, &str_key);
         HM_TEST_ASSERT_OK_OR_OOM(err);
         err = hmInt32ToString(&allocator, 2, &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);

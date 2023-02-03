@@ -1,5 +1,5 @@
 runtime_sources = files(
+    'metadata.c',
     'module.c',
-    'image.c',
     'signature.c'
 )

@@ -15,7 +15,7 @@
 #include <core/allocator.h>
 #include <core/primitives.h>
 #include <core/utils.h>
-#include <runtime/image.h>
+#include <runtime/metadata.h>
 #include <runtime/signature.h>
 
 static hmError hmModuleRegistry_enumModulesFunc(hmModuleMetadata* metadata, void* user_data);
@@ -84,11 +84,11 @@ hmError hmModuleRegistryDispose(hmModuleRegistry* registry)
     return hmMergeErrors(err, hmArrayDispose(&registry->module_ids_to_resolve));
 }
 
-hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmImageLoader* image_loader)
+hmError hmModuleRegistryLoad(hmModuleRegistry* registry, hmMetadataLoader* metadata_loader)
 {
     /* First step: load modules. */
-    HM_TRY(hmImageLoaderEnumMetadata(
-        image_loader,
+    HM_TRY(hmMetadataLoaderEnumMetadata(
+        metadata_loader,
         &hmModuleRegistry_enumModulesFunc, /* populates `module_ids_to_resolve` */
         &hmModuleRegistry_enumClassesFunc,
         &hmModuleRegistry_enumMethodsFunc,
@@ -175,7 +175,7 @@ static hm_bool hmValidateMetadataName(hmString* name)
 {
     hm_bool is_valid = hmIsValidMetadataName(name);
     if (!is_valid) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     return HM_OK;
 }
@@ -196,11 +196,11 @@ static hmError hmModuleRegistryValidateModuleDoesNotExist(hmModuleRegistry* regi
 {
     hm_bool found = hmHashMapContains(&registry->name_to_module_map, name);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     found = hmHashMapContains(&registry->module_id_to_module_ref_map, &module_id);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     return HM_OK;
 }
@@ -293,11 +293,11 @@ static hmError hmModuleValidateClassDoesNotExist(hmModule* module, hm_metadata_i
 {
     hm_bool found = hmHashMapContains(&module->name_to_class_map, name);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     found = hmHashMapContains(&module->class_id_to_class_ref_map, &class_id);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     return HM_OK;
 }
@@ -380,7 +380,7 @@ static hmError hmModuleRegistry_enumClassesFunc(hmClassMetadata* metadata, void*
     hmModule* module_ref;
     hmError err = hmModuleRegistryGetModuleRefByID(registry, metadata->module_id, &module_ref);
     if (err != HM_OK) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     HM_TRY(hmModuleValidateClassDoesNotExist(module_ref, metadata->class_id, &metadata->name));
     hmClass hm_class;
@@ -398,7 +398,7 @@ static hmError hmValidateSignature(hmString* signature) /* TDOO refactor */
 {
     hm_bool is_valid = hmIsValidSignatureDesc(signature);
     if (!is_valid) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     return HM_OK;
 }
@@ -493,11 +493,11 @@ static hmError hmModuleValidateMethodDoesNotExist(hmClass* hm_class, hm_metadata
 {
     hm_bool found = hmHashMapContains(&hm_class->name_to_method_map, name);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     found = hmHashMapContains(&hm_class->method_id_to_method_ref_map, &method_id);
     if (found) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     return HM_OK;
 }
@@ -531,7 +531,7 @@ static hmError hmModuleRegistry_enumMethodsFunc(hmMethodMetadata* metadata, void
     hmClass* class_ref = HM_NULL;
     hmError err = hmModuleRegistryGetClassRefByModuleAndClassID(registry, metadata->module_id, metadata->class_id, &class_ref);
     if (err != HM_OK) {
-        return HM_ERROR_INVALID_IMAGE;
+        return HM_ERROR_INVALID_DATA;
     }
     HM_TRY(hmModuleValidateMethodDoesNotExist(class_ref, metadata->method_id, &metadata->name));
     hmMethod method;
