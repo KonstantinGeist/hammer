@@ -34,7 +34,9 @@ typedef struct {
    `name_opt` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
    using a thread-safe allocator; can be HM_NULL.
    `worker_func` specifies the processing function. Note that any unexpected errors will immediately stop the worker.
-    So if you instead would like to log errors and continue, then such errors should be processed inside worker_func. */
+    So if you instead would like to log errors and continue, then such errors should be processed inside worker_func.
+   `queue_size` specifies the internal queue size. Note that if the rate of enqueueing new items is very high and the queue
+    is unbounded, the worker may fail with an out-of-memory condition. */
 hmError hmCreateWorker(
     hmAllocator*  allocator,
     hmString*     name_opt,
