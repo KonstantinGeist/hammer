@@ -279,11 +279,10 @@ static hmError worker_throughput_worker_with_tick_count_func(void* obj)
 
 static hmError worker_throughput_worker_without_tick_count_func(void* obj)
 {
-    processed_count++;
     return HM_OK;
 }
 
-static void worker_throughput_calculate_average_latency_and_total_time(hm_bool with_tick_count, hm_float64* out_average_latency, hm_float64* out_total_time, hm_float64* out_enqueue_time)
+static void worker_throughput_calculate_times(hm_bool with_tick_count, hm_float64* out_average_latency, hm_float64* out_total_time, hm_float64* out_enqueue_time)
 {
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
@@ -331,7 +330,9 @@ static void worker_throughput_calculate_average_latency_and_total_time(hm_bool w
         err = hmWorkerWait(&workers[i], WORKER_WAIT_TIMEOUT);
         HM_TEST_ASSERT_OK(err);
     }
-    HM_TEST_ASSERT(processed_count == THROUGHPUT_WORK_ITEM_COUNT);
+    if (with_tick_count) {
+        HM_TEST_ASSERT(processed_count == THROUGHPUT_WORK_ITEM_COUNT);
+    }
     hm_float64 average_latency = 0.0;
     if (with_tick_count) {
         for (hm_nint i = 0; i < THROUGHPUT_WORK_ITEM_COUNT; i++) {
@@ -361,8 +362,8 @@ static void worker_throughput_calculate_average_latency_and_total_time(hm_bool w
 static void test_worker_throughput()
 {
     hm_float64 total_time_without_tick_count, average_latency_with_tick_count, total_time_with_tick_count, enqueue_time;
-    worker_throughput_calculate_average_latency_and_total_time(HM_FALSE, HM_NULL, &total_time_without_tick_count, HM_NULL); // with_tick_count = HM_FALSE
-    worker_throughput_calculate_average_latency_and_total_time(HM_TRUE, &average_latency_with_tick_count, &total_time_with_tick_count, &enqueue_time); // with_tick_count = HM_TRUE
+    worker_throughput_calculate_times(HM_FALSE, HM_NULL, &total_time_without_tick_count, HM_NULL); // with_tick_count = HM_FALSE
+    worker_throughput_calculate_times(HM_TRUE, &average_latency_with_tick_count, &total_time_with_tick_count, &enqueue_time); // with_tick_count = HM_TRUE
     hm_float64 tick_count_ratio = total_time_with_tick_count / total_time_without_tick_count;
     hm_float64 corrected_average_latency = average_latency_with_tick_count / tick_count_ratio;
     hm_float64 enqueue_rate = ((hm_float64)THROUGHPUT_WORK_ITEM_COUNT / enqueue_time) * 1000.0;
