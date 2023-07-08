@@ -174,8 +174,8 @@ static hmError hmWorkerProcessNewItems(hmWorkerData* data)
     /* We allocate on the stack because we want to only copy work items under the lock (without processing them)
        to minimize the time spent when the worker's queue is locked. However, work items can be of arbitrary size,
        and for that reason, to prevent undefined behavior due to stack overflows, the maximum work item size is
-       limited to HM_WORKER_MAX_ITEM_SIZE. */
-    char work_item[HM_WORKER_MAX_ITEM_SIZE];
+       limited to HM_WORKER_MAX_ITEM_SIZE when using hmAllocOnStack(..) */
+    void* work_item = hmAllocOnStack(hmAlignSize(data->item_size));
     while (hmWorkerShouldProcessQueue(data) && (err = hmWorkerDequeueWorkItem(data, work_item)) == HM_OK) {
         err = data->worker_func(work_item);
         if (data->item_dispose_func_opt) {

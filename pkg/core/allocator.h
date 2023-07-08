@@ -55,6 +55,9 @@ void hmFree(hmAllocator* allocator, void* mem);
 /* Deletes the allocator, including all of its bookkeeping data. Behavior is undefined if there are still pointers
    to objects allocated through this allocator. */
 hmError hmAllocatorDispose(hmAllocator* allocator);
+/* Allocates memory on the stack. Always guaranteed to return something. The size should be limited to a reasonable
+   value to avoid stack overflows (which is undefined behavior). */
+#define hmAllocOnStack(size) alloca(size)
 
 /* Creates a system allocator - it merely redirects to the OS or the standard library which implement alloc/free.
    Memory alignment is OS-specific. This allocator is thread-safe and can be used with hmThread/hmProcess. */
