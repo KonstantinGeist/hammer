@@ -64,7 +64,7 @@ hmError hmCreateWorker(
     hmError err = HM_OK;
     HM_TRY_OR_FINALIZE(err, hmCreateQueue(
         allocator,
-        queue_size,
+        item_size,
         queue_size,
         item_dispose_func_opt,
         is_queue_bounded,
