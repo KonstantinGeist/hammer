@@ -14,8 +14,8 @@
 #ifndef HM_ARRAY_H
 #define HM_ARRAY_H
 
-#include <core/common.h>
 #include <core/allocator.h>
+#include <collections/common.h>
 
 #define HM_ARRAY_DEFAULT_CAPACITY 16
 
@@ -32,7 +32,7 @@ typedef struct {
 } hmArray;
 
 /* Array expansion function. User_data is passed from hmArrayExpand(..) (see). */
-typedef hmError (*hmArrayExpandFunc)(hmArray* array, hm_nint index, void* in_item, void* user_data);
+typedef hmError (*hmArrayExpandFunc)(hm_nint index, void* in_item, void* user_data);
 
 /* Creates a new array. When calling hmArrayAdd in a loop, make sure initial_capacity is set to a correct value
    so that we don't have to reallocate too often. */
@@ -64,7 +64,10 @@ hmError hmArrayClear(hmArray* array);
 #define hmArrayGetCount(array) (array)->count
 /* Expands the array by initializing elements of the array with the given callback. If no callback is provided,
    initializes the elements with all zeros (useful only if the array contains only zeroable types: integers, floats, pointers).
-   The user_data parameter is passed to the expand function as is (meaningful only if array_expand_func is provided). */
+   The `user_data` parameter is passed to the expand function as is (meaningful only if array_expand_func is provided). */
 hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func, void* user_data);
+/* Sorts the items in the entire array in place. If two items are equal, their original order is not preserved.
+   The `user_data` parameter is passed to the compare function as is. */
+hmError hmArraySort(hmArray* array, hmCompareFunc compare_func, void* user_data);
 
 #endif /* HM_ARRAY_H */

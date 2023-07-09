@@ -171,7 +171,7 @@ HM_TEST_ON_FINALIZE
     dispose_array_and_allocator(&array, &allocator);
 }
 
-static hmError array_expand_func(hmArray* array, hm_nint index, void* in_item, void* user_data)
+static hmError array_expand_func(hm_nint index, void* in_item, void* user_data)
 {
     testItem* test_item = (testItem*)in_item;
     hm_nint base_int = *((hm_nint*)user_data);
@@ -319,6 +319,82 @@ HM_TEST_ON_FINALIZE
     }
 }
 
+typedef struct {
+    hm_nint count;
+} array_sort_context;
+
+static hmComparisonResult test_item_compare_func(void* item1, void* item2, void* user_data)
+{
+    ((array_sort_context*)user_data)->count++;
+    hm_nint a = ((testItem*)item1)->x;
+    hm_nint b = ((testItem*)item2)->x;
+    if (a < b) {
+        return HM_COMPARISON_RESULT_LESS;
+    } else if (a > b) {
+        return HM_COMPARISON_RESULT_GREATER;
+    } else {
+        return HM_COMPARISON_RESULT_EQUAL;
+    }
+}
+
+static void test_can_sort_array()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    const hm_nint unordered_x_values[ARRAY_CAPACITY] = {11, 31, 4, 2};
+    const hm_nint ordered_x_values[ARRAY_CAPACITY] = {2, 4, 11, 31};
+    const hm_nint original_y_values[ARRAY_CAPACITY] = {7, 0, 1, 5};
+    const hm_nint altered_y_values[ARRAY_CAPACITY] = {5, 1, 7, 0};
+    for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
+        testItem test_item;
+        test_item.x = unordered_x_values[i];
+        test_item.y = original_y_values[i];
+        hmError err = hmArrayAdd(&array, &test_item);
+        HM_TEST_ASSERT_OK(err);
+    }
+    array_sort_context context;
+    context.count = 0;
+    hmError err = hmArraySort(&array, &test_item_compare_func, &context);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(context.count > 0);
+    for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
+        testItem test_item;
+        err = hmArrayGet(&array, i, &test_item);
+        HM_TEST_ASSERT_OK(err);
+        HM_TEST_ASSERT(test_item.x == ordered_x_values[i]); /* ordered by x */
+        HM_TEST_ASSERT(test_item.y == altered_y_values[i]); /* y just follows x's sorting inside their shared testItem */
+    }
+    dispose_array_and_allocator(&array, &allocator);
+}
+
+static void test_can_sort_arrays_with_0_and_1_items()
+{
+    hmAllocator allocator;
+    hmArray array;
+    create_array_and_allocator(&array, &allocator, &item_dispose_func);
+    array_sort_context context;
+    context.count = 0;
+    /* Edge case: an array with 0 items. */
+    hmError err = hmArraySort(&array, &test_item_compare_func, &context);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(context.count == 0);
+    /* Edge case: an array with 1 items. */
+    testItem test_item;
+    test_item.x = 10;
+    test_item.y = 20;
+    err = hmArrayAdd(&array, &test_item);
+    HM_TEST_ASSERT_OK(err);
+    err = hmArraySort(&array, &test_item_compare_func, &context);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(context.count == 0);
+    err = hmArrayGet(&array, 0, &test_item);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(test_item.x == 10);
+    HM_TEST_ASSERT(test_item.y == 20);
+    dispose_array_and_allocator(&array, &allocator);
+}
+
 HM_TEST_SUITE_BEGIN(arrays)
     HM_TEST_RUN(test_array_can_create_add_get_dispose_without_item_dispose_func)
     HM_TEST_RUN(test_array_can_create_add_get_dispose_with_item_dispose_func)
@@ -331,4 +407,6 @@ HM_TEST_SUITE_BEGIN(arrays)
     HM_TEST_RUN(test_can_add_range_to_array)
     HM_TEST_RUN(test_can_add_range_to_array_with_new_count_exceeding_capacity_greater_than_growth_factor)
     HM_TEST_RUN(test_can_clear_array)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_sort_array) /* Sorting is in-place, so avoid testing memory allocations. */
+    HM_TEST_RUN_WITHOUT_OOM(test_can_sort_arrays_with_0_and_1_items)
 HM_TEST_SUITE_END()

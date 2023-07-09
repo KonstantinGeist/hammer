@@ -316,7 +316,7 @@ static void worker_throughput_calculate_times(hm_bool with_tick_count, hm_float6
             arg->start_time = hmGetTickCount();
         }
         hm_nint worker_index = i % worker_count;
-        hmError err = hmWorkerEnqueueItem(&workers[worker_index], &arg);
+        err = hmWorkerEnqueueItem(&workers[worker_index], &arg);
         HM_TEST_ASSERT_OK(err);
     }
     if (out_enqueue_time) {

@@ -17,12 +17,12 @@
 #include <stdio.h>  /* for printf(..) */
 #include <stdlib.h> /* for exit(..) */
 
-hm_nint hmAlignSize(hm_nint sz)
+hm_nint hmAlignSize(hm_nint size)
 {
-    hm_nint sz_with_alignment = 0;
-    hmError err = hmAddNint(sz, HM_ALLOC_SIZE_ALIGNMENT - 1, &sz_with_alignment);
+    hm_nint size_with_alignment = 0;
+    hmError err = hmAddNint(size, HM_ALLOC_SIZE_ALIGNMENT - 1, &size_with_alignment);
     hmPanicIf(err != HM_OK, "overflow in hmAlignSize(..)"); /* mentioned in the function's docs */
-    return sz_with_alignment & (-HM_ALLOC_SIZE_ALIGNMENT);
+    return size_with_alignment & (-HM_ALLOC_SIZE_ALIGNMENT);
 }
 
 void hmLog(const char* msg)

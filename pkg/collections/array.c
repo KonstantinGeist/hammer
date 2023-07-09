@@ -151,7 +151,7 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         char* item = array->items + array->count * array->item_size;
         for (hm_nint i = 0; i < count; i++) {
             /* NOTE: no need to deallocate array->items on error. */
-            HM_TRY(array_expand_func(array, array->count + i, item, user_data));
+            HM_TRY(array_expand_func(array->count + i, item, user_data));
             item += array->item_size;
         }
     } else {

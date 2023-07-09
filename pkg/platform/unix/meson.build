@@ -1,4 +1,5 @@
 platform_sources = files(
+    'array.c',
     'common.c',
     'environment.c',
     'mutex.c',
