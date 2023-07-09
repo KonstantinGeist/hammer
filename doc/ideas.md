@@ -18,7 +18,7 @@ Feature ideas:
 * saga support
 * ease of debugging, inspectability
 * no null
-* zero downtime rollouts and hotfix support (without restarts)
+* zero downtime rollouts, canary deployments and hotfix support (without restarts)
 * arbitrary data embedding inside Hammer images
 * structural typing
 * high-precision decimal type for financial applications

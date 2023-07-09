@@ -189,6 +189,14 @@ static hmError thread_reports_processor_time_thread_func(void* user_data)
     hmThread* thread = (hmThread*)user_data;
     while (hmThreadGetState(thread) != HM_THREAD_STATE_ABORT_REQUESTED) {
         hmError err = hmSleep(100);
+        /* Synthetic load to make sure there's some processor time reported below. */
+        static volatile hm_nint result = 0;
+        for (hm_nint i = 0; i < 1000; i++) {
+            for (hm_nint j = 0; j < 1000; j++) {
+                result += i;
+                result *= j;
+            }
+        }
         HM_TEST_ASSERT_OK(err);
     }
     hm_millis processor_time = hmThreadGetProcessorTime(thread);

@@ -17,6 +17,7 @@
 #include <core/common.h>
 #include <core/string.h>
 
+/* An internal hardcoded limit for optimization. */
 #define HM_WORKER_MAX_ITEM_SIZE 1024
 
 typedef hmError (*hmWorkerFunc)(void* work_item);

@@ -23,7 +23,7 @@
 #define WORKER_WAIT_TIMEOUT 4000
 #define THROUGHPUT_WORK_ITEM_COUNT 1000000
 
-static hm_nint processed_count = 0;
+static hm_atomic_nint processed_count = 0;
 
 static void create_worker_and_allocator(
     hmWorker* worker,
@@ -273,7 +273,7 @@ static hmError worker_throughput_worker_with_tick_count_func(void* obj)
 {
     throughput_work_item* work_item = *((throughput_work_item**)obj);
     work_item->end_time = hmGetTickCount();
-    processed_count++;
+    (void)hmAtomicIncrement(&processed_count);
     return HM_OK;
 }
 
