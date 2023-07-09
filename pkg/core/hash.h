@@ -20,7 +20,7 @@
    The salt should be stable for the duration of the process (subprocess) but different across different
    process (subprocess) runs.
    Returns uint32 (not native int) to make hashing more predictable across platforms. Unsigned values
-   also allow wrap-arounds without undefined behavior. */
+   also allow wraparounds without undefined behavior. */
 hm_uint32 hmHash(void* bytes, hm_nint size, hm_uint32 salt);
 
 #endif /* HM_HASH_H */

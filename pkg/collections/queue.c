@@ -19,7 +19,7 @@
 #define HM_QUEUE_GROWTH_FACTOR 2
 
 static hmError hmQueueDoubleQueue(hmQueue* queue);
-/* No hmAddNint because even with wrap-arounds, it will fit in the buffer due to the modulo operator. */
+/* No hmAddNint because even with wraparounds, it will fit in the buffer due to the modulo operator. */
 #define hmQueueIncrementIndex(queue, index) (((index) + 1) % (queue)->capacity)
 
 hmError hmCreateQueue(

@@ -54,6 +54,13 @@ hm_nint hmGetProcessorCount()
 #endif /* _SC_NPROCESSORS_ONLN */
 }
 
+hm_nint hmGetAvailableMemory()
+{
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages * page_size;
+}
+
 hmError hmGetEnvironmentVariable(hmAllocator* allocator, const char* name, hmString* in_value)
 {
     char* value = getenv(name);

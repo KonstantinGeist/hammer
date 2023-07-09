@@ -34,6 +34,12 @@ static void test_can_get_processor_count()
     HM_TEST_ASSERT(processor_count > 0);
 }
 
+static void test_can_get_available_memory()
+{
+    hm_nint available_memory = hmGetAvailableMemory();
+    HM_TEST_ASSERT(available_memory > 0);
+}
+
 static void test_can_get_executable_file_path()
 {
     hmAllocator allocator;
@@ -77,6 +83,7 @@ HM_TEST_ON_FINALIZE
 HM_TEST_SUITE_BEGIN(environment)
     HM_TEST_RUN_WITHOUT_OOM(test_tick_count_grows_monotonically)
     HM_TEST_RUN_WITHOUT_OOM(test_can_get_processor_count)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_get_available_memory)
     HM_TEST_RUN(test_can_get_executable_file_path)
     HM_TEST_RUN(test_can_get_os_version)
 HM_TEST_SUITE_END()
