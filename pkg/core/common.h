@@ -88,4 +88,11 @@ typedef hmError (*hmDisposeFunc)(void* object);
 #define hmCastPointerToNint(value) ((hm_nint)(void*)value)
 #define hmCastNintToPointer(value, type) ((type)(void*)value)
 
+typedef hm_uint8 hmComparisonResult;
+#define HM_COMPARISON_RESULT_LESS ((hmComparisonResult)-1)
+#define HM_COMPARISON_RESULT_EQUAL ((hmComparisonResult)0)
+#define HM_COMPARISON_RESULT_GREATER ((hmComparisonResult)1)
+
+typedef hmComparisonResult (*hmCompareFunc)(void* obj1, void* obj2, void* user_data);
+
 #endif /* HM_COMMON_H */

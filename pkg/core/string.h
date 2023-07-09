@@ -56,10 +56,12 @@ hm_nint hmStringGetLength(hmString* string);
    the contents are never mutated. */
 #define hmStringGetCString(string) ((const char*)(string)->content)
 #define hmStringGetChars(string) ((string)->content)
+hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);
 hmError hmStringDisposeFunc(void* obj);
+hmComparisonResult hmStringCompareFunc(void* obj1, void* obj2, void* user_data);
 
 /* Sometimes containers may need references to strings someone else owns. These hash/equals functions
    allow to operate on string references instead of strings themselves. */

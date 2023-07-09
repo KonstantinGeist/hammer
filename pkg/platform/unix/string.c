@@ -11,16 +11,19 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_COLLECTIONS_COMMON_H
-#define HM_COLLECTIONS_COMMON_H
+#include <core/string.h>
 
-#include <core/common.h>
+#include <string.h> /* for strcoll(..) */
 
-typedef hm_uint8 hmComparisonResult;
-#define HM_COMPARISON_RESULT_LESS ((hmComparisonResult)-1)
-#define HM_COMPARISON_RESULT_EQUAL ((hmComparisonResult)0)
-#define HM_COMPARISON_RESULT_GREATER ((hmComparisonResult)1)
-
-typedef hmComparisonResult (*hmCompareFunc)(void* item1, void* item2, void* user_data);
-
-#endif /* HM_COLLECTIONS_COMMON_H */
+/* Assumes the current locale is UTF8, which is the standard in modern Unix systems. */
+hmComparisonResult hmStringCompare(hmString* string1, hmString* string2)
+{
+    int result = strcoll(hmStringGetCString(string1), hmStringGetCString(string2));
+    if (result < 0) {
+        return HM_COMPARISON_RESULT_LESS;
+    } else if (result > 0) {
+        return HM_COMPARISON_RESULT_GREATER;
+    } else {
+        return HM_COMPARISON_RESULT_EQUAL;
+    }
+}

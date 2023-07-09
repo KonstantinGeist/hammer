@@ -14,8 +14,8 @@
 #ifndef HM_ARRAY_H
 #define HM_ARRAY_H
 
+#include <core/common.h>
 #include <core/allocator.h>
-#include <collections/common.h>
 
 #define HM_ARRAY_DEFAULT_CAPACITY 16
 

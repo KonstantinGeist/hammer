@@ -141,6 +141,13 @@ hmError hmStringDisposeFunc(void* obj)
     return hmStringDispose(string);
 }
 
+hmComparisonResult hmStringCompareFunc(void* obj1, void* obj2, void* user_data)
+{
+    hmString* string1 = (hmString*)obj1;
+    hmString* string2 = (hmString*)obj2;
+    return hmStringCompare(string1, string2);
+}
+
 hm_uint32 hmStringRefHashFunc(void* key, hm_uint32 salt)
 {
     hmString* string = *((hmString**)key);

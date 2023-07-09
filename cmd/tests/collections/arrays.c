@@ -13,6 +13,7 @@
 
 #include "../common.h"
 #include <collections/array.h>
+#include <core/string.h>
 
 #include <string.h> /* for strlen(..) */
 
@@ -395,6 +396,37 @@ static void test_can_sort_arrays_with_0_and_1_items()
     dispose_array_and_allocator(&array, &allocator);
 }
 
+static void test_can_sort_string_array()
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmArray array;
+    err = hmCreateArray(&allocator, sizeof(hmString), ARRAY_CAPACITY, &hmStringDisposeFunc, &array);
+    HM_TEST_ASSERT_OK(err);
+    const char* string_contents[ARRAY_CAPACITY] = {"abc", "cde", "efg", "bcd"};
+    hmString strings[ARRAY_CAPACITY];
+    for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
+        err = hmCreateStringViewFromCString(string_contents[i], &strings[i]);
+        HM_TEST_ASSERT_OK(err);
+    }
+    for (hm_nint i = 0; i < ARRAY_CAPACITY; i++) {
+        err = hmArrayAdd(&array, &strings[i]);
+        HM_TEST_ASSERT_OK(err);
+    }
+    err = hmArraySort(&array, &hmStringCompareFunc, HM_NULL);
+    HM_TEST_ASSERT_OK(err);
+    hmString* raw_strings = hmArrayGetRaw(&array, hmString);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&raw_strings[0], "abc"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(&raw_strings[1], "bcd"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(&raw_strings[2], "cde"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(&raw_strings[3], "efg"));
+    err = hmArrayDispose(&array);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(arrays)
     HM_TEST_RUN(test_array_can_create_add_get_dispose_without_item_dispose_func)
     HM_TEST_RUN(test_array_can_create_add_get_dispose_with_item_dispose_func)
@@ -409,4 +441,5 @@ HM_TEST_SUITE_BEGIN(arrays)
     HM_TEST_RUN(test_can_clear_array)
     HM_TEST_RUN_WITHOUT_OOM(test_can_sort_array) /* Sorting is in-place, so avoid testing memory allocations. */
     HM_TEST_RUN_WITHOUT_OOM(test_can_sort_arrays_with_0_and_1_items)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_sort_string_array)
 HM_TEST_SUITE_END()
