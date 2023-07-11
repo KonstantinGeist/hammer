@@ -69,7 +69,8 @@ hmError hmCreateServerSocket(
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (is_socket_initialized) {
-            shutdown(platform_data->socket_fd, SHUT_RDWR);
+            int r = shutdown(platform_data->socket_fd, SHUT_RDWR);
+            err = hmMergeErrors(err, r ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK);
         }
         hmFree(allocator, platform_data);
     }
@@ -80,7 +81,7 @@ hmError hmServerSocketAccept(hmServerSocket* socket, hmSocket* out_socket)
 {
     hmServerSocketPlatformData* platform_data = (hmServerSocketPlatformData*)socket->platform_data;
     int socket_fd = 0;
-    hm_nint address_length = sizeof(platform_data->address);
+    socklen_t address_length = sizeof(platform_data->address);
     if ((socket_fd = accept(platform_data->socket_fd, (struct sockaddr*)&platform_data->address, (socklen_t*)&address_length)) < 0) {
         return HM_ERROR_PLATFORM_DEPENDENT;
     }
@@ -90,7 +91,7 @@ hmError hmServerSocketAccept(hmServerSocket* socket, hmSocket* out_socket)
 hmError hmServerSocketDispose(hmServerSocket* socket)
 {
     hmServerSocketPlatformData* platform_data = (hmServerSocketPlatformData*)socket->platform_data;
-    shutdown(platform_data->socket_fd, SHUT_RDWR);
+    int r = shutdown(platform_data->socket_fd, SHUT_RDWR);
     hmFree(platform_data->allocator, platform_data);
-    return HM_OK;
+    return r ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
 }

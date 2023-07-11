@@ -82,27 +82,32 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz)
+hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out_bytes_sent)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    send(platform_data->socket_fd, buf, sz, 0);
-    return HM_OK;
+    ssize_t r = send(platform_data->socket_fd, buf, sz, 0);
+    if (out_bytes_sent && r >= 0) {
+        *out_bytes_sent = (hm_nint)r;
+    }
+    return r < 0 ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
 }
 
 hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    *out_bytes_read = read(platform_data->socket_fd, buf, sz);
-    /* TODO error condition */
-    return HM_OK;
+    ssize_t r = read(platform_data->socket_fd, buf, sz);
+    if (out_bytes_read && r >= 0) {
+        *out_bytes_read = (hm_nint)r;
+    }
+    return r < 0 ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
 }
 
 hmError hmSocketDispose(hmSocket* socket)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    close(platform_data->socket_fd);
+    int r = close(platform_data->socket_fd);
     hmFree(platform_data->allocator, platform_data);
-    return HM_OK;
+    return r ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
 }
 
 hmError hmSocketDisposeFunc(void* obj)

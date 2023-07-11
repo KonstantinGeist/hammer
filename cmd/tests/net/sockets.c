@@ -41,7 +41,7 @@ static hmError server_socket_worker_func(void* work_item)
     hmError err = hmSocketRead(socket, buf, sizeof(buf), &bytes_read);
     HM_TEST_ASSERT_OK(err);
     buf[bytes_read] = 0;
-    err = hmSocketSend(socket, buf, bytes_read); /* Echoes back. */
+    err = hmSocketSend(socket, buf, bytes_read, HM_NULL); /* Echoes back. */
     HM_TEST_ASSERT_OK(err);
     return HM_OK;
 }
@@ -114,7 +114,6 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
     hmString host;
     err = hmCreateStringViewFromCString("127.0.0.1", &host);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT_OK(err);
     hm_millis start = hmGetTickCount();
     for (hm_nint i = 0; i < REQUEST_COUNT; i++) {
         if (i == REQUEST_COUNT - 1) {
@@ -130,7 +129,7 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
         HM_TEST_ASSERT_OK(err);
         char message[1024];
         sprintf(message, "message #%d", (int)i);
-        err = hmSocketSend(&socket, message, strlen(message));
+        err = hmSocketSend(&socket, message, strlen(message), HM_NULL);
         HM_TEST_ASSERT_OK(err);
         if (!client_socket_write_only) {
             char buf[1024];
@@ -160,7 +159,7 @@ static void test_can_send_and_read_from_sockets()
     hm_millis client_socket_write_only_time = socket_throughput_calculate_times(HM_TRUE);
     is_server_thread_aborted = HM_FALSE;
     hm_millis time = socket_throughput_calculate_times(HM_FALSE);
-    printf("        Throughput: %f requests/sec (single-threaded client, without its write time)\n", (hm_float64)REQUEST_COUNT / ((hm_float64)(int)(time - client_socket_write_only_time) / 1000.0));
+    printf("        Throughput: %d requests/sec (single-threaded client, without its write time)\n", (int)((hm_float64)REQUEST_COUNT / ((hm_float64)(int)(time - client_socket_write_only_time) / 1000.0)));
 }
 
 HM_TEST_SUITE_BEGIN(sockets)

@@ -78,17 +78,17 @@ hmError hmWorkerPoolStop(hmWorkerPool* pool, hm_bool should_drain_queue)
 
 hmError hmWorkerPoolWait(hmWorkerPool* pool, hm_millis timeout_ms)
 {
+    hmError err = HM_OK;
     for (hm_nint i = 0; i < pool->worker_count; i++) {
-        HM_TRY(hmWorkerWait(&pool->workers[i], timeout_ms));
+        err = hmMergeErrors(err, hmWorkerWait(&pool->workers[i], timeout_ms));
     }
-    return HM_OK;
+    return err;
 }
 
 hmError hmWorkerPoolEnqueueItem(hmWorkerPool* pool, void* in_work_item)
 {
     hm_nint new_index = (hm_nint)hmAtomicIncrement(&pool->cur_index);
     hm_nint target_index = new_index % pool->worker_count;
-
     hmWorker* worker = &pool->workers[target_index];
     return hmWorkerEnqueueItem(worker, in_work_item);
 }
