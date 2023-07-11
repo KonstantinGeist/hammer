@@ -30,5 +30,6 @@ hmError hmCreateSocket(
 hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz);
 hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read);
 hmError hmSocketDispose(hmSocket* socket);
+hmError hmSocketDisposeFunc(void* obj);
 
 #endif /* HM_SOCKET_H */

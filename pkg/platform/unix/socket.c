@@ -104,3 +104,8 @@ hmError hmSocketDispose(hmSocket* socket)
     hmFree(platform_data->allocator, platform_data);
     return HM_OK;
 }
+
+hmError hmSocketDisposeFunc(void* obj)
+{
+    return hmSocketDispose((hmSocket*)obj);
+}

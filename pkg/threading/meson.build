@@ -1,3 +1,4 @@
 threading_sources = files(
-    'worker.c'
+    'worker.c',
+    'workerpool.c'
 )

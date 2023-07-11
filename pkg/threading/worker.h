@@ -51,6 +51,7 @@ hmError hmCreateWorker(
 /* Before disposing of the worker, it should be stopped and awaited with hmWorkerStop(..) and hmWorkerWait(..)
    Returns HM_ERROR_INVALID_STATE if the worker isn't fully stopped. */
 hmError hmWorkerDispose(hmWorker* worker);
+hmError hmWorkerDisposeFunc(void* obj);
 /* Tells the worker to stop gracefully.
    If `should_drain_queue` is set to HM_TRUE, the worker makes sure all work items currently enqueued are processed, before stopping.
    Otherwise, the worker will finish processing only the current item and stop immediately. */

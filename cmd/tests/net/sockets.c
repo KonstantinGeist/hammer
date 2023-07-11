@@ -15,36 +15,73 @@
 
 #include <net/socket.h>
 #include <net/serversocket.h>
+#include <core/environment.h>
 #include <threading/thread.h>
 #include <threading/waitableevent.h>
+#include <threading/workerpool.h>
 
 #include <string.h> /* for strlen(..) and strcmp(..) */
 
-#define THREAD_JOIN_TIMEOUT 1000
+#define REQUEST_COUNT 100000
+#define WAIT_TIMEOUT 1000
 #define PORT 8080
+#define QUEUE_SIZE 16
+
+static hm_bool is_server_thread_aborted = HM_FALSE;
+
+typedef struct {
+    hmWaitableEvent* waitable_event;
+} serverSocketContext;
+
+static hmError server_socket_worker_func(void* work_item)
+{
+    hmSocket* socket = (hmSocket*)work_item;
+    char buf[1024];
+    hm_nint bytes_read = 0;
+    hmError err = hmSocketRead(socket, buf, sizeof(buf), &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    buf[bytes_read] = 0;
+    err = hmSocketSend(socket, buf, bytes_read); /* Echoes back. */
+    HM_TEST_ASSERT_OK(err);
+    return HM_OK;
+}
 
 static hmError server_socket_thread_func(void* user_data)
 {
-    hmWaitableEvent* waitable_event = (hmWaitableEvent*)user_data;
+    serverSocketContext* context = (serverSocketContext*)user_data;
+    hmWaitableEvent* waitable_event = context->waitable_event;
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmWorkerPool worker_pool;
+    err = hmCreateWorkerPool(
+        &allocator,
+        hmGetProcessorCount(),
+        &server_socket_worker_func,
+        sizeof(hmSocket),
+        &hmSocketDisposeFunc,
+        HM_FALSE,
+        QUEUE_SIZE,
+        &worker_pool
+    );
     HM_TEST_ASSERT_OK(err);
     hmServerSocket server_socket;
     err = hmCreateServerSocket(&allocator, PORT, &server_socket);
     HM_TEST_ASSERT_OK(err);
     err = hmWaitableEventSignal(waitable_event);
     HM_TEST_ASSERT_OK(err);
-    hmSocket socket;
-    err = hmServerSocketAccept(&server_socket, &socket);
+    do {
+        hmSocket socket;
+        err = hmServerSocketAccept(&server_socket, &socket);
+        HM_TEST_ASSERT_OK(err);
+        err = hmWorkerPoolEnqueueItem(&worker_pool, &socket);
+        HM_TEST_ASSERT_OK(err);
+    } while (!is_server_thread_aborted);
+    err = hmWorkerPoolStop(&worker_pool, HM_TRUE);
     HM_TEST_ASSERT_OK(err);
-    char buf[1024];
-    hm_nint bytes_read = 0;
-    err = hmSocketRead(&socket, buf, sizeof(buf), &bytes_read);
+    err = hmWorkerPoolWait(&worker_pool, WAIT_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
-    buf[bytes_read] = 0;
-    err = hmSocketSend(&socket, buf, bytes_read); /* Echoes back. */
-    HM_TEST_ASSERT_OK(err);
-    err = hmSocketDispose(&socket);
+    err = hmWorkerPoolDispose(&worker_pool);
     HM_TEST_ASSERT_OK(err);
     err = hmServerSocketDispose(&server_socket);
     HM_TEST_ASSERT_OK(err);
@@ -53,7 +90,7 @@ static hmError server_socket_thread_func(void* user_data)
     return HM_OK;
 }
 
-static void test_can_send_and_read_from_sockets()
+static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_only)
 {
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
@@ -61,12 +98,14 @@ static void test_can_send_and_read_from_sockets()
     hmWaitableEvent waitable_event;
     err = hmCreateWaitableEvent(&allocator, &waitable_event);
     HM_TEST_ASSERT_OK(err);
+    serverSocketContext context;
+    context.waitable_event = &waitable_event;
     hmThread thread;
     err = hmCreateThread(
         &allocator,
         HM_NULL,
-        server_socket_thread_func,
-        &waitable_event,
+        &server_socket_thread_func,
+        &context,
         &thread
     );
     HM_TEST_ASSERT_OK(err);
@@ -75,26 +114,37 @@ static void test_can_send_and_read_from_sockets()
     hmString host;
     err = hmCreateStringViewFromCString("127.0.0.1", &host);
     HM_TEST_ASSERT_OK(err);
-    hmSocket socket;
-    err = hmCreateSocket(
-        &allocator,
-        &host,
-        PORT,
-        &socket
-    );
     HM_TEST_ASSERT_OK(err);
-    const char* message = "Hello, World!";
-    err = hmSocketSend(&socket, message, strlen(message));
-    HM_TEST_ASSERT_OK(err);
-    char buf[1024];
-    hm_nint bytes_read = 0;
-    err = hmSocketRead(&socket, buf, sizeof(buf), &bytes_read);
-    HM_TEST_ASSERT_OK(err);
-    buf[bytes_read] = 0;
-    HM_TEST_ASSERT(strcmp(message, buf) == 0);
-    err = hmSocketDispose(&socket);
-    HM_TEST_ASSERT_OK(err);
-    err = hmThreadJoin(&thread, THREAD_JOIN_TIMEOUT);
+    hm_millis start = hmGetTickCount();
+    for (hm_nint i = 0; i < REQUEST_COUNT; i++) {
+        if (i == REQUEST_COUNT - 1) {
+            is_server_thread_aborted = HM_TRUE;
+        }
+        hmSocket socket;
+        err = hmCreateSocket(
+            &allocator,
+            &host,
+            PORT,
+            &socket
+        );
+        HM_TEST_ASSERT_OK(err);
+        char message[1024];
+        sprintf(message, "message #%d", (int)i);
+        err = hmSocketSend(&socket, message, strlen(message));
+        HM_TEST_ASSERT_OK(err);
+        if (!client_socket_write_only) {
+            char buf[1024];
+            hm_nint bytes_read = 0;
+            err = hmSocketRead(&socket, buf, sizeof(buf), &bytes_read);
+            HM_TEST_ASSERT_OK(err);
+            buf[bytes_read] = 0;
+            HM_TEST_ASSERT(strcmp(message, buf) == 0);
+        }
+        err = hmSocketDispose(&socket);
+        HM_TEST_ASSERT_OK(err);
+    }
+    hm_millis end = hmGetTickCount();
+    err = hmThreadJoin(&thread, WAIT_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
     err = hmThreadDispose(&thread);
     HM_TEST_ASSERT_OK(err);
@@ -102,6 +152,15 @@ static void test_can_send_and_read_from_sockets()
     HM_TEST_ASSERT_OK(err);
     err = hmAllocatorDispose(&allocator);
     HM_TEST_ASSERT_OK(err);
+    return end - start;
+}
+
+static void test_can_send_and_read_from_sockets()
+{
+    hm_millis client_socket_write_only_time = socket_throughput_calculate_times(HM_TRUE);
+    is_server_thread_aborted = HM_FALSE;
+    hm_millis time = socket_throughput_calculate_times(HM_FALSE);
+    printf("        Throughput: %f requests/sec (single-threaded client, without its write time)\n", (hm_float64)REQUEST_COUNT / ((hm_float64)(int)(time - client_socket_write_only_time) / 1000.0));
 }
 
 HM_TEST_SUITE_BEGIN(sockets)

@@ -113,6 +113,11 @@ hmError hmWorkerDispose(hmWorker* worker)
     return err;
 }
 
+hmError hmWorkerDisposeFunc(void* obj)
+{
+    return hmWorkerDispose((hmWorker*)obj);
+}
+
 hmError hmWorkerStop(hmWorker* worker, hm_bool should_drain_queue)
 {
     hmWorkerData* data = worker->data;
