@@ -47,7 +47,7 @@ hmError hmCreateWorker(
     hm_nint       item_size,
     hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
-    hm_nint       queue_size,
+    hm_nint       queue_capacity,
     hmWorker*     in_worker
 )
 {
@@ -65,7 +65,7 @@ hmError hmCreateWorker(
     HM_TRY_OR_FINALIZE(err, hmCreateQueue(
         allocator,
         item_size,
-        queue_size,
+        queue_capacity,
         item_dispose_func_opt,
         is_queue_bounded,
         &data->queue
@@ -143,6 +143,11 @@ hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item)
 hmError hmWorkerGetName(hmWorker* worker, hmString* in_string)
 {
     return hmThreadGetName(&worker->data->thread, in_string);
+}
+
+hm_nint hmWorkerGetQueueSize(hmWorker* worker)
+{
+    return hmQueueGetCount(&worker->data->queue);
 }
 
 static hmError hmWorkerDequeueWorkItem(hmWorkerData* data, void* in_work_item)

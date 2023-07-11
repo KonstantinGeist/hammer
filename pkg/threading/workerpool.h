@@ -21,7 +21,7 @@ typedef struct {
     hmAllocator*   allocator;
     hmWorker*      workers;
     hm_nint        worker_count;
-    hm_atomic_nint cur_index;
+    hm_atomic_nint current_index;
 } hmWorkerPool;
 
 hmError hmCreateWorkerPool(
@@ -31,7 +31,7 @@ hmError hmCreateWorkerPool(
     hm_nint       item_size,
     hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
-    hm_nint       queue_size,
+    hm_nint       queue_capacity,
     hmWorkerPool* in_worker_pool
 );
 hmError hmWorkerPoolDispose(hmWorkerPool* pool);

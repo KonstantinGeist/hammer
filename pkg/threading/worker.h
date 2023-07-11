@@ -36,7 +36,7 @@ typedef struct {
    using a thread-safe allocator; can be HM_NULL.
    `worker_func` specifies the processing function. Note that any unexpected errors will immediately stop the worker.
     So if you instead would like to log errors and continue, then such errors should be processed inside worker_func.
-   `queue_size` specifies the internal queue size. Note that if the rate of enqueueing new items is very high and the queue
+   `queue_capacity` specifies the internal queue size. Note that if the rate of enqueueing new items is very high and the queue
     is unbounded, the worker may fail with an out-of-memory condition. */
 hmError hmCreateWorker(
     hmAllocator*  allocator,
@@ -45,7 +45,7 @@ hmError hmCreateWorker(
     hm_nint       item_size,
     hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
-    hm_nint       queue_size,
+    hm_nint       queue_capacity,
     hmWorker*     in_worker
 );
 /* Before disposing of the worker, it should be stopped and awaited with hmWorkerStop(..) and hmWorkerWait(..)
@@ -72,5 +72,6 @@ hmError hmWorkerEnqueueItem(hmWorker* worker, void* in_work_item);
 /* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
    it's duplicated because a worker's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmWorkerGetName(hmWorker* worker, hmString* in_string);
+hm_nint hmWorkerGetQueueSize(hmWorker* worker);
 
 #endif /* HM_WORKER_H */

@@ -20,7 +20,7 @@ hmError hmCreateWorkerPool(
     hm_nint       item_size,
     hmDisposeFunc item_dispose_func_opt,
     hm_bool       is_queue_bounded,
-    hm_nint       queue_size,
+    hm_nint       queue_capacity,
     hmWorkerPool* in_worker_pool
 )
 {
@@ -41,13 +41,13 @@ hmError hmCreateWorkerPool(
             item_size,
             item_dispose_func_opt,
             is_queue_bounded,
-            queue_size,
+            queue_capacity,
             &in_worker_pool->workers[worker_index]
         ));
     }
     in_worker_pool->allocator = allocator;
     in_worker_pool->worker_count = worker_count;
-    in_worker_pool->cur_index = 0;
+    in_worker_pool->current_index = 0;
 HM_ON_FINALIZE
     if (err != HM_OK) {
         for (hm_nint j = 0; j < worker_index; j++) {
@@ -87,8 +87,11 @@ hmError hmWorkerPoolWait(hmWorkerPool* pool, hm_millis timeout_ms)
 
 hmError hmWorkerPoolEnqueueItem(hmWorkerPool* pool, void* in_work_item)
 {
-    hm_nint new_index = (hm_nint)hmAtomicIncrement(&pool->cur_index);
-    hm_nint target_index = new_index % pool->worker_count;
-    hmWorker* worker = &pool->workers[target_index];
+    /* A combination of "round robin" and "power of two choices" load balancing algorithms: move the current index forward
+       and choose the worker with the smallest queue inside the sliding window of 2. */
+    hm_nint new_index = (hm_nint)hmAtomicIncrement(&pool->current_index);
+    hmWorker* first_choice = &pool->workers[new_index % pool->worker_count];
+    hmWorker* second_choice = &pool->workers[(new_index + 1) % pool->worker_count];
+    hmWorker* worker = hmWorkerGetQueueSize(first_choice) < hmWorkerGetQueueSize(second_choice) ? first_choice : second_choice;
     return hmWorkerEnqueueItem(worker, in_work_item);
 }
