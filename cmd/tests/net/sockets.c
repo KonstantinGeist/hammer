@@ -27,10 +27,9 @@
 #define PORT 8080
 #define QUEUE_SIZE 16
 
-static hm_bool is_server_thread_aborted = HM_FALSE;
-
 typedef struct {
     hmWaitableEvent* waitable_event;
+    hmThread*        thread;
 } serverSocketContext;
 
 static hmError server_socket_worker_func(void* work_item)
@@ -50,6 +49,7 @@ static hmError server_socket_thread_func(void* user_data)
 {
     serverSocketContext* context = (serverSocketContext*)user_data;
     hmWaitableEvent* waitable_event = context->waitable_event;
+    hmThread* thread = context->thread;
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
@@ -76,7 +76,7 @@ static hmError server_socket_thread_func(void* user_data)
         HM_TEST_ASSERT_OK(err);
         err = hmWorkerPoolEnqueueItem(&worker_pool, &socket);
         HM_TEST_ASSERT_OK(err);
-    } while (!is_server_thread_aborted);
+    } while (hmThreadGetState(thread) != HM_THREAD_STATE_ABORT_REQUESTED);
     err = hmWorkerPoolStop(&worker_pool, HM_TRUE);
     HM_TEST_ASSERT_OK(err);
     err = hmWorkerPoolWait(&worker_pool, WAIT_TIMEOUT);
@@ -98,9 +98,10 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
     hmWaitableEvent waitable_event;
     err = hmCreateWaitableEvent(&allocator, &waitable_event);
     HM_TEST_ASSERT_OK(err);
+    hmThread thread;
     serverSocketContext context;
     context.waitable_event = &waitable_event;
-    hmThread thread;
+    context.thread = &thread;
     err = hmCreateThread(
         &allocator,
         HM_NULL,
@@ -117,7 +118,8 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
     hm_millis start = hmGetTickCount();
     for (hm_nint i = 0; i < REQUEST_COUNT; i++) {
         if (i == REQUEST_COUNT - 1) {
-            is_server_thread_aborted = HM_TRUE;
+            err = hmThreadAbort(&thread);
+            HM_TEST_ASSERT_OK(err);
         }
         hmSocket socket;
         err = hmCreateSocket(
@@ -157,7 +159,6 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
 static void test_can_send_and_read_from_sockets()
 {
     hm_millis client_socket_write_only_time = socket_throughput_calculate_times(HM_TRUE);
-    is_server_thread_aborted = HM_FALSE;
     hm_millis time = socket_throughput_calculate_times(HM_FALSE);
     printf("        Throughput: %d requests/sec (single-threaded client, without its write time)\n", (int)((hm_float64)REQUEST_COUNT / ((hm_float64)(int)(time - client_socket_write_only_time) / 1000.0)));
 }
