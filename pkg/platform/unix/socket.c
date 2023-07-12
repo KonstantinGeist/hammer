@@ -18,11 +18,14 @@
 #include <netinet/in.h> /* for sockaddr_in & Co. */
 #include <arpa/inet.h>  /* for inet_pton(..) & Co. */
 #include <unistd.h>     /* for close(..) & Co. */
+#include <errno.h>      /* for error codes */
 
 typedef struct {
     hmAllocator* allocator;
     int          socket_fd;
 } hmSocketPlatformData;
+
+static hmError hmMapCurrentSocketErrorCodeToHammer();
 
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
@@ -55,7 +58,7 @@ hmError hmCreateSocket(
     platform_data->allocator = allocator;
     hm_bool is_socket_initialized = HM_FALSE;
     if ((platform_data->socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        err = HM_ERROR_PLATFORM_DEPENDENT;
+        err = hmMapCurrentSocketErrorCodeToHammer();
         HM_FINALIZE;
     }
     is_socket_initialized = HM_TRUE;
@@ -64,11 +67,11 @@ hmError hmCreateSocket(
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
     if (inet_pton(AF_INET, hmStringGetCString(host), &server_address.sin_addr) <= 0) {
-        err = HM_ERROR_PLATFORM_DEPENDENT;
+        err = hmMapCurrentSocketErrorCodeToHammer();
         HM_FINALIZE;
     }
     if (connect(platform_data->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
-        err = HM_ERROR_PLATFORM_DEPENDENT;
+        err = hmMapCurrentSocketErrorCodeToHammer();
         HM_FINALIZE;
     }
     in_socket->platform_data = platform_data;
@@ -89,7 +92,7 @@ hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out
     if (out_bytes_sent && r >= 0) {
         *out_bytes_sent = (hm_nint)r;
     }
-    return r < 0 ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
+    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
 }
 
 hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read)
@@ -99,7 +102,7 @@ hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes
     if (out_bytes_read && r >= 0) {
         *out_bytes_read = (hm_nint)r;
     }
-    return r < 0 ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
+    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
 }
 
 hmError hmSocketDispose(hmSocket* socket)
@@ -107,10 +110,23 @@ hmError hmSocketDispose(hmSocket* socket)
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     int r = close(platform_data->socket_fd);
     hmFree(platform_data->allocator, platform_data);
-    return r ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK;
+    return r ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
 }
 
 hmError hmSocketDisposeFunc(void* obj)
 {
     return hmSocketDispose((hmSocket*)obj);
+}
+
+static hmError hmMapCurrentSocketErrorCodeToHammer()
+{
+    switch (errno) {
+        case ETIMEDOUT:
+            return HM_ERROR_TIMEOUT;
+        case ENETUNREACH:
+        case ECONNREFUSED:
+            return HM_ERROR_NOT_FOUND;
+        default:
+            return HM_ERROR_PLATFORM_DEPENDENT;
+    }
 }
