@@ -70,10 +70,11 @@ hmError hmWorkerPoolDispose(hmWorkerPool* pool)
 
 hmError hmWorkerPoolStop(hmWorkerPool* pool, hm_bool should_drain_queue)
 {
+    hmError err = HM_OK;
     for (hm_nint i = 0; i < pool->worker_count; i++) {
-        HM_TRY(hmWorkerStop(&pool->workers[i], should_drain_queue));
+        err = hmMergeErrors(err, hmWorkerStop(&pool->workers[i], should_drain_queue));
     }
-    return HM_OK;
+    return err;
 }
 
 hmError hmWorkerPoolWait(hmWorkerPool* pool, hm_millis timeout_ms)
@@ -89,9 +90,9 @@ hmError hmWorkerPoolEnqueueItem(hmWorkerPool* pool, void* in_work_item)
 {
     /* A combination of "round robin" and "power of two choices" load balancing algorithms: move the current index forward
        and choose the worker with the smallest queue inside the sliding window of 2. */
-    hm_nint new_index = (hm_nint)hmAtomicIncrement(&pool->current_index);
-    hmWorker* first_choice = &pool->workers[new_index % pool->worker_count];
-    hmWorker* second_choice = &pool->workers[(new_index + 1) % pool->worker_count];
+    hm_nint current_index = (hm_nint)hmAtomicIncrement(&pool->current_index);
+    hmWorker* first_choice = &pool->workers[current_index % pool->worker_count];
+    hmWorker* second_choice = &pool->workers[(current_index + 1) % pool->worker_count];
     hmWorker* worker = hmWorkerGetQueueSize(first_choice) < hmWorkerGetQueueSize(second_choice) ? first_choice : second_choice;
     return hmWorkerEnqueueItem(worker, in_work_item);
 }

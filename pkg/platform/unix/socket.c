@@ -27,7 +27,7 @@ typedef struct {
     int          socket_fd;
 } hmSocketPlatformData;
 
-static hmError hmMapCurrentSocketErrorCodeToHammer();
+static hmError hmMapCurrentSocketErrorCodeToHammer(int error_code);
 
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
@@ -61,10 +61,10 @@ hmError hmCreateSocket(
     hm_bool is_addrinfo_initialized = HM_FALSE,
             is_socket_initialized = HM_FALSE;
     struct addrinfo hints;
-	hmZeroMemory(&hints, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
+    hmZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
     struct addrinfo* addrinfo;
     char port_str[32];
     sprintf(port_str, "%d", (int)port);
@@ -75,12 +75,12 @@ hmError hmCreateSocket(
     }
     is_addrinfo_initialized = HM_TRUE;
     if ((platform_data->socket_fd = socket(addrinfo->ai_family, SOCK_STREAM, 0)) < 0) {
-        err = hmMapCurrentSocketErrorCodeToHammer();
+        err = hmMapCurrentSocketErrorCodeToHammer(errno);
         HM_FINALIZE;
     }
     is_socket_initialized = HM_TRUE;
     if (connect(platform_data->socket_fd, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) < 0) {
-        err = hmMapCurrentSocketErrorCodeToHammer();
+        err = hmMapCurrentSocketErrorCodeToHammer(errno);
         HM_FINALIZE;
     }
     in_socket->platform_data = platform_data;
@@ -104,7 +104,7 @@ hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out
     if (out_bytes_sent && r >= 0) {
         *out_bytes_sent = (hm_nint)r;
     }
-    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
+    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
 }
 
 hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read)
@@ -114,15 +114,16 @@ hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes
     if (out_bytes_read && r >= 0) {
         *out_bytes_read = (hm_nint)r;
     }
-    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
+    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
 }
 
 hmError hmSocketDispose(hmSocket* socket)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     int r = close(platform_data->socket_fd);
+    hmError err = r ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
     hmFree(platform_data->allocator, platform_data);
-    return r ? hmMapCurrentSocketErrorCodeToHammer() : HM_OK;
+    return err;
 }
 
 hmError hmSocketDisposeFunc(void* obj)
@@ -130,7 +131,7 @@ hmError hmSocketDisposeFunc(void* obj)
     return hmSocketDispose((hmSocket*)obj);
 }
 
-static hmError hmMapCurrentSocketErrorCodeToHammer()
+static hmError hmMapCurrentSocketErrorCodeToHammer(int error_code)
 {
     switch (errno) {
         case ETIMEDOUT:

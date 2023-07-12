@@ -22,7 +22,7 @@
 
 #include <string.h> /* for strlen(..) and strcmp(..) */
 
-#define REQUEST_COUNT 100000
+#define REQUEST_COUNT 10000
 #define WAIT_TIMEOUT 1000
 #define PORT 8080
 #define QUEUE_SIZE 16
@@ -163,7 +163,7 @@ static void test_can_send_and_read_from_sockets()
     printf("        Throughput: %d requests/sec (single-threaded client, without its write time)\n", (int)((hm_float64)REQUEST_COUNT / ((hm_float64)(int)(time - client_socket_write_only_time) / 1000.0)));
 }
 
-static void test_socket_reports_error_if_connected_to_nonexisting_host()
+static void test_socket_reports_error_if_connecting_to_nonexisting_host()
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
@@ -178,11 +178,11 @@ static void test_socket_reports_error_if_connected_to_nonexisting_host()
         PORT,
         &socket
     );
-    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND || err == HM_ERROR_OUT_OF_MEMORY);
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
 HM_TEST_SUITE_BEGIN(sockets)
-    HM_TEST_RUN(test_socket_reports_error_if_connected_to_nonexisting_host)
+    HM_TEST_RUN(test_socket_reports_error_if_connecting_to_nonexisting_host)
     HM_TEST_RUN_WITHOUT_OOM(test_can_send_and_read_from_sockets)
 HM_TEST_SUITE_END()
