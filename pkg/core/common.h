@@ -70,6 +70,7 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_NOT_IMPLEMENTED    ((hmError)10) /* Operation is not implemented for this platform. */
 #define HM_ERROR_OVERFLOW           ((hmError)11) /* Overflow happened. */
 #define HM_ERROR_UNDERFLOW          ((hmError)12) /* Underflow happened. */
+#define HM_ERROR_ACCESS_DENIED      ((hmError)13) /* Access denied for the given resource. */
 
 /* Allows to merge several errors into one. Usually useful when a new error occurs while processing another error. */
 hmError hmMergeErrors(hmError older, hmError newer);

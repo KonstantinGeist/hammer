@@ -20,7 +20,7 @@ typedef struct {
     hmCompareFunc compare_func;
 } hmArraySortContext;
 
-static int hmAdaptUnixSortFuncToHammer(const void* obj1, const void* obj2, void* arg)
+static int hmAdaptGlibcSortFuncToHammer(const void* obj1, const void* obj2, void* arg)
 {
     hmArraySortContext* context = (hmArraySortContext*)arg;
     hmComparisonResult result = context->compare_func((void*)obj1, (void*)obj2, context->user_data);
@@ -44,6 +44,6 @@ hmError hmArraySort(hmArray* array, hmCompareFunc compare_func, void* user_data)
     hmArraySortContext context;
     context.user_data = user_data;
     context.compare_func = compare_func;
-    qsort_r(array->items, array->count, array->item_size, &hmAdaptUnixSortFuncToHammer, &context);
+    qsort_r(array->items, array->count, array->item_size, &hmAdaptGlibcSortFuncToHammer, &context);
     return HM_OK;
 }

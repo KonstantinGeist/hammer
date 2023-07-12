@@ -18,11 +18,12 @@
 
 #include <sys/time.h> /* for timespec */
 
-/* Unix-specific functions for converting between Hammer and Unix data formats. */
+/* Unix-specific functions for converting between Hammer and Unix/Posix data formats. */
 
-#define POSIX_RESULT_OK 0
-#define hmResultToError(result) ((result) != POSIX_RESULT_OK ? HM_ERROR_PLATFORM_DEPENDENT : HM_OK)
-#define HM_TRY_FOR_RESULT(expr) HM_TRY(hmResultToError(expr))
+#define HM_UNIX_OK 0
+#define HM_TRY_FOR_UNIX_ERROR(expr) HM_TRY(hmUnixErrorToHammer(expr))
+
+hmError hmUnixErrorToHammer(int unix_err);
 
 /* Converts milliseconds to POSIX's timespec. Since time_t is platform-dependent, all users, transitively,
    must have a reasonable limit for `ms`, to prevent overflows. For that reason, functions like hmThreadJoin(..) and

@@ -13,21 +13,20 @@
 
 #include <net/socket.h>
 #include <core/utils.h>
+#include <platform/unix/common.h>
 
-#include <sys/socket.h> /* for socket(..) & Co. */
-#include <netinet/in.h> /* for sockaddr_in & Co. */
 #include <arpa/inet.h>  /* for inet_pton(..) & Co. */
-#include <unistd.h>     /* for close(..) & Co. */
-#include <errno.h>      /* for error codes */
+#include <netinet/in.h> /* for sockaddr_in & Co. */
+#include <sys/socket.h> /* for socket(..) & Co. */
+#include <errno.h>      /* for errno */
 #include <netdb.h>      /* for getaddrinfo(..) & Co. */
 #include <stdio.h>      /* for sprintf(..) */
+#include <unistd.h>     /* for close(..) & Co. */
 
 typedef struct {
     hmAllocator* allocator;
     int          socket_fd;
 } hmSocketPlatformData;
-
-static hmError hmMapCurrentSocketErrorCodeToHammer(int error_code);
 
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
@@ -70,24 +69,25 @@ hmError hmCreateSocket(
     sprintf(port_str, "%d", (int)port);
     int r = getaddrinfo(hmStringGetCString(host), port_str, &hints, &addrinfo);
     if (r) {
-        err = r == EAI_NONAME ? HM_ERROR_NOT_FOUND : HM_ERROR_PLATFORM_DEPENDENT;
+        err = r == EAI_NONAME ? HM_ERROR_NOT_FOUND : HM_ERROR_PLATFORM_DEPENDENT; /* getaddrinfo(..) has its own error codes */
         HM_FINALIZE;
     }
     is_addrinfo_initialized = HM_TRUE;
-    if ((platform_data->socket_fd = socket(addrinfo->ai_family, SOCK_STREAM, 0)) < 0) {
-        err = hmMapCurrentSocketErrorCodeToHammer(errno);
+    if ((platform_data->socket_fd = socket(addrinfo->ai_family, SOCK_STREAM, 0)) == -1) {
+        err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
     is_socket_initialized = HM_TRUE;
-    if (connect(platform_data->socket_fd, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) < 0) {
-        err = hmMapCurrentSocketErrorCodeToHammer(errno);
+    if (connect(platform_data->socket_fd, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) == -1) {
+        err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
     in_socket->platform_data = platform_data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (is_socket_initialized) {
-            close(platform_data->socket_fd);
+            int unix_err = close(platform_data->socket_fd);
+            err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
         }
         hmFree(allocator, platform_data);
     }
@@ -100,28 +100,28 @@ HM_ON_FINALIZE
 hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out_bytes_sent)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    ssize_t r = send(platform_data->socket_fd, buf, sz, 0);
-    if (out_bytes_sent && r >= 0) {
-        *out_bytes_sent = (hm_nint)r;
+    ssize_t bytes_send = send(platform_data->socket_fd, buf, sz, 0);
+    if (out_bytes_sent && bytes_send >= 0) {
+        *out_bytes_sent = (hm_nint)bytes_send;
     }
-    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
+    return bytes_send == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
 
 hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    ssize_t r = read(platform_data->socket_fd, buf, sz);
-    if (out_bytes_read && r >= 0) {
-        *out_bytes_read = (hm_nint)r;
+    ssize_t bytes_read = read(platform_data->socket_fd, buf, sz);
+    if (out_bytes_read && bytes_read >= 0) {
+        *out_bytes_read = (hm_nint)bytes_read;
     }
-    return r < 0 ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
+    return bytes_read == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
 
 hmError hmSocketDispose(hmSocket* socket)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    int r = close(platform_data->socket_fd);
-    hmError err = r ? hmMapCurrentSocketErrorCodeToHammer(errno) : HM_OK;
+    int unix_err = close(platform_data->socket_fd);
+    hmError err = unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
     hmFree(platform_data->allocator, platform_data);
     return err;
 }
@@ -129,17 +129,4 @@ hmError hmSocketDispose(hmSocket* socket)
 hmError hmSocketDisposeFunc(void* obj)
 {
     return hmSocketDispose((hmSocket*)obj);
-}
-
-static hmError hmMapCurrentSocketErrorCodeToHammer(int error_code)
-{
-    switch (errno) {
-        case ETIMEDOUT:
-            return HM_ERROR_TIMEOUT;
-        case ENETUNREACH:
-        case ECONNREFUSED:
-            return HM_ERROR_NOT_FOUND;
-        default:
-            return HM_ERROR_PLATFORM_DEPENDENT;
-    }
 }

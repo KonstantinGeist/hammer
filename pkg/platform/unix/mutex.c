@@ -31,9 +31,9 @@ hmError hmCreateMutex(hmAllocator* allocator, hmMutex* in_mutex)
     }
     hmError err = HM_OK;
     pthread_mutexattr_t mutex_attr;
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutexattr_init(&mutex_attr)));
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE)));
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr)));
+    HM_TRY_OR_FINALIZE(err, hmUnixErrorToHammer(pthread_mutexattr_init(&mutex_attr)));
+    HM_TRY_OR_FINALIZE(err, hmUnixErrorToHammer(pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE)));
+    HM_TRY_OR_FINALIZE(err, hmUnixErrorToHammer(pthread_mutex_init(&platform_data->posix_mutex, &mutex_attr)));
     in_mutex->allocator = allocator;
     in_mutex->platform_data = platform_data;
 HM_ON_FINALIZE
@@ -45,17 +45,17 @@ HM_ON_FINALIZE
 
 hmError hmMutexDispose(hmMutex* mutex)
 {
-    hmError err = hmResultToError(pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex)));
+    hmError err = hmUnixErrorToHammer(pthread_mutex_destroy(hmMutexGetPosixMutexRef(mutex)));
     hmFree(mutex->allocator, mutex->platform_data);
     return err;
 }
 
 hmError hmMutexLock(hmMutex* mutex)
 {
-    return hmResultToError(pthread_mutex_lock(hmMutexGetPosixMutexRef(mutex)));
+    return hmUnixErrorToHammer(pthread_mutex_lock(hmMutexGetPosixMutexRef(mutex)));
 }
 
 hmError hmMutexUnlock(hmMutex* mutex)
 {
-    return hmResultToError(pthread_mutex_unlock(hmMutexGetPosixMutexRef(mutex)));
+    return hmUnixErrorToHammer(pthread_mutex_unlock(hmMutexGetPosixMutexRef(mutex)));
 }

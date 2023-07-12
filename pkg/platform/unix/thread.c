@@ -72,7 +72,7 @@ hmError hmCreateThread(
     hmAtomicStore(&platform_data->is_abort_requested, HM_FALSE);
     hmAtomicStore(&platform_data->is_detached, HM_FALSE);
     in_thread->platform_data = platform_data;
-    HM_TRY_OR_FINALIZE(err, hmResultToError(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
+    HM_TRY_OR_FINALIZE(err, hmUnixErrorToHammer(pthread_create(&platform_data->posix_thread, 0, &hmAdaptPosixThreadToHammer, platform_data)));
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (is_string_duplicated) {
@@ -110,8 +110,8 @@ hmError hmThreadJoin(hmThread* thread, hm_millis timeout_ms)
     }
     struct timespec ts;
     HM_TRY(hmGetFutureTimeSpec(HM_FALSE, timeout_ms, &ts));
-    int result = pthread_timedjoin_np(platform_data->posix_thread, HM_NULL, &ts);
-    hmError err = result == ETIMEDOUT ? HM_ERROR_TIMEOUT : hmResultToError(result);
+    int unix_err = pthread_timedjoin_np(platform_data->posix_thread, HM_NULL, &ts);
+    hmError err = hmUnixErrorToHammer(unix_err);
     if (err == HM_OK) {
         /* Makes sure we don't call pthread_detach in the destructor later on, as the thread is already
            detached after a call to pthread_join. */
@@ -179,7 +179,7 @@ static hmError hmThreadTryDisposePlatformData(hmThreadPlatformData* platform_dat
     if (new_ref_count == 0) {
         err = hmMergeErrors(err, hmStringDispose(&platform_data->name));
         if (!hmAtomicLoad(&platform_data->is_detached)) {
-            err = hmMergeErrors(err, hmResultToError(pthread_detach(platform_data->posix_thread)));
+            err = hmMergeErrors(err, hmUnixErrorToHammer(pthread_detach(platform_data->posix_thread)));
         }
         hmFree(platform_data->allocator, platform_data);
     }

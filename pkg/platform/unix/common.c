@@ -14,7 +14,24 @@
 #include <platform/unix/common.h>
 #include <core/math.h>
 
-#include <time.h> /* for clock_gettime(..), CLOCK_MONOTONIC and CLOCK_REALTIME */
+#include <errno.h> /* for error codes */
+#include <time.h>  /* for clock_gettime(..), CLOCK_MONOTONIC and CLOCK_REALTIME */
+
+hmError hmUnixErrorToHammer(int unix_err)
+{
+    switch (unix_err) {
+        case HM_UNIX_OK:
+            return HM_OK;
+        case ETIMEDOUT:
+            return HM_ERROR_TIMEOUT;
+        case ENETUNREACH:
+            return HM_ERROR_NOT_FOUND;
+        case ECONNREFUSED:
+            return HM_ERROR_ACCESS_DENIED;
+        default:
+            return HM_ERROR_PLATFORM_DEPENDENT;
+    }
+}
 
 struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms)
 {
