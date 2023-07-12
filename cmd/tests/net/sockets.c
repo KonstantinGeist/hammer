@@ -167,7 +167,7 @@ static void test_socket_reports_error_if_connecting_to_nonexisting_host()
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
-    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmString host;
     hmError err = hmCreateStringViewFromCString("notfound.fail", &host);
     HM_TEST_ASSERT_OK(err);

@@ -27,6 +27,7 @@ hmError hmUnixErrorToHammer(int unix_err)
         case ENETUNREACH:
             return HM_ERROR_NOT_FOUND;
         case ECONNREFUSED:
+        case EADDRINUSE:
             return HM_ERROR_ACCESS_DENIED;
         default:
             return HM_ERROR_PLATFORM_DEPENDENT;
