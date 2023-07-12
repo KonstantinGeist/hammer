@@ -41,7 +41,7 @@ hmError hmCreateServerSocket(
     }
     platform_data->allocator = allocator;
     hm_bool is_socket_initialized = HM_FALSE;
-    if ((platform_data->socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {\
+    if ((platform_data->socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         err = HM_ERROR_PLATFORM_DEPENDENT;
         HM_FINALIZE;
     }

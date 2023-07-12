@@ -19,6 +19,8 @@
 #include <arpa/inet.h>  /* for inet_pton(..) & Co. */
 #include <unistd.h>     /* for close(..) & Co. */
 #include <errno.h>      /* for error codes */
+#include <netdb.h>      /* for getaddrinfo(..) & Co. */
+#include <stdio.h>      /* for sprintf(..) */
 
 typedef struct {
     hmAllocator* allocator;
@@ -56,21 +58,28 @@ hmError hmCreateSocket(
         return HM_ERROR_OUT_OF_MEMORY;
     }
     platform_data->allocator = allocator;
-    hm_bool is_socket_initialized = HM_FALSE;
-    if ((platform_data->socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    hm_bool is_addrinfo_initialized = HM_FALSE,
+            is_socket_initialized = HM_FALSE;
+    struct addrinfo hints;
+	hmZeroMemory(&hints, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+    struct addrinfo* addrinfo;
+    char port_str[32];
+    sprintf(port_str, "%d", (int)port);
+    int r = getaddrinfo(hmStringGetCString(host), port_str, &hints, &addrinfo);
+    if (r) {
+        err = r == EAI_NONAME ? HM_ERROR_NOT_FOUND : HM_ERROR_PLATFORM_DEPENDENT;
+        HM_FINALIZE;
+    }
+    is_addrinfo_initialized = HM_TRUE;
+    if ((platform_data->socket_fd = socket(addrinfo->ai_family, SOCK_STREAM, 0)) < 0) {
         err = hmMapCurrentSocketErrorCodeToHammer();
         HM_FINALIZE;
     }
     is_socket_initialized = HM_TRUE;
-    struct sockaddr_in server_address;
-    hmZeroMemory(&server_address, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);
-    if (inet_pton(AF_INET, hmStringGetCString(host), &server_address.sin_addr) <= 0) {
-        err = hmMapCurrentSocketErrorCodeToHammer();
-        HM_FINALIZE;
-    }
-    if (connect(platform_data->socket_fd, (struct sockaddr*)&server_address, sizeof(server_address)) < 0) {
+    if (connect(platform_data->socket_fd, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) < 0) {
         err = hmMapCurrentSocketErrorCodeToHammer();
         HM_FINALIZE;
     }
@@ -81,6 +90,9 @@ HM_ON_FINALIZE
             close(platform_data->socket_fd);
         }
         hmFree(allocator, platform_data);
+    }
+    if (is_addrinfo_initialized) {
+        freeaddrinfo(addrinfo);
     }
     return err;
 }

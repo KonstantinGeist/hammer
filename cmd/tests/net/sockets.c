@@ -183,6 +183,6 @@ static void test_socket_reports_error_if_connected_to_nonexisting_host()
 }
 
 HM_TEST_SUITE_BEGIN(sockets)
-    HM_TEST_RUN_WITHOUT_OOM(test_can_send_and_read_from_sockets)
     HM_TEST_RUN(test_socket_reports_error_if_connected_to_nonexisting_host)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_send_and_read_from_sockets)
 HM_TEST_SUITE_END()
