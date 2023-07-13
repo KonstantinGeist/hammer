@@ -1,2 +1,2 @@
 cd bin
-valgrind --leak-check=full ./hammer-tests "$@"
+valgrind --leak-check=full --track-fds=yes ./hammer-tests "$@"

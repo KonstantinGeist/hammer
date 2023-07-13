@@ -95,6 +95,8 @@ hmError hmServerSocketDispose(hmServerSocket* socket)
     hmServerSocketPlatformData* platform_data = (hmServerSocketPlatformData*)socket->platform_data;
     int unix_err = shutdown(platform_data->socket_fd, SHUT_RDWR);
     hmError err = unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
+    unix_err = close(platform_data->socket_fd);
+    err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
     hmFree(platform_data->allocator, platform_data);
     return err;
 }
