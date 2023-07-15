@@ -72,7 +72,7 @@ static hmError server_socket_thread_func(void* user_data)
     HM_TEST_ASSERT_OK(err);
     do {
         hmSocket socket;
-        err = hmServerSocketAccept(&server_socket, &socket);
+        err = hmServerSocketAccept(&server_socket, HM_NULL, &socket);
         HM_TEST_ASSERT_OK(err);
         err = hmWorkerPoolEnqueueItem(&worker_pool, &socket);
         HM_TEST_ASSERT_OK(err);

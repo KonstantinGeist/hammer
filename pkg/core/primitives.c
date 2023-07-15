@@ -15,7 +15,7 @@
 #include <core/hash.h>
 
 #include <inttypes.h> /* for PRId32 */
-#include <stdio.h> /* for sprintf */
+#include <stdio.h> /* for sprintf(..) */
 
 hm_uint32 hmNintHashFunc(void* key, hm_uint32 salt)
 {

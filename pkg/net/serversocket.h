@@ -19,7 +19,8 @@
 #include <net/socket.h>
 
 typedef struct {
-    void* platform_data; /* Platform-specific data is hidden from public headers. */
+    hmAllocator* allocator;
+    void*        platform_data; /* Platform-specific data is hidden from public headers. */
 } hmServerSocket;
 
 /* A server socket is a special socket which is able to accept new connections and establish communication by
@@ -30,7 +31,7 @@ hmError hmCreateServerSocket(
     hm_nint         port,
     hmServerSocket* in_socket
 );
-hmError hmServerSocketAccept(hmServerSocket* socket, hmSocket* out_socket);
+hmError hmServerSocketAccept(hmServerSocket* socket, hmAllocator* socket_allocator_opt, hmSocket* out_socket);
 hmError hmServerSocketDispose(hmServerSocket* socket);
 
 #endif /* HM_SERVER_SOCKET_H */

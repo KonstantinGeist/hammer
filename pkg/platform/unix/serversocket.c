@@ -50,7 +50,6 @@ hmError hmCreateServerSocket(
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    platform_data->allocator = allocator;
     hm_bool is_socket_initialized = HM_FALSE;
     if ((platform_data->socket_file_desc = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         err = hmUnixErrorToHammer(errno);
@@ -77,6 +76,7 @@ hmError hmCreateServerSocket(
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
+    in_socket->allocator = allocator;
     in_socket->platform_data = platform_data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
@@ -91,7 +91,7 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmServerSocketAccept(hmServerSocket* socket, hmSocket* out_socket)
+hmError hmServerSocketAccept(hmServerSocket* socket, hmAllocator* socket_allocator_opt, hmSocket* out_socket)
 {
     hmServerSocketPlatformData* platform_data = (hmServerSocketPlatformData*)socket->platform_data;
     int socket_file_desc = 0;
@@ -99,7 +99,11 @@ hmError hmServerSocketAccept(hmServerSocket* socket, hmSocket* out_socket)
     if ((socket_file_desc = accept(platform_data->socket_file_desc, (struct sockaddr*)&platform_data->address, (socklen_t*)&address_length)) == -1) {
         return hmUnixErrorToHammer(errno);
     }
-    return hmCreateSocketFromDescriptor(platform_data->allocator, socket_file_desc, out_socket);
+    return hmCreateSocketFromDescriptor(
+        socket_allocator_opt ? socket_allocator_opt : socket->allocator,
+        socket_file_desc,
+        out_socket
+    );
 }
 
 hmError hmServerSocketDispose(hmServerSocket* socket)
@@ -109,7 +113,7 @@ hmError hmServerSocketDispose(hmServerSocket* socket)
     hmError err = unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
     unix_err = close(platform_data->socket_file_desc);
     err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
-    hmFree(platform_data->allocator, platform_data);
+    hmFree(socket->allocator, platform_data);
     return err;
 }
 

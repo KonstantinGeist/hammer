@@ -16,9 +16,11 @@
 
 #include <core/common.h>
 #include <core/string.h>
+#include <io/reader.h>
 
 typedef struct {
-    void* platform_data; /* Platform-specific data is hidden from public headers. */
+    hmAllocator* allocator;
+    void*        platform_data; /* Platform-specific data is hidden from public headers. */
 } hmSocket;
 
 /* A socket allows for two machines to communicate via the network. */
@@ -28,8 +30,9 @@ hmError hmCreateSocket(
     hm_nint      port,
     hmSocket*    in_socket
 );
-hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent);
-hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read);
+hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent_opt);
+hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read_opt);
+hmError hmSocketCreateReader(hmSocket* socket, hmAllocator* reader_allocator_opt, hmReader* in_reader);
 hmError hmSocketDispose(hmSocket* socket);
 hmError hmSocketDisposeFunc(void* obj);
 

@@ -38,8 +38,8 @@ hmError hmCreateSocketFromDescriptor(
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    platform_data->allocator = allocator;
     platform_data->socket_file_desc = socket_file_desc;
+    in_socket->allocator = allocator;
     in_socket->platform_data = platform_data;
     return HM_OK;
 }
@@ -56,7 +56,6 @@ hmError hmCreateSocket(
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    platform_data->allocator = allocator;
     hm_bool is_addrinfo_initialized = HM_FALSE,
             is_socket_initialized = HM_FALSE;
     struct addrinfo hints;
@@ -82,6 +81,7 @@ hmError hmCreateSocket(
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
+    in_socket->allocator = allocator;
     in_socket->platform_data = platform_data;
 HM_ON_FINALIZE
     if (err != HM_OK) {
@@ -97,22 +97,28 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent)
+hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent_opt)
 {
+    if (!buffer) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     ssize_t bytes_send = send(platform_data->socket_file_desc, buffer, size, 0);
-    if (out_bytes_sent && bytes_send >= 0) {
-        *out_bytes_sent = (hm_nint)bytes_send;
+    if (out_bytes_sent_opt && bytes_send >= 0) {
+        *out_bytes_sent_opt = (hm_nint)bytes_send;
     }
     return bytes_send == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
 
-hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read)
+hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read_opt)
 {
+    if (!buffer) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     ssize_t bytes_read = read(platform_data->socket_file_desc, buffer, size);
-    if (out_bytes_read && bytes_read >= 0) {
-        *out_bytes_read = (hm_nint)bytes_read;
+    if (out_bytes_read_opt && bytes_read >= 0) {
+        *out_bytes_read_opt = (hm_nint)bytes_read;
     }
     return bytes_read == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
@@ -122,7 +128,7 @@ hmError hmSocketDispose(hmSocket* socket)
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     int unix_err = close(platform_data->socket_file_desc);
     hmError err = unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
-    hmFree(platform_data->allocator, platform_data);
+    hmFree(socket->allocator, platform_data);
     return err;
 }
 
