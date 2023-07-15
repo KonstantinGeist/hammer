@@ -18,7 +18,7 @@
 
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
-    int          socket_fd,
+    int          socket_file_desc,
     hmSocket*    in_socket
 );
 

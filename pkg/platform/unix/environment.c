@@ -17,8 +17,10 @@
 #include <core/stringbuilder.h>
 #include <platform/unix/common.h>
 
+#include <errno.h>       /* for errno */
+#include <fcntl.h>       /* for O_RDONLY */
 #include <inttypes.h>    /* for PRId32 */
-#include <stdio.h>       /* for fopen(..), fread(..), fclose(..) and sprintf(..) */
+#include <stdio.h>       /* for sprintf(..) */
 #include <stdlib.h>      /* for getenv(..) */
 #include <sys/utsname.h> /* for uname(..) */
 #include <unistd.h>      /* for sysconf(..), _SC_NPROCESSORS_ONLN and getpid(..) */
@@ -74,8 +76,8 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
 {
     char system_file_name[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];
     HM_TRY(hmFormatWithCurrentProcessId(allocator, system_file_name, "/proc/", "/cmdline"));
-    FILE* file = fopen(system_file_name, "rb");
-    if (!file) {
+    int file_desc = open(system_file_name, O_RDONLY);
+    if (!file_desc) {
         return HM_ERROR_PLATFORM_DEPENDENT;
     }
     hmError err = HM_OK;
@@ -87,9 +89,9 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
     HM_TRY_OR_FINALIZE(err, hmCreateStringBuilder(allocator, &string_builder));
     is_string_builder_initialized = HM_TRUE;
     char buffer[HM_COMMAND_LINE_BUFFER_SIZE];
-    hm_nint read_bytes = 0;
+    ssize_t read_bytes = 0;
     hm_nint arg_count = 0; /* to skip the first element, which is the executable name we don't need in our API */
-    while ((read_bytes = fread(buffer, 1, HM_COMMAND_LINE_BUFFER_SIZE, file)) != 0) {
+    while ((read_bytes = read(file_desc, buffer, HM_COMMAND_LINE_BUFFER_SIZE)) != 0) {
         hm_nint last_i = 0;
         for (hm_nint i = 0; i < read_bytes; i++) {
             char c = buffer[i];
@@ -115,9 +117,13 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
             }
         }
     }
+    if (read_bytes == -1) {
+        err = hmMergeErrors(err, hmUnixErrorToHammer(errno));
+    }
 HM_ON_FINALIZE
-    if (fclose(file)) {
-        err = hmMergeErrors(err, HM_ERROR_PLATFORM_DEPENDENT);
+    int unix_err = 0;
+    if ((unix_err = close(file_desc)) == -1) {
+        err = hmMergeErrors(err, hmUnixErrorToHammer(errno));
     }
     if (is_string_builder_initialized) {
         err = hmMergeErrors(err, hmStringBuilderDispose(&string_builder));
