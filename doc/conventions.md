@@ -2,6 +2,8 @@ There are several conventions to follow:
 
 * Always use Hammer C wrappers around native types: hm_nint instead of size_t, hm_uint8 instead of uint8_t etc.
   This allows to have a future-proof abstraction layer for platform-specific data types.
+* Same goes for platform-specific functions and data structures: place them in the `platform` folder and never expose
+  them directly to Hammer's C code. Something which feels "portable" under Linux may not work under Windows at all.
 * Always sort struct fields from larger to smaller values: for example, first pointers (32 or 64 bit), then
   integers, then booleans etc. This can help the compiler to better pack values in memory without "holes" due to
   misalignment.
@@ -13,7 +15,8 @@ There are several conventions to follow:
   object itself, for example "this" pointer in interface implementations or the `data` field (a tradeoff between
   speed and correctness).
 * Cover everything with tests.
-* Never use global state: it should be possible to create as many runtimes per process as one wishes.
+* Never use global state: it should be possible to create as many runtimes per process as one wishes. 
+  Exception: cached values for system-wide settings which rarely change. 
 * Always place a copyright header at the top of every file.
 * For interfaces, implement easy-to-use wrappers (which deal with selecting the function pointer and passing "this" to it).
   Always validate arguments in the implementations themselves, not the wrappers. Such pointers should be in the same
@@ -33,6 +36,16 @@ There are several conventions to follow:
   Allocate on stack whenever possible.
 * Add _opt suffix to optional values.
 * Don't start symbols with an underscore.
+* Do everything yourself if the implementation of a feature is trivial, instead of adding a third-party library by 
+  a third-party vendor. This way, it's simpler and faster to fix bugs, add improvements, it better fits with the overall
+  design of the system, and it's generally just more fun. Third-party vendors are included by placing their source code  
+  in the `vendor` folder. Never use package managers! This way, we avoid supply chain attacks and make building simpler. 
+  A potential third-party library to be included in the source tree must have a perfect safety record with extensive
+  test suites (example: SQLite); it should also have support for custom memory allocators (example: again, SQLite).
+* Same goes for standard C library functions: when possible, use your own implementations if C library functions
+  allocate from the global memory allocator in a wasteful way, and/or they make use of global state, and if you 
+  own solution would be pretty trivial to implement (with tests!)
+* Avoid arcane abbreviations, use concise, readable language.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

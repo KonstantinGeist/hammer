@@ -22,9 +22,9 @@
 #include <bits/socket.h> /* for SOMAXCONN */
 #include <sys/socket.h>  /* for socket(..) & Co. */
 #include <errno.h>       /* for errno */
-#include <fcntl.h>       /* for open(..), read(..), close(..), O_RDONLY */
+#include <fcntl.h>       /* for open(..), O_RDONLY */
 #include <stdlib.h>      /* for atoi(..) */
-#include <unistd.h>      /* for close(..) & Co. */
+#include <unistd.h>      /* for read(..), close(..) */
 
 /* We want to avoid using global variables as much as possible, but this setting is very unlikely to change and it's
    usually system-wide, so it's OK to cache this value once to avoid asking the OS for the backlog size every time a server
@@ -127,13 +127,14 @@ static hm_nint hmGetMaxConnectionBacklog()
         HM_FINALIZE;
     }
     is_file_opened = HM_TRUE;
-    char buf[sizeof(int) + 1];
+    char buf[sizeof(int) + 1]; /* No safe math: a compile-time constant. */
     ssize_t read_bytes = read(file_desc, buf, sizeof(buf));
     if (read_bytes == -1) {
         max_connection_backlog = SOMAXCONN;
         HM_FINALIZE;
     }
     buf[read_bytes] = 0; /* Null terminator. */
+    /* The following suppression exists because cppcheck doesn't understand that HM_FINALIZE is a goto. */
     /* cppcheck-suppress redundantAssignment */
     max_connection_backlog = atoi(buf);
     if (max_connection_backlog == 0) {
