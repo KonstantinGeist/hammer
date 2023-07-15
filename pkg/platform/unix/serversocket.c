@@ -73,6 +73,8 @@ HM_ON_FINALIZE
         if (is_socket_initialized) {
             int unix_err = shutdown(platform_data->socket_fd, SHUT_RDWR);
             err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
+            unix_err = close(platform_data->socket_fd);
+            err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
         }
         hmFree(allocator, platform_data);
     }
