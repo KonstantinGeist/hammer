@@ -18,7 +18,7 @@
 #include <platform/unix/common.h>
 
 #include <errno.h>       /* for errno */
-#include <fcntl.h>       /* for O_RDONLY */
+#include <fcntl.h>       /* for open(..), read(..), close(..), O_RDONLY */
 #include <inttypes.h>    /* for PRId32 */
 #include <stdio.h>       /* for sprintf(..) */
 #include <stdlib.h>      /* for getenv(..) */
@@ -91,7 +91,7 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
     char buffer[HM_COMMAND_LINE_BUFFER_SIZE];
     ssize_t read_bytes = 0;
     hm_nint arg_count = 0; /* to skip the first element, which is the executable name we don't need in our API */
-    while ((read_bytes = read(file_desc, buffer, HM_COMMAND_LINE_BUFFER_SIZE)) != 0) {
+    while ((read_bytes = read(file_desc, buffer, HM_COMMAND_LINE_BUFFER_SIZE)) > 0) {
         hm_nint last_i = 0;
         for (hm_nint i = 0; i < read_bytes; i++) {
             char c = buffer[i];

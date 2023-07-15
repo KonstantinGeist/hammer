@@ -13,22 +13,31 @@
 
 #include <net/serversocket.h>
 #include <core/utils.h>
+#include <threading/atomic.h>
 #include <platform/unix/common.h>
 #include <platform/unix/socket.h>
 
-#include <arpa/inet.h>  /* for inet_pton(..) & Co. */
-#include <netinet/in.h> /* for sockaddr_in & Co. */
-#include <sys/socket.h> /* for socket(..) & Co. */
-#include <errno.h>      /* for errno */
-#include <unistd.h>     /* for close(..) & Co. */
+#include <arpa/inet.h>   /* for inet_pton(..) & Co. */
+#include <netinet/in.h>  /* for sockaddr_in & Co. */
+#include <bits/socket.h> /* for SOMAXCONN */
+#include <sys/socket.h>  /* for socket(..) & Co. */
+#include <errno.h>       /* for errno */
+#include <fcntl.h>       /* for open(..), read(..), close(..), O_RDONLY */
+#include <stdlib.h>      /* for atoi(..) */
+#include <unistd.h>      /* for close(..) & Co. */
 
-#define BACKLOG 1000
+/* We want to avoid using global variables as much as possible, but this setting is very unlikely to change and it's
+   usually system-wide, so it's OK to cache this value once to avoid asking the OS for the backlog size every time a server
+   socket is created. */
+static hm_atomic_nint cached_max_connection_backlog = 0;
 
 typedef struct {
     hmAllocator*       allocator;
     int                socket_file_desc;
     struct sockaddr_in address;
 } hmServerSocketPlatformData;
+
+static hm_nint hmGetMaxConnectionBacklog();
 
 hmError hmCreateServerSocket(
     hmAllocator*    allocator,
@@ -63,7 +72,8 @@ hmError hmCreateServerSocket(
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
-    if (listen(platform_data->socket_file_desc, BACKLOG) == -1) {
+    hm_nint max_connection_backlog = hmGetMaxConnectionBacklog();
+    if (listen(platform_data->socket_file_desc, max_connection_backlog) == -1) {
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
@@ -101,4 +111,39 @@ hmError hmServerSocketDispose(hmServerSocket* socket)
     err = hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
     hmFree(platform_data->allocator, platform_data);
     return err;
+}
+
+static hm_nint hmGetMaxConnectionBacklog()
+{
+    hm_nint max_connection_backlog = hmAtomicLoad(&cached_max_connection_backlog);
+    if (max_connection_backlog) {
+        return max_connection_backlog;
+    }
+    int file_desc = open("/proc/sys/net/core/somaxconn", O_RDONLY);
+    hm_bool is_file_opened = HM_FALSE;
+    if (!file_desc) {
+        /* If it's not a Linux, or there are other unknown errors - just use C's hardcoded constants here and below. */
+        max_connection_backlog = SOMAXCONN;
+        HM_FINALIZE;
+    }
+    is_file_opened = HM_TRUE;
+    char buf[sizeof(int)];
+    ssize_t read_bytes = read(file_desc, buf, sizeof(buf) - 1);
+    if (read_bytes == -1) {
+        max_connection_backlog = SOMAXCONN;
+        HM_FINALIZE;
+    }
+    buf[read_bytes] = 0;
+    /* cppcheck-suppress redundantAssignment */
+    max_connection_backlog = atoi(buf);
+    if (max_connection_backlog == 0) {
+        max_connection_backlog = SOMAXCONN;
+        HM_FINALIZE;
+    }
+HM_ON_FINALIZE
+    if (is_file_opened) {
+        close(file_desc); /* The returned value is ignored because we can't do much about errors here. */
+    }
+    hmAtomicStore(&cached_max_connection_backlog, max_connection_backlog);
+    return max_connection_backlog;
 }
