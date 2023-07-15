@@ -97,20 +97,20 @@ HM_ON_FINALIZE
     return err;
 }
 
-hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out_bytes_sent)
+hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    ssize_t bytes_send = send(platform_data->socket_file_desc, buf, sz, 0);
+    ssize_t bytes_send = send(platform_data->socket_file_desc, buffer, size, 0);
     if (out_bytes_sent && bytes_send >= 0) {
         *out_bytes_sent = (hm_nint)bytes_send;
     }
     return bytes_send == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
 
-hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read)
+hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    ssize_t bytes_read = read(platform_data->socket_file_desc, buf, sz);
+    ssize_t bytes_read = read(platform_data->socket_file_desc, buffer, size);
     if (out_bytes_read && bytes_read >= 0) {
         *out_bytes_read = (hm_nint)bytes_read;
     }

@@ -30,7 +30,7 @@
    to a certain case. For example, runtime metadata is allocated using a fast bump pointer allocator which can
    be deallocated all at once. */
 typedef struct hmAllocator_ {
-    void* (*alloc)(struct hmAllocator_* allocator, hm_nint sz); /* Allocating function. Returns HM_NULL if out of memory. */
+    void* (*alloc)(struct hmAllocator_* allocator, hm_nint size); /* Allocating function. Returns HM_NULL if out of memory. */
     void  (*free)(struct hmAllocator_* allocator, void* mem);   /* Frees a given block of memory. Behavior is undefined if memory
                                                                    not belonging to this allocator is passed to it. Generally should
                                                                    ignore errors (preferably by logging errors). Safe to pass HM_NULL to it. */
@@ -43,9 +43,9 @@ typedef struct hmAllocator_ {
 
 /* Allocates memory given the allocator and the memory size. Returns HM_NULL if out of memory.
    Allocations are aligned. */
-void* hmAlloc(hmAllocator* allocator, hm_nint sz);
+void* hmAlloc(hmAllocator* allocator, hm_nint size);
 /* Same as hmAlloc, except also zero-initializes the returned array. */
-void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz);
+void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint size);
 /* Reallocates the given memory block: allocates a new array, copies old data to it, and frees the old memory block.
    The memory block can be HM_NULL, in that case it's equivalent to hmAlloc. */
 void* hmRealloc(hmAllocator* allocator, void* mem_opt, hm_nint old_size, hm_nint new_size);

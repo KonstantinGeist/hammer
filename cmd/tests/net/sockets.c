@@ -35,12 +35,12 @@ typedef struct {
 static hmError server_socket_worker_func(void* work_item)
 {
     hmSocket* socket = (hmSocket*)work_item;
-    char buf[1024];
+    char buffer[1024];
     hm_nint bytes_read = 0;
-    hmError err = hmSocketRead(socket, buf, sizeof(buf), &bytes_read);
+    hmError err = hmSocketRead(socket, buffer, sizeof(buffer), &bytes_read);
     HM_TEST_ASSERT_OK(err);
-    buf[bytes_read] = 0;
-    err = hmSocketSend(socket, buf, bytes_read, HM_NULL); /* Echoes back. */
+    buffer[bytes_read] = 0;
+    err = hmSocketSend(socket, buffer, bytes_read, HM_NULL); /* Echoes back. */
     HM_TEST_ASSERT_OK(err);
     return HM_OK;
 }
@@ -134,12 +134,12 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
         err = hmSocketSend(&socket, message, strlen(message), HM_NULL);
         HM_TEST_ASSERT_OK(err);
         if (!client_socket_write_only) {
-            char buf[1024];
+            char buffer[1024];
             hm_nint bytes_read = 0;
-            err = hmSocketRead(&socket, buf, sizeof(buf), &bytes_read);
+            err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
             HM_TEST_ASSERT_OK(err);
-            buf[bytes_read] = 0;
-            HM_TEST_ASSERT(strcmp(message, buf) == 0);
+            buffer[bytes_read] = 0;
+            HM_TEST_ASSERT(strcmp(message, buffer) == 0);
         }
         err = hmSocketDispose(&socket);
         HM_TEST_ASSERT_OK(err);

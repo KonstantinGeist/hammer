@@ -28,8 +28,8 @@ hmError hmCreateSocket(
     hm_nint      port,
     hmSocket*    in_socket
 );
-hmError hmSocketSend(hmSocket* socket, const char* buf, hm_nint sz, hm_nint *out_bytes_sent);
-hmError hmSocketRead(hmSocket* socket, char* buf, hm_nint sz, hm_nint* out_bytes_read);
+hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent);
+hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read);
 hmError hmSocketDispose(hmSocket* socket);
 hmError hmSocketDisposeFunc(void* obj);
 

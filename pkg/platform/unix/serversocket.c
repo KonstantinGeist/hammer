@@ -127,16 +127,16 @@ static hm_nint hmGetMaxConnectionBacklog()
         HM_FINALIZE;
     }
     is_file_opened = HM_TRUE;
-    char buf[sizeof(int) + 1]; /* No safe math: a compile-time constant. */
-    ssize_t read_bytes = read(file_desc, buf, sizeof(buf));
+    char buffer[sizeof(int) + 1]; /* No safe math: a compile-time constant. */
+    ssize_t read_bytes = read(file_desc, buffer, sizeof(buffer));
     if (read_bytes == -1) {
         max_connection_backlog = SOMAXCONN;
         HM_FINALIZE;
     }
-    buf[read_bytes] = 0; /* Null terminator. */
+    buffer[read_bytes] = 0; /* Null terminator. */
     /* The following suppression exists because cppcheck doesn't understand that HM_FINALIZE is a goto. */
     /* cppcheck-suppress redundantAssignment */
-    max_connection_backlog = atoi(buf);
+    max_connection_backlog = atoi(buffer);
     if (max_connection_backlog == 0) {
         max_connection_backlog = SOMAXCONN;
         HM_FINALIZE;

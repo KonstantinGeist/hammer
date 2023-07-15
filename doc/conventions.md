@@ -36,14 +36,14 @@ There are several conventions to follow:
   Allocate on stack whenever possible.
 * Add _opt suffix to optional values.
 * Don't start symbols with an underscore.
-* Do everything yourself if the implementation of a feature is trivial, instead of adding a third-party library by 
+* We do everything ourselves if the implementation of a feature is trivial, instead of adding a third-party library by 
   a third-party vendor. This way, it's simpler and faster to fix bugs, add improvements, it better fits with the overall
   design of the system, and it's generally just more fun. Third-party vendors are included by placing their source code  
   in the `vendor` folder. Never use package managers! This way, we avoid supply chain attacks and make building simpler. 
   A potential third-party library to be included in the source tree must have a perfect safety record with extensive
   test suites (example: SQLite); it should also have support for custom memory allocators (example: again, SQLite).
-* Same goes for standard C library functions: when possible, use your own implementations if C library functions
-  allocate from the global memory allocator in a wasteful way, and/or they make use of global state, and if you 
+* Same goes for standard C library functions: when possible, use our own implementations if C library functions
+  allocate from the global memory allocator in a wasteful way, and/or they make use of global state, and if our 
   own solution would be pretty trivial to implement (with tests!)
 * Avoid arcane abbreviations, use concise, readable language.
 

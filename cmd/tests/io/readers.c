@@ -16,14 +16,14 @@
 
 #include <string.h> /* for memcmp(..) */
 
-#define READ_BUF_SIZE 5
-#define MEMORY_BUF_STRING "Hello, World"
+#define READ_BUFFER_SIZE 5
+#define MEMORY_BUFFER_STRING "Hello, World"
 
 static void create_memory_reader_and_allocator(hmReader* reader, hmAllocator* allocator)
 {
     HM_TEST_INIT_ALLOC(allocator);
     HM_TEST_TRACK_OOM(allocator, HM_FALSE);
-    hmError err = hmCreateMemoryReader(allocator, MEMORY_BUF_STRING, strlen(MEMORY_BUF_STRING), reader);
+    hmError err = hmCreateMemoryReader(allocator, MEMORY_BUFFER_STRING, strlen(MEMORY_BUFFER_STRING), reader);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(allocator, HM_TRUE);
 }
@@ -37,32 +37,32 @@ static void dispose_memory_reader_and_allocator(hmReader* reader, hmAllocator* a
 
 static void test_memory_reader_can_create_read_close()
 {
-    char read_buf[READ_BUF_SIZE] = {0};
+    char read_buffer[READ_BUFFER_SIZE] = {0};
     hm_nint bytes_read;
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
+    hmError err = hmReaderRead(&reader, read_buffer, READ_BUFFER_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
-    HM_TEST_ASSERT(memcmp(read_buf, "Hello", READ_BUF_SIZE) == 0);
+    HM_TEST_ASSERT(bytes_read == READ_BUFFER_SIZE);
+    HM_TEST_ASSERT(memcmp(read_buffer, "Hello", READ_BUFFER_SIZE) == 0);
 HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
 static void test_memory_can_create_seek_read_close()
 {
-    char read_buf[READ_BUF_SIZE] = {0};
+    char read_buffer[READ_BUFFER_SIZE] = {0};
     hm_nint bytes_read;
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 3);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
+    err = hmReaderRead(&reader, read_buffer, READ_BUFFER_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE);
-    HM_TEST_ASSERT(memcmp(read_buf, "lo, W", READ_BUF_SIZE) == 0);
+    HM_TEST_ASSERT(bytes_read == READ_BUFFER_SIZE);
+    HM_TEST_ASSERT(memcmp(read_buffer, "lo, W", READ_BUFFER_SIZE) == 0);
 HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
@@ -79,32 +79,32 @@ static void test_memory_reader_cant_seek_past_buffer()
 
 static void test_memory_reader_truncates_buffer_if_read_past_buffer()
 {
-    char read_buf[READ_BUF_SIZE] = {0};
+    char read_buffer[READ_BUFFER_SIZE] = {0};
     hm_nint bytes_read;
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
     hmError err = hmReaderSeek(&reader, 8);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    err = hmReaderRead(&reader, read_buf, READ_BUF_SIZE, &bytes_read);
+    err = hmReaderRead(&reader, read_buffer, READ_BUFFER_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(bytes_read == READ_BUF_SIZE-1);
-    HM_TEST_ASSERT(memcmp(read_buf, "orld", READ_BUF_SIZE-1) == 0);
+    HM_TEST_ASSERT(bytes_read == READ_BUFFER_SIZE-1);
+    HM_TEST_ASSERT(memcmp(read_buffer, "orld", READ_BUFFER_SIZE - 1) == 0);
 HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
 static void test_memory_reader_ignores_zero_size_requests()
 {
-    char read_buf[READ_BUF_SIZE] = {0};
+    char read_buffer[READ_BUFFER_SIZE] = {0};
     hm_nint bytes_read;
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderRead(&reader, read_buf, 0, &bytes_read);
+    hmError err = hmReaderRead(&reader, read_buffer, 0, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(bytes_read == 0);
-    HM_TEST_ASSERT(read_buf[0] == '\0');
+    HM_TEST_ASSERT(read_buffer[0] == '\0');
 HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }

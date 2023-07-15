@@ -17,23 +17,23 @@
 
 #include <stdlib.h> /* for malloc(..) and free(..) */
 
-void* hmAlloc(hmAllocator* allocator, hm_nint sz)
+void* hmAlloc(hmAllocator* allocator, hm_nint size)
 {
-    if (!sz) {
+    if (!size) {
         return HM_NULL; /* it's meaningless to try allocate 0 bytes */
     }
-    return allocator->alloc(allocator, hmAlignSize(sz));
+    return allocator->alloc(allocator, hmAlignSize(size));
 }
 
-void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint sz)
+void* hmAllocZeroInitialized(hmAllocator* allocator, hm_nint size)
 {
-    if (!sz) {
+    if (!size) {
         return HM_NULL; /* it's meaningless to try allocate 0 bytes */
     }
-    sz = hmAlignSize(sz);
-    void* r = allocator->alloc(allocator, sz);
+    size = hmAlignSize(size);
+    void* r = allocator->alloc(allocator, size);
     if (r) {
-        hmZeroMemory(r, sz);
+        hmZeroMemory(r, size);
     }
     return r;
 }
@@ -69,9 +69,9 @@ hmError hmAllocatorDispose(hmAllocator* allocator)
 /*    SystemAllocator.    */
 /* ********************** */
 
-static void* hmSystemAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+static void* hmSystemAllocator_alloc(hmAllocator* allocator, hm_nint size)
 {
-    return malloc(sz);
+    return malloc(size);
 }
 
 static void hmSystemAllocator_free(hmAllocator* allocator, void* mem)
@@ -120,16 +120,16 @@ typedef struct {
     hm_nint      used_memory;
 } hmBumpPointerAllocatorData;
 
-static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint size)
 {
     hmBumpPointerAllocatorData* data = (hmBumpPointerAllocatorData*)allocator->data;
     hm_nint new_used_memory = 0;
-    hmError err = hmAddNint(data->used_memory, sz, &new_used_memory);
+    hmError err = hmAddNint(data->used_memory, size, &new_used_memory);
     if (err != HM_OK || new_used_memory > data->memory_limit) {
         return HM_NULL;
     }
-    if (sz > HM_LARGE_OBJECT_SIZE_THRESHOLD) { /* too large to fit in a segment */
-        void* result = hmAlloc(data->base_allocator, sz);
+    if (size > HM_LARGE_OBJECT_SIZE_THRESHOLD) { /* too large to fit in a segment */
+        void* result = hmAlloc(data->base_allocator, size);
         if (!result) {
             return HM_NULL;
         }
@@ -157,7 +157,7 @@ static void* hmBumpPointerAllocator_alloc(hmAllocator* allocator, hm_nint sz)
     }
     hmBumpPointerAllocatorSegment* cur_segment = data->cur_segment;
     hm_nint new_index = 0;
-    err = hmAddNint(cur_segment ? cur_segment->index : 0, sz, &new_index);
+    err = hmAddNint(cur_segment ? cur_segment->index : 0, size, &new_index);
     if (err != HM_OK) {
         return HM_NULL;
     }
@@ -232,10 +232,10 @@ typedef struct {
     hm_bool      is_tracking;
 } hmStatsAllocatorData;
 
-static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+static void* hmStatsAllocator_alloc(hmAllocator* allocator, hm_nint size)
 {
     hmStatsAllocatorData* data = (hmStatsAllocatorData*)allocator->data;
-    void* result = hmAlloc(data->base_allocator, sz);
+    void* result = hmAlloc(data->base_allocator, size);
     if (data->is_tracking) {
         /* In case of an overflow, total_alloc_count will simply stop updating. */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
@@ -299,13 +299,13 @@ typedef struct {
     hm_bool      is_tracking;
 } hmOOMAllocatorData;
 
-static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+static void* hmOOMAllocator_alloc(hmAllocator* allocator, hm_nint size)
 {
     hmOOMAllocatorData* data = (hmOOMAllocatorData*)allocator->data;
     if (data->is_tracking && data->total_alloc_count >= data->failed_alloc_number) {
         return HM_NULL;
     }
-    void* result = hmAlloc(data->base_allocator, sz);
+    void* result = hmAlloc(data->base_allocator, size);
     if (data->is_tracking) {
         /* In case of an overflow, total_alloc_count will simply stop updating. */
         hmAddNint(data->total_alloc_count, 1, &data->total_alloc_count);
@@ -370,21 +370,21 @@ typedef struct {
     hmAllocator* fallback_allocator;
 } hmBufferAllocatorData;
 
-static void* hmBufferAllocator_alloc(hmAllocator* allocator, hm_nint sz)
+static void* hmBufferAllocator_alloc(hmAllocator* allocator, hm_nint size)
 {
     hmBufferAllocatorData* data = (hmBufferAllocatorData*)allocator->data;
-    if (sz > data->end - data->current) { /* underflow-safe because `end` must be greater than `current` */
+    if (size > data->end - data->current) { /* underflow-safe because `end` must be greater than `current` */
         if (data->fallback_allocator) {
-            return hmAlloc(data->fallback_allocator, sz);
+            return hmAlloc(data->fallback_allocator, size);
         }
         return HM_NULL;
     }
     char* result = data->current;
     hm_nint new_current = 0;
-    hmError err = hmAddNint(hmCastPointerToNint(data->current), sz, &new_current);
+    hmError err = hmAddNint(hmCastPointerToNint(data->current), size, &new_current);
     if (err != HM_OK) {
         /* Tries to use the fallback allocator on overflow: the only sane behavior at this point. */
-        return hmAlloc(data->fallback_allocator, sz);
+        return hmAlloc(data->fallback_allocator, size);
     }
     data->current = hmCastNintToPointer(new_current, char*);
     return result;

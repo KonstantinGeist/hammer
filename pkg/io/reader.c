@@ -16,14 +16,14 @@
 #include <core/math.h>
 #include <core/utils.h>
 
-hmError hmReaderRead(hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read)
+hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
-    return reader->read(reader, buf, sz, out_bytes_read);
+    return reader->read(reader, buffer, size, out_bytes_read);
 }
 
-hmError hmReaderSeek(hmReader* reader, hm_nint sz)
+hmError hmReaderSeek(hmReader* reader, hm_nint size)
 {
-    return reader->seek(reader, sz);
+    return reader->seek(reader, size);
 }
 
 hmError hmReaderClose(hmReader* reader)
@@ -42,26 +42,26 @@ typedef struct {
     hm_nint      size;      /* The size of the memory block. */
 } hmMemoryReaderData;
 
-static hmError hmMemoryReader_read(hmReader* reader, char* buf, hm_nint sz, hm_nint* out_bytes_read)
+static hmError hmMemoryReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
-    if (!buf || !out_bytes_read) {
+    if (!buffer || !out_bytes_read) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    if (!sz) {
+    if (!size) {
         *out_bytes_read = 0;
         return HM_OK; /* do nothing because we were told to read 0 bytes */
     }
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
-    hm_nint bytes_read = sz;
-    hm_nint offset_with_sz = 0;
-    HM_TRY(hmAddNint(data->offset, sz, &offset_with_sz));
-    if (offset_with_sz > data->size) {
+    hm_nint bytes_read = size;
+    hm_nint offset_with_size = 0;
+    HM_TRY(hmAddNint(data->offset, size, &offset_with_size));
+    if (offset_with_size > data->size) {
         bytes_read = data->size - data->offset;
     }
     hm_nint base_with_offset = 0;
     HM_TRY(hmAddNint(hmCastPointerToNint(data->base), data->offset, &base_with_offset));
-    hmCopyMemory(buf, hmCastNintToPointer(base_with_offset, const char*), bytes_read);
-    data->offset = offset_with_sz;
+    hmCopyMemory(buffer, hmCastNintToPointer(base_with_offset, const char*), bytes_read);
+    data->offset = offset_with_size;
     *out_bytes_read = bytes_read;
     return HM_OK;
 }
