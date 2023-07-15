@@ -127,13 +127,13 @@ static hm_nint hmGetMaxConnectionBacklog()
         HM_FINALIZE;
     }
     is_file_opened = HM_TRUE;
-    char buf[sizeof(int)];
-    ssize_t read_bytes = read(file_desc, buf, sizeof(buf) - 1);
+    char buf[sizeof(int) + 1];
+    ssize_t read_bytes = read(file_desc, buf, sizeof(buf));
     if (read_bytes == -1) {
         max_connection_backlog = SOMAXCONN;
         HM_FINALIZE;
     }
-    buf[read_bytes] = 0;
+    buf[read_bytes] = 0; /* Null terminator. */
     /* cppcheck-suppress redundantAssignment */
     max_connection_backlog = atoi(buf);
     if (max_connection_backlog == 0) {
