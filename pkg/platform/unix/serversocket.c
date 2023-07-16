@@ -26,11 +26,6 @@
 #include <stdlib.h>      /* for atoi(..) */
 #include <unistd.h>      /* for read(..), close(..) */
 
-/* We want to avoid using global variables as much as possible, but this setting is very unlikely to change and it's
-   usually system-wide, so it's OK to cache this value once to avoid asking the OS for the backlog size every time a server
-   socket is created. */
-static hm_atomic_nint cached_max_connection_backlog = 0;
-
 typedef struct {
     hmAllocator*       allocator;
     int                socket_file_desc;
@@ -119,6 +114,10 @@ hmError hmServerSocketDispose(hmServerSocket* socket)
 
 static hm_nint hmGetMaxConnectionBacklog()
 {
+    /* We want to avoid using global variables as much as possible, but this setting is very unlikely to change and it's
+       usually system-wide, so it's OK to cache this value once to avoid asking the OS for the backlog size every time a server
+       socket is created. */
+    static hm_atomic_nint cached_max_connection_backlog = 0;
     hm_nint max_connection_backlog = hmAtomicLoad(&cached_max_connection_backlog);
     if (max_connection_backlog) {
         return max_connection_backlog;
