@@ -23,7 +23,7 @@ typedef struct {
     void*        platform_data; /* Platform-specific data is hidden from public headers. */
 } hmServerSocket;
 
-/* A server socket is a special socket which is able to accept new connections and establish communication by
+/* A server socket is a special socket which is able to accept new connections on the given `port` and establish communication by
    creating client sockets on every connection (via hmServerSocketAccept(..)). When created, a server socket is
    already automatically in the listening state, ready to accept new connections. */
 hmError hmCreateServerSocket(
@@ -31,6 +31,8 @@ hmError hmCreateServerSocket(
     hm_nint         port,
     hmServerSocket* in_socket
 );
+/* Blocks the current thread until a new connection is available. If it's available, returns a new socket object
+   which can be used on another thread. */
 hmError hmServerSocketAccept(hmServerSocket* socket, hmAllocator* socket_allocator_opt, hmSocket* out_socket);
 hmError hmServerSocketDispose(hmServerSocket* socket);
 

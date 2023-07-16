@@ -39,7 +39,8 @@ typedef struct {
 
 /* Creates and starts a new thread. The allocator must be thread-safe, as it will allocate/deallocate on different threads.
    `name` is the name of the thread, for debugging purposes. The string will be duplicated because we must ensure it's allocated
-   using a thread-safe allocator; can be HM_NULL. */
+   using a thread-safe allocator; can be HM_NULL.
+   `thread_func` is the thread's entrypoint function which will be called once the thread starts. */
 hmError hmCreateThread(
     hmAllocator*      allocator,
     hmString*         name_opt,
@@ -58,8 +59,10 @@ hmError hmThreadAbort(hmThread* thread);
    Returns HM_ERROR_INVALID_ARGUMENT if `thread` refers to the current thread. Returns HM_ERROR_TIMEOUT if the timeout expired.
    `timeout_ms` must be in the range between HM_THREAD_JOIN_MIN_TIMEOUT_MS and HM_THREAD_JOIN_MAX_TIMEOUT_MS. */
 hmError hmThreadJoin(hmThread* thread, hm_millis timeout_ms);
+/* Returns the current state of the thread. Useful when polling the thread if an abort was requested (see hmThreadAbort(..));
+   also useful in debugging/diagnostics. */
 hmThreadState hmThreadGetState(hmThread* thread);
-/* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose --
+/* Returns the name of the thread, for debugging purposes. The value should be disposed with hmStringDispose(..) --
    it's duplicated because a thread's lifetime is not predictable, it can get disposed while we access the name value. */
 hmError hmThreadGetName(hmThread* thread, hmString* in_string);
 /* Returns the total CPU time for this thread. Useful for debugging CPU load. */

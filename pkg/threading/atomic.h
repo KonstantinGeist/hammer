@@ -21,7 +21,9 @@
 typedef atomic_size_t hm_atomic_nint;
 typedef atomic_bool hm_atomic_bool;
 
+/* Atomically stores `value` at the given memory pointer `object`. */
 #define hmAtomicStore(object, value) atomic_store_explicit(object, value, memory_order_relaxed)
+/* Atomically loads (reads) at the given memory pointer `object` and returns it. */
 #define hmAtomicLoad(object) atomic_load_explicit(object, memory_order_relaxed)
 /* Atomically increments the value and returns the new value. */
 #define hmAtomicIncrement(object) (atomic_fetch_add_explicit(object, 1, memory_order_relaxed) + 1)
