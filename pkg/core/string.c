@@ -33,7 +33,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     }
     hmCopyMemory(content_copy, content, length_with_null);
     in_string->content = content_copy;
-    in_string->allocator = allocator;
+    in_string->allocator_opt = allocator;
     in_string->length = length;
     return HM_OK;
 }
@@ -55,7 +55,7 @@ hmError hmCreateStringFromCStringWithLength(hmAllocator* allocator, const char* 
     hmCopyMemory(content_copy, content, length);
     content_copy[length] = '\0'; /* null terminator */
     in_string->content = content_copy;
-    in_string->allocator = allocator;
+    in_string->allocator_opt = allocator;
     in_string->length = length;
     return HM_OK;
 }
@@ -66,7 +66,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
         return HM_ERROR_INVALID_ARGUMENT;
     }
     in_string->content = (hm_char*)content;
-    in_string->allocator = HM_NULL;
+    in_string->allocator_opt = HM_NULL;
     in_string->length = HM_EMPTY_STRING_LENGTH; /* it will be computed lazily in hmStringGetLength(..) */
     return HM_OK;
 }
@@ -74,15 +74,15 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 hmError hmCreateEmptyStringView(hmString* in_string)
 {
     in_string->content = (hm_char*)"";
-    in_string->allocator = HM_NULL;
+    in_string->allocator_opt = HM_NULL;
     in_string->length = 0;
     return HM_OK;
 }
 
 hmError hmStringDispose(hmString* string)
 {
-    if (string->allocator) {
-        hmFree(string->allocator, string->content);
+    if (string->allocator_opt) {
+        hmFree(string->allocator_opt, string->content);
     }
     return HM_OK;
 }
@@ -141,10 +141,10 @@ hmError hmStringDisposeFunc(void* obj)
     return hmStringDispose(string);
 }
 
-hmComparisonResult hmStringCompareFunc(void* obj1, void* obj2, void* user_data)
+hmComparisonResult hmStringCompareFunc(void* value1, void* value2, void* user_data)
 {
-    hmString* string1 = (hmString*)obj1;
-    hmString* string2 = (hmString*)obj2;
+    hmString* string1 = (hmString*)value1;
+    hmString* string2 = (hmString*)value2;
     return hmStringCompare(string1, string2);
 }
 

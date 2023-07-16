@@ -89,11 +89,12 @@ typedef hmError (*hmDisposeFunc)(void* object);
 #define hmCastPointerToNint(value) ((hm_nint)(void*)value)
 #define hmCastNintToPointer(value, type) ((type)(void*)value)
 
+/* Comparison function and its enum values. Useful in situations where it's required to compare two values; for example,
+   hmArraySort(..) makes use of it. */
 typedef hm_uint8 hmComparisonResult;
-#define HM_COMPARISON_RESULT_LESS ((hmComparisonResult)-1)
-#define HM_COMPARISON_RESULT_EQUAL ((hmComparisonResult)0)
-#define HM_COMPARISON_RESULT_GREATER ((hmComparisonResult)1)
-
-typedef hmComparisonResult (*hmCompareFunc)(void* obj1, void* obj2, void* user_data);
+#define HM_COMPARISON_RESULT_LESS ((hmComparisonResult)-1)   /* The first value is less than the second value (see hmComparisonResult). */
+#define HM_COMPARISON_RESULT_EQUAL ((hmComparisonResult)0)   /* The first value is equal to the second value (see hmComparisonResult). */
+#define HM_COMPARISON_RESULT_GREATER ((hmComparisonResult)1) /* The first value is greater than the second value (see hmComparisonResult). */
+typedef hmComparisonResult (*hmCompareFunc)(void* value1, void* value2, void* user_data);
 
 #endif /* HM_COMMON_H */

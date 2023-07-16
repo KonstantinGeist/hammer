@@ -20,10 +20,10 @@ typedef struct {
     hmCompareFunc compare_func;
 } hmArraySortContext;
 
-static int hmAdaptGlibcSortFuncToHammer(const void* obj1, const void* obj2, void* arg)
+static int hmAdaptGlibcSortFuncToHammer(const void* value1, const void* value2, void* arg)
 {
     hmArraySortContext* context = (hmArraySortContext*)arg;
-    hmComparisonResult result = context->compare_func((void*)obj1, (void*)obj2, context->user_data);
+    hmComparisonResult result = context->compare_func((void*)value1, (void*)value2, context->user_data);
     switch (result) {
         case HM_COMPARISON_RESULT_LESS:
             return -1;

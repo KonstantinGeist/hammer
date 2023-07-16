@@ -72,16 +72,20 @@ hmError hmCreateSystemAllocator(hmAllocator* in_allocator);
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hm_nint memory_limit, hmAllocator* in_allocator);
 /* Creates an allocator which wraps another allocator and additionally keeps track of statistics. */
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator);
-/* Returns the number of allocations. UNSAFE: it may crash if the underlying allocator is not a StatsAllocator. */
+/* Returns the number of allocations.
+   WARNING It may crash if the underlying allocator is not a StatsAllocator. */
 hm_nint hmStatsAllocatorGetTotalCount(hmAllocator* allocator);
+/* Tells the StatsAllocator whether it should start/stop tracking allocations.
+   WARNING It may crash if the underlying allocator is not a StatsAllocator. */
 void hmStatsAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
 /* Creates a special allocator for tests which fails exactly at the N-th allocation. Useful for testing
    how the system recovers from allocation failures. */
 hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_number, hmAllocator* in_allocator);
-/* Returns if the OOM condition is being simulated. UNSAFE: it may crash if the underlying allocator is not an OOMAllocator. */
+/* Returns if the OOM condition is being simulated.
+   WARNING It may crash if the underlying allocator is not an OOMAllocator. */
 hm_nint hmOOMAllocatorIsOutOfMEmory(hmAllocator* allocator);
 /* Can be used to stop tracking the allocation count for areas of code where OOM should not be injected.
-   UNSAFE: it may crash if the underlying allocator is not an OOMAllocator. */
+   WARNING It may crash if the underlying allocator is not an OOMAllocator. */
 void hmOOMAllocatorTrackAllocCount(hmAllocator* allocator, hm_bool value);
 /* Creates an allocator which allocates in the given buffer. The most performant allocator: no heap memory allocation
    whatsoever (if `fallback_allocator` is set to HM_NULL), ideal for building short-lived objects whose lifetime is bound

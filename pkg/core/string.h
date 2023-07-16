@@ -18,9 +18,10 @@
 #include <core/allocator.h>
 
 typedef struct {
-    hm_char*     content;
-    hmAllocator* allocator;
-    hm_nint      length;    /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
+    hm_char*     content;       /* The actual string content. If the `allocator` is specified, the content is owned by the string
+                                  (and disposed in hmStringDispose(..) Otherwise, it's just a view string. */
+    hmAllocator* allocator_opt; /* See `content` above on the implications of this field's optionality. */
+    hm_nint      length;        /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
 } hmString;
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
@@ -43,9 +44,12 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
    Strings are immutable. */
 hmError hmCreateEmptyStringView(hmString* in_string);
+/* Clones the given string as a new instance. */
 hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate);
 hmError hmStringDispose(hmString* string);
+/* A quick way to compare if then given string contains the given content. */
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
+/* Compares two Hammer strings for equality. */
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
 /* Hashes a string. For `salt`, see hmHash(..) */
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
@@ -55,13 +59,15 @@ hm_nint hmStringGetLength(hmString* string);
    because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. */
 #define hmStringGetCString(string) ((const char*)(string)->content)
+/* Returns the internal char arrays of the string for quicker access to the underlying data. */
 #define hmStringGetChars(string) ((string)->content)
+/* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);
 hmError hmStringDisposeFunc(void* obj);
-hmComparisonResult hmStringCompareFunc(void* obj1, void* obj2, void* user_data);
+hmComparisonResult hmStringCompareFunc(void* value1, void* value2, void* user_data);
 
 /* Sometimes containers may need references to strings someone else owns. These hash/equals functions
    allow to operate on string references instead of strings themselves. */

@@ -21,7 +21,7 @@
 
 typedef struct {
     hmAllocator* allocator;
-    hmArray      array;
+    hmArray      array;     /* A string builder is basically an array with additional logic on top. */
 } hmStringBuilder;
 
 /* Creates a string builder, which allows to efficiently construct strings. */
@@ -36,7 +36,7 @@ hmError hmStringBuilderAppendCStrings(hmStringBuilder* string_builder, ...);
 /* Same as hmStringBuilderAppendCString(..), except uses the provided argument for length instead of null termination. */
 hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length);
 /* Creates a string from the string builder.
-   `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
+  `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
    will be reused. */
 hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator, hmString* in_string);
 /* Same as hmStringBuilderToString, except creates a C string. */

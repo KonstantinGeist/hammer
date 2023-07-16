@@ -14,7 +14,7 @@
 #include <core/stringpool.h>
 #include <core/string.h>
 
-hmError hmCreateStringPool(hmAllocator* allocator, hm_nint default_capacity, hm_uint32 hash_salt, hmStringPool* in_pool)
+hmError hmCreateStringPool(hmAllocator* allocator, hm_nint initial_capacity, hm_uint32 hash_salt, hmStringPool* in_pool)
 {
     /* We use a bump pointer allocator for strings for two reasons:
         - we need to somehow store a string as both the key and the value and make sure both of them resolve
@@ -33,7 +33,7 @@ hmError hmCreateStringPool(hmAllocator* allocator, hm_nint default_capacity, hm_
         HM_NULL,                 /* value_dispose_func */
         sizeof(hmString*),
         sizeof(hmString*),
-        default_capacity,
+        initial_capacity,
         HM_HASHMAP_DEFAULT_LOAD_FACTOR,
         hash_salt,
         &in_pool->pool

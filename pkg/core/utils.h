@@ -27,11 +27,17 @@
 hm_nint hmAlignSize(hm_nint size);
 /* Useful for logging when there's no other way to report an error. */
 void hmLog(const char* msg);
+/* Prints a problem and "panics" (abnormally terminates the entire current process) and prints `description`.
+   Useful when errors are not tolerable or during debugging. */
 void hmPanicIf(hm_bool condition, const char* description);
 
 /* We use own wrappers to be able to swap them with some instrumentation and safer variants later. */
+
+/* Copies a chunk of memory from `src` to `dest` using `size` number of bytes. */
 #define hmCopyMemory(dest, src, size) memcpy(dest, src, size)
+/* Compares two values for bitwise equality: -1 means the first value is smaller, 0 means both equal, +1 the first value is greater. */
 #define hmCompareMemory(value1, value2, size) memcmp(value1, value2, size)
+/* Clear all bytes and bits of the memory block starting at `dest` with the given `size`; that is, they are all set to 0. */
 #define hmZeroMemory(dest, size) memset(dest, 0, size)
 
 #endif /* HM_UTILS_H */

@@ -29,11 +29,11 @@ typedef struct {
 /* A string pool allows to save memory by reusing "interned" strings. For example, if something has N identical copies of
    a string, it's possible to share the same object N times instead of having N object copies.
    Useful, for example, for storing names of classes in TypeRef's.
-   `default_capacity` can be set to HM_STRING_POOL_DEFAULT_CAPACITY. Returns HM_ERROR_INVALID_ARGUMENT if it's zero.
+   `initial_capacity` can be set to HM_STRING_POOL_DEFAULT_CAPACITY. Returns HM_ERROR_INVALID_ARGUMENT if it's zero.
    `hash_salt` is the hashing salt unique for the current runtime instance.
     Note that the minimum memory usage of the pool is similar to that of hmCreateBumpPointerAllocator(..) (see)
     which can measure in hundreds of kilobytes. */
-hmError hmCreateStringPool(hmAllocator* allocator, hm_nint default_capacity, hm_uint32 hash_salt, hmStringPool* in_pool);
+hmError hmCreateStringPool(hmAllocator* allocator, hm_nint initial_capacity, hm_uint32 hash_salt, hmStringPool* in_pool);
 hmError hmStringPoolDispose(hmStringPool* pool);
 /* Receives a string view and searches the string in the pool. If it is already present, returns a pointer to the object
    stored in the pool (never try to dispose it manually because it's owned by the pool!) Otherwise, the input string is

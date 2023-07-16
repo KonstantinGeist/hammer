@@ -35,7 +35,7 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array);
 hmError hmGetEnvironmentVariable(hmAllocator* allocator, const char* name, hmString* in_value);
 /* Gets the file path of the currently running executable. The returned string can be used to spawn another instance
    of the running program. The returned file path points to the final executable loaded by the OS. In the case of
-   scripts, the path points to the script handler, not to the script. The returned value points to the actual exectuable
+   scripts, the path points to the script handler, not to the script. The returned value points to the actual executable
    and not a symlink. */
 hmError hmGetExecutableFilePath(hmAllocator* allocator, hmString* in_file_path);
 /* Retrieves the name of the OS, for purely debugging/diagnostics purposes.
