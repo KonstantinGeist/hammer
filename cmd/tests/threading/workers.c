@@ -356,7 +356,7 @@ static void worker_throughput_calculate_times(hm_bool with_tick_count, hm_float6
     }
 }
 
-// Tests enqueueing THROUGHPUT_WORK_ITEM_COUNT elements + works as a benchmark (raw response time in milliseconds,
+// Tests enqueueing THROUGHPUT_WORK_ITEM_COUNT items + works as a benchmark (raw response time in milliseconds,
 // i.e. we measure our system's overhead). Uses all available CPU cores and also additionally subtracts the time
 // it takes to make hmGetTickCount() calls.
 static void test_worker_throughput()

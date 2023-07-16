@@ -62,7 +62,7 @@ typedef hm_uint8 hmError;
                                                   crashing the whole process (at the expense of some slowdown). */
 #define HM_ERROR_INVALID_STATE      ((hmError)3) /* A function is called on an object which is not in the required state. */
 #define HM_ERROR_OUT_OF_RANGE       ((hmError)4) /* An attempt was made to retrieve an item out of its container's range. */
-#define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file, or an element in a hashmap) was not found. */
+#define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file, or an item in a hashmap) was not found. */
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
 #define HM_ERROR_INVALID_DATA       ((hmError)7) /* Invalid binary data found. */
 #define HM_ERROR_LIMIT_EXCEEDED     ((hmError)8) /* A certain limit was exceeded. */

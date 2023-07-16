@@ -90,7 +90,7 @@ hmError hmGetCommandLineArguments(hmAllocator* allocator, hmArray* in_array)
     is_string_builder_initialized = HM_TRUE;
     char buffer[HM_COMMAND_LINE_BUFFER_SIZE];
     ssize_t read_bytes = 0;
-    hm_nint arg_count = 0; /* to skip the first element, which is the executable name we don't need in our API */
+    hm_nint arg_count = 0; /* to skip the first item, which is the executable name we don't need in our API */
     while ((read_bytes = read(file_desc, buffer, HM_COMMAND_LINE_BUFFER_SIZE)) > 0) {
         hm_nint last_i = 0;
         for (hm_nint i = 0; i < read_bytes; i++) {

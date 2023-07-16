@@ -127,7 +127,7 @@ static void test_can_remove_integers_from_hash_map()
         hmError err = hmHashMapPut(&hash_map, &i, &value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd items */
         if (i % 2 == 0) {
             hm_bool removed;
             hmError err = hmHashMapRemove(&hash_map, &i, &removed);
@@ -190,7 +190,7 @@ static void test_hash_map_reports_correct_count()
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
     HM_TEST_ASSERT(hmHashMapGetCount(&hash_map) == ITERATION_COUNT);
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd items */
         if (i % 2 == 0) {
             hm_bool removed;
             hmError err = hmHashMapRemove(&hash_map, &i, &removed);
@@ -217,7 +217,7 @@ static void test_can_put_remove_and_get_strings_from_hash_map_with_dispose_func(
         err = hmHashMapPut(&hash_map, &str_key, &str_value);
         HM_TEST_ASSERT_OK_OR_OOM(err);
     }
-    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd elements */
+    for (hm_nint i = 0; i < ITERATION_COUNT; i++) { /* removes all non-odd items */
         if (i % 2 == 0) {
             hmString str_key;
             hmError err = hmInt32ToString(&allocator, (hm_int32)i, &str_key);
@@ -372,11 +372,11 @@ static void test_hash_map_keys_values_can_be_moved()
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmHashMapGetCount(&src_hash_map) == 0);
     HM_TEST_ASSERT(hmHashMapGetCount(&dest_hash_map) == SMALL_ITERATION_COUNT);
-    hmString nth_element_key;
-    err = hmCreateStringViewFromCString("10", &nth_element_key);
+    hmString nth_item_key;
+    err = hmCreateStringViewFromCString("10", &nth_item_key);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     void* retrieved_dest_value = HM_NULL;
-    err = hmHashMapGetRef(&dest_hash_map, &nth_element_key, &retrieved_dest_value);
+    err = hmHashMapGetRef(&dest_hash_map, &nth_item_key, &retrieved_dest_value);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringEqualsToCString((hmString*)retrieved_dest_value, "20"));
 HM_TEST_ON_FINALIZE

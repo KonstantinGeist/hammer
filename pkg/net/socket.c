@@ -20,9 +20,6 @@ typedef struct {
 
 static hmError hmSocketReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
-    if (!buffer || !out_bytes_read) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmSocketReaderData* data = (hmSocketReaderData*)reader->data;
     return hmSocketRead(data->socket, buffer, size, out_bytes_read);
 }

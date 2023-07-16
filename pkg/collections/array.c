@@ -114,7 +114,7 @@ hmError hmArrayClear(hmArray* array)
         char* item = array->items;
         for (hm_nint i = 0; i < array->count; i++) {
             err = hmMergeErrors(err, array->item_dispose_func_opt(item));
-            /* No hmAddNint because if we were able to add this many elements, it must have been valid. */
+            /* No hmAddNint because if we were able to add this many items, it must have been valid. */
             item += array->item_size;
         }
     }
@@ -122,7 +122,7 @@ hmError hmArrayClear(hmArray* array)
     return err;
 }
 
-hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func, void* user_data)
+hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_expand_func_opt, void* user_data)
 {
     if (!count) {
         return HM_OK;
@@ -147,11 +147,11 @@ hmError hmArrayExpand(hmArray* array, hm_nint count, hmArrayExpandFunc array_exp
         array->capacity = new_capacity;
     }
     /* The following block doesn't need safe math operations, because they were prevalidated when expanding the internal buffer. */
-    if (array_expand_func) {
+    if (array_expand_func_opt) {
         char* item = array->items + array->count * array->item_size;
         for (hm_nint i = 0; i < count; i++) {
             /* NOTE: no need to deallocate array->items on error. */
-            HM_TRY(array_expand_func(array->count + i, item, user_data));
+            HM_TRY(array_expand_func_opt(array->count + i, item, user_data));
             item += array->item_size;
         }
     } else {
