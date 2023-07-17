@@ -14,7 +14,7 @@
 #ifndef HM_PLATFORM_SOCKET_H
 #define HM_PLATFORM_SOCKET_H
 
-#include <net/socket.h>
+#include <net/sockets/socket.h>
 
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,

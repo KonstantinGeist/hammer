@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include <net/serversocket.h>
+#include <net/sockets/serversocket.h>
 #include <core/utils.h>
 #include <threading/atomic.h>
 #include <platform/unix/common.h>

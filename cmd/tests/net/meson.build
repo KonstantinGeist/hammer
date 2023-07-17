@@ -1,3 +1,3 @@
-test_net_sources = files(
-    'sockets.c'
-)
+subdir('sockets')
+
+test_net_sources = test_sockets_sources

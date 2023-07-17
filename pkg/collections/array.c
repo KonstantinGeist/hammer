@@ -52,6 +52,11 @@ hmError hmArrayDispose(hmArray* array)
     return HM_OK;
 }
 
+hmError hmArrayDisposeFunc(void* obj)
+{
+    return hmArrayDispose((hmArray*)obj);
+}
+
 hmError hmArrayAdd(hmArray* array, void* in_value)
 {
     hm_nint new_count = 0;

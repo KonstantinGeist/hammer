@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include <net/socket.h>
+#include <net/sockets/socket.h>
 #include <core/utils.h>
 #include <platform/unix/common.h>
 

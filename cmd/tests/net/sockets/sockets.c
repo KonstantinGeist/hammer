@@ -11,10 +11,10 @@
 *
 * ******************************************************************************/
 
-#include "../common.h"
+#include "../../common.h"
 
-#include <net/socket.h>
-#include <net/serversocket.h>
+#include <net/sockets/socket.h>
+#include <net/sockets/serversocket.h>
 #include <core/environment.h>
 #include <threading/thread.h>
 #include <threading/waitableevent.h>

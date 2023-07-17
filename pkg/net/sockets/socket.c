@@ -11,7 +11,7 @@
 *
 * ******************************************************************************/
 
-#include <net/socket.h>
+#include <net/sockets/socket.h>
 
 typedef struct {
     hmAllocator* allocator;

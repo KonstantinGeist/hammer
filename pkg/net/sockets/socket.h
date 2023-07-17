@@ -31,10 +31,12 @@ hmError hmCreateSocket(
     hmSocket*    in_socket
 );
 /* Sends the given block specified as buffer[0:size) to the socket.
-   `out_bytes_sent_opt` is an optional value which returns how many bytes were actually sent (does it need a retry?) */
+   `out_bytes_sent_opt` is an optional value which returns how many bytes were actually sent (does it need a retry?)
+   The function is synchronous (blocking). */
 hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent_opt);
 /* Reads the given number of bytes, specified as buffer[0:size) to the socket. The number of read bytes can be 0 --
-   that means there's no more data in the socket. */
+   that means there's no more data in the socket.
+   The function is synchronous (blocking). */
 hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read_opt);
 /* Returns the socket as a reader interface, to be able to read from a socket without knowing it's a socket. */
 hmError hmSocketCreateReader(hmSocket* socket, hmAllocator* reader_allocator_opt, hmReader* in_reader);

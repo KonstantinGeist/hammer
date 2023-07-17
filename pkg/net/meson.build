@@ -1,3 +1,4 @@
-net_sources = files(
-    'socket.c'
-)
+subdir('http')
+subdir('sockets')
+
+net_sources = http_sources + sockets_sources
