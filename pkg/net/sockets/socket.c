@@ -39,7 +39,7 @@ static hmError hmSocketReader_close(hmReader* reader)
 hmError hmSocketCreateReader(hmSocket* socket, hmAllocator* reader_allocator_opt, hmReader* in_reader)
 {
     hmAllocator* allocator = reader_allocator_opt ? reader_allocator_opt : socket->allocator;
-    hmSocketReaderData* data = hmAlloc(allocator, sizeof(hmSocketReaderData));
+    hmSocketReaderData* data = (hmSocketReaderData*)hmAlloc(allocator, sizeof(hmSocketReaderData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
     }

@@ -142,7 +142,7 @@ hmError hmGetExecutableFilePath(hmAllocator* allocator, hmString* in_file_path)
     hm_nint buffer_size = HM_EXECUTABLE_FILE_PATH_BUFFER_SIZE;
     char* buffer = HM_NULL;
     for (;;) {
-        buffer = hmAlloc(allocator, buffer_size);
+        buffer = (char*)hmAlloc(allocator, buffer_size);
         if (!buffer) {
             return HM_ERROR_OUT_OF_MEMORY;
         }

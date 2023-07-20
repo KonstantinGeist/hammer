@@ -64,7 +64,7 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_OUT_OF_RANGE       ((hmError)4) /* An attempt was made to retrieve an item out of its container's range. */
 #define HM_ERROR_NOT_FOUND          ((hmError)5) /* Resource (for example, a file, or an item in a hashmap) was not found. */
 #define HM_ERROR_PLATFORM_DEPENDENT ((hmError)6) /* A platform-dependent error occurred. */
-#define HM_ERROR_INVALID_DATA       ((hmError)7) /* Invalid binary data found. */
+#define HM_ERROR_INVALID_DATA       ((hmError)7) /* Invalid data: malformed or corrupted. */
 #define HM_ERROR_LIMIT_EXCEEDED     ((hmError)8) /* A certain limit was exceeded. */
 #define HM_ERROR_TIMEOUT            ((hmError)9) /* An operation timed out. */
 #define HM_ERROR_NOT_IMPLEMENTED    ((hmError)10) /* Operation is not implemented for this platform. */

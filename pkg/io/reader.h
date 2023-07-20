@@ -17,6 +17,8 @@
 #include <core/common.h>
 #include <core/allocator.h>
 
+#define HM_READER_DEFAULT_BUFFER_SIZE (4*1024) /* 4KB */
+
 /* Generic structure for any reader. Readers can be used to read runtime metadata from disk, memory, etc. */
 typedef struct hmReader_ {
     hmError (*read)(struct hmReader_* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read); /* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. */
@@ -25,7 +27,8 @@ typedef struct hmReader_ {
     void*     data;                                            /* Reader-specific data. */
 } hmReader;
 
-/* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. */
+/* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. If `out_bytes_read` is 0, it means there's no
+   more data in the reader. */
 hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read);
 /* Moves the file pointer to a specific offset denoted by `offset`. */
 hmError hmReaderSeek(hmReader* reader, hm_nint offset);
@@ -33,7 +36,7 @@ hmError hmReaderSeek(hmReader* reader, hm_nint offset);
 hmError hmReaderClose(hmReader *reader);
 
 /* Creates a reader which reads from a given fixed memory block and initialized data pointed to by in_reader.
-   Useful when, for example, runtime metadata is constructed in-memory. */
+   Useful when data is constructed in-memory; for example, in tests. */
 hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader);
 
 #endif /* HM_READER_H */

@@ -17,13 +17,15 @@
 #include <core/common.h>
 #include <collections/hashmap.h>
 #include <io/reader.h>
+#include <net/common.h>
 
 typedef struct {
-    hmReader  reader;       /* Stores the reader to:
-                               1) read the body via hmHTTPRequestGetBodyReader(..)
-                               2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
-    hmHashMap headers;      /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
-    hm_bool   close_reader; /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
+    hmReader     reader;       /* Stores the reader to:
+                                  1) read the body via hmHTTPRequestGetBodyReader(..)
+                                  2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
+    hmHashMap    headers;      /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
+    hmHTTPMethod method;
+    hm_bool      close_reader; /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.

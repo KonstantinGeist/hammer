@@ -14,6 +14,8 @@
 #include <net/http/httprequest.h>
 #include <collections/array.h>
 
+static hmError hmParseHTTPHeaders(hmAllocator* allocator, hmReader* reader, hmHashMap* in_headers, hmHTTPMethod* out_method);
+
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
@@ -33,7 +35,11 @@ hmError hmCreateHTTPRequestFromReader(
     ));
     in_request->reader = reader;
     in_request->close_reader = close_reader;
-    return HM_OK;
+    hmError err = hmParseHTTPHeaders(allocator, &in_request->reader, &in_request->headers, &in_request->method);
+    if (err != HM_OK) {
+        err = hmMergeErrors(err, hmHTTPRequestDispose(in_request));
+    }
+    return err;
 }
 
 hmError hmHTTPRequestDispose(hmHTTPRequest* request)
@@ -48,6 +54,11 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
 {
     /* We use the same reader from hmCreateHTTPRequestFromReader(..), except now its position must be at the beginning
-       of the body when the first call to hmHTTPRequestGetBodyReader(..) is made.. */
+       of the body when the first call to hmHTTPRequestGetBodyReader(..) is made. */
     return &request->reader;
+}
+
+static hmError hmParseHTTPHeaders(hmAllocator* allocator, hmReader* reader, hmHashMap* in_headers, hmHTTPMethod* out_method)
+{
+    return HM_OK;
 }
