@@ -31,7 +31,7 @@ There are several conventions to follow:
   described in <core/math.h>, to avoid overflows/underflows. An exception to the rule is iteration variables (as they are bounded).
   Sometimes logic can guarantee a value will never practically overflow -- in that case, a comment must be written to
   explain why no safe math function is used.
-* Priorities: safety > simplicity > performance.
+* Priorities: safety and stability > simplicity > performance.
 * Use the buffer allocator (see hmCreateBufferAllocator(..)) for temporary objects whenever possible.
   Allocate on stack whenever possible.
 * Add _opt suffix to optional values.
@@ -46,6 +46,7 @@ There are several conventions to follow:
   allocate from the global memory allocator in a wasteful way, and/or they make use of global state, and if our 
   own solution would be pretty trivial to implement (with tests!)
 * Avoid arcane abbreviations, use concise, readable language.
+* A line of code should not be longer than 120 characters.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

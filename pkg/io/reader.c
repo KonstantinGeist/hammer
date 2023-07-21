@@ -44,9 +44,6 @@ typedef struct {
 
 static hmError hmMemoryReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
-    if (!buffer || !out_bytes_read) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     if (!size) {
         *out_bytes_read = 0;
         return HM_OK; /* do nothing because we were told to read 0 bytes */
@@ -55,13 +52,13 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buffer, hm_nint size,
     hm_nint bytes_read = size;
     hm_nint offset_with_size = 0;
     HM_TRY(hmAddNint(data->offset, size, &offset_with_size));
-    if (offset_with_size > data->size) {
+    if (offset_with_size > data->size) { /* truncates if there's an attempt to read past the buffer */
         bytes_read = data->size - data->offset;
     }
     hm_nint base_with_offset = 0;
     HM_TRY(hmAddNint(hmCastPointerToNint(data->base), data->offset, &base_with_offset));
     hmCopyMemory(buffer, hmCastNintToPointer(base_with_offset, const char*), bytes_read);
-    data->offset = offset_with_size;
+    data->offset = offset_with_size > data->size ? data->size : offset_with_size;
     *out_bytes_read = bytes_read;
     return HM_OK;
 }
@@ -85,7 +82,7 @@ static hmError hmMemoryReader_close(hmReader* reader)
 
 hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader)
 {
-    if (!mem || !mem_size || !allocator || !in_reader) {
+    if (!mem_size) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmMemoryReaderData* data = hmAlloc(allocator, sizeof(hmMemoryReaderData));

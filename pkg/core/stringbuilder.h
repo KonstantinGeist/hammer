@@ -38,11 +38,13 @@ hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, 
 /* Creates a string from the string builder.
   `allocator` is the allocator to create the string with. If it's not provided, the string builder's allocator
    will be reused. */
-hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator, hmString* in_string);
+hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator_opt, hmString* in_string);
 /* Same as hmStringBuilderToString, except creates a C string. */
-hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator, char** out_c_string);
+hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator_opt, char** out_c_string);
 /* Clears the string builder, allowing the instance to be reused in a different case: the length is reset to 0
    and all the previous content is wiped out. */
 hmError hmStringBuilderClear(hmStringBuilder* string_builder);
+/* Returns the length of the string builder (the number of appended characters). */
+#define hmStringBuilderGetLength(sb) (hmArrayGetCount(&((sb)->array)))
 
 #endif /* HM_STRINGBUILDER_H */

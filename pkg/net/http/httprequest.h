@@ -11,13 +11,13 @@
 *
 * ******************************************************************************/
 
-#ifndef HM_HTTPREQUEST_H
-#define HM_HTTPREQUEST_H
+#ifndef HM_HTTP_REQUEST_H
+#define HM_HTTP_REQUEST_H
 
 #include <core/common.h>
 #include <collections/hashmap.h>
 #include <io/reader.h>
-#include <net/common.h>
+#include <net/http/common.h>
 
 typedef struct {
     hmReader     reader;       /* Stores the reader to:
@@ -42,4 +42,4 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request);
 /* Returns a reader which allows to read the body of the request. */
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request);
 
-#endif /* HM_HTTPREQUEST_H */
+#endif /* HM_HTTP_REQUEST_H */
