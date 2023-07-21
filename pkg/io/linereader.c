@@ -13,6 +13,12 @@
 
 #include <io/linereader.h>
 
+static hm_bool hmLineReaderShouldReadFromSourceReader(hmLineReader* line_reader);
+static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_reader);
+static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed);
+static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed);
+static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_reader);
+
 hmError hmCreateLineReader(
     hmAllocator*  allocator,
     hmReader      source_reader,
@@ -25,7 +31,7 @@ hmError hmCreateLineReader(
     if (!buffer_size) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    HM_TRY(hmCreateStringBuilder(allocator, &in_line_reader->string_builder));
+    HM_TRY(hmCreateStringBuilder(allocator, &in_line_reader->next_line_builder));
     in_line_reader->source_reader = source_reader;
     in_line_reader->allocator = allocator;
     in_line_reader->buffer = buffer;
@@ -39,7 +45,7 @@ hmError hmCreateLineReader(
 
 hmError hmLineReaderDispose(hmLineReader* line_reader)
 {
-    hmError err = hmStringBuilderDispose(&line_reader->string_builder);
+    hmError err = hmStringBuilderDispose(&line_reader->next_line_builder);
     if (line_reader->close_source_reader) {
         err = hmMergeErrors(err, hmReaderClose(&line_reader->source_reader));
     }
@@ -48,73 +54,32 @@ hmError hmLineReaderDispose(hmLineReader* line_reader)
 
 hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line)
 {
+    /* The loop is quite simple:
+       - reads from the source reader into the buffer if necessary (may form the next line if it can't read from the
+         source reader anymore but there's still some stuff remaining in the buffer)
+       - scans the buffer for the next line (i.e. by looking for the first "\n")
+       - appends remaining stuff in the buffer to the next line if the previous scanning of the buffer was not successful
+        (i.e. the next line spans several buffered reading calls because it's large)
+       - repeats until one of the functions above forms a line */
     if (!line_reader->has_more_lines) {
         return HM_ERROR_INVALID_STATE;
     }
-again: {}
-    hmError err = HM_OK;
-    if (line_reader->bytes_read == 0) {
-        hm_nint bytes_read;
-        HM_TRY(hmReaderRead(&line_reader->source_reader, line_reader->buffer, line_reader->buffer_size, &bytes_read));
-        /* To avoid buffer overflows, as we don't know if the underlying reader behaves correctly. */
-        if (bytes_read > line_reader->buffer_size) {
-            return HM_ERROR_OVERFLOW;
-        }
-        if (bytes_read == 0) {
-            line_reader->has_more_lines = HM_FALSE;
-            if (hmStringBuilderGetLength(&line_reader->string_builder) == 0) {
-                return HM_ERROR_INVALID_STATE;
+    while (HM_TRUE) {
+        hm_bool is_line_formed = HM_FALSE;
+        if (hmLineReaderShouldReadFromSourceReader(line_reader)) {
+            HM_TRY(hmLineReaderReadFromSourceReader(line_reader, in_line, &is_line_formed));
+            if (is_line_formed) {
+                break;
             }
-            HM_TRY(hmStringBuilderAppendCStringWithLength(
-                &line_reader->string_builder,
-                line_reader->buffer + line_reader->buffer_index,
-                line_reader->bytes_read - line_reader->buffer_index
-            ));
-            err = hmStringBuilderToString(&line_reader->string_builder, HM_NULL, in_line);
-            hm_bool is_string_initialized = err == HM_OK;
-            err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->string_builder));
-            if (err != HM_OK) {
-                if (is_string_initialized) {
-                    err = hmMergeErrors(err, hmStringDispose(in_line));
-                }
-            }
-            return err;
         }
-        line_reader->bytes_read = bytes_read;
+        HM_TRY(hmLineReaderScanBufferForNextLine(line_reader, in_line, &is_line_formed));
+        if (is_line_formed) {
+            break;
+        }
+        HM_TRY(hmLineReaderAppendRemainingInBufferToNextLine(line_reader));
+        hmLineReaderScheduleMoreReadingFromSourceReader(line_reader);
     }
-    for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
-        if (line_reader->buffer[i] == '\n') {  /* TODO iterate as UTF8 code points */
-            /* No safe math for `line_reader->buffer + line_reader->buffer_index` because the resulting value is
-                bounded to [buffer, buffer + buffer_size). */
-            HM_TRY(hmStringBuilderAppendCStringWithLength(
-                &line_reader->string_builder,
-                line_reader->buffer + line_reader->buffer_index,
-                i - line_reader->buffer_index
-            ));
-            err = hmStringBuilderToString(&line_reader->string_builder, HM_NULL, in_line);
-            hm_bool is_string_initialized = err == HM_OK;
-            err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->string_builder));
-            if (err != HM_OK) {
-                if (is_string_initialized) {
-                    err = hmMergeErrors(err, hmStringDispose(in_line));
-                }
-                return err;
-            }
-            line_reader->buffer_index = i + 1; /* no safe math, because `i + 1` is bounded to [0, bytes_read] */
-            return HM_OK;
-        }
-    }
-    /* The buffer is fully scanned and there's no more newlines found, so append the reminder to the string builder
-        so that the reminder was picked up by the next call to hmLineReaderReadLine(..) */
-    HM_TRY(hmStringBuilderAppendCStringWithLength(
-        &line_reader->string_builder,
-        line_reader->buffer + line_reader->buffer_index,
-        line_reader->bytes_read - line_reader->buffer_index
-    ));
-    line_reader->buffer_index = 0; /* rewinds the buffer's index back to the beginning */
-    line_reader->bytes_read = 0;
-    goto again;
-    return err;
+    return HM_OK;
 }
 
 hmError hmReadAllLines(
@@ -152,6 +117,9 @@ hmError hmReadAllLines(
             HM_FINALIZE;
         }
     }
+    /* According to the specification of hmLineReaderReadLine(..), error code HM_ERROR_INVALID_STATE tells that there
+       are no more lines in the line reader, so we convert it to HM_OK, because it's not actually an error as far as
+       hmReadAllLines(..) is concerned. */
     if (err == HM_ERROR_INVALID_STATE) {
         err = HM_OK;
     }
@@ -163,4 +131,94 @@ HM_ON_FINALIZE
         }
     }
     return err;
+}
+
+static hm_bool hmLineReaderShouldReadFromSourceReader(hmLineReader* line_reader)
+{
+    return line_reader->bytes_read == 0;
+}
+
+static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_reader)
+{
+    line_reader->bytes_read = 0;
+}
+
+/* See hmLineReaderReadLine(..) for the overview of the algorithm. */
+static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_reader)
+{
+    HM_TRY(hmStringBuilderAppendCStringWithLength(
+        &line_reader->next_line_builder,
+        line_reader->buffer + line_reader->buffer_index,
+        line_reader->bytes_read - line_reader->buffer_index
+    ));
+    line_reader->buffer_index = 0;
+    return HM_OK;
+}
+
+/* See hmLineReaderReadLine(..) for the overview of the algorithm. */
+static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
+{
+    *out_is_line_formed = HM_FALSE;
+    hm_nint bytes_read;
+    HM_TRY(hmReaderRead(&line_reader->source_reader, line_reader->buffer, line_reader->buffer_size, &bytes_read));
+    /* A check to avoid buffer overflows, as we don't know if the underlying reader behaves correctly. */
+    if (bytes_read > line_reader->buffer_size) {
+        return HM_ERROR_OVERFLOW;
+    }
+    if (bytes_read == 0) { /* can't read from the buffer anymore => reached the end of the stream */
+        line_reader->has_more_lines = HM_FALSE;
+        if (hmStringBuilderGetLength(&line_reader->next_line_builder) == 0) { /* no more lines => the end */
+            return HM_ERROR_INVALID_STATE;
+        }
+        /* We can't read from the source reader anymore but there's some stuff still found in the buffer => form it as the
+           next (and last) line. */
+        HM_TRY(hmStringBuilderAppendCStringWithLength(
+            &line_reader->next_line_builder,
+            line_reader->buffer + line_reader->buffer_index,
+            line_reader->bytes_read - line_reader->buffer_index
+        ));
+        hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
+        hm_bool is_string_initialized = err == HM_OK;
+        err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->next_line_builder));
+        if (err != HM_OK) {
+            if (is_string_initialized) {
+                err = hmMergeErrors(err, hmStringDispose(in_line));
+            }
+        } else {
+            *out_is_line_formed = HM_TRUE;
+        }
+        return err;
+    }
+    line_reader->bytes_read = bytes_read;
+    return HM_OK;
+}
+
+/* See hmLineReaderReadLine(..) for the overview of the algorithm. */
+static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
+{
+    *out_is_line_formed = HM_FALSE;
+    for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
+        if (line_reader->buffer[i] == '\n') {  /* TODO iterate as UTF8 code points */
+            /* No safe math for `line_reader->buffer + line_reader->buffer_index` because the resulting value is
+                bounded to [buffer, buffer + buffer_size). */
+            HM_TRY(hmStringBuilderAppendCStringWithLength(
+                &line_reader->next_line_builder,
+                line_reader->buffer + line_reader->buffer_index,
+                i - line_reader->buffer_index
+            ));
+            hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
+            hm_bool is_string_initialized = err == HM_OK;
+            err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->next_line_builder));
+            if (err != HM_OK) {
+                if (is_string_initialized) {
+                    err = hmMergeErrors(err, hmStringDispose(in_line));
+                }
+                return err;
+            }
+            line_reader->buffer_index = i + 1; /* no safe math, because `i + 1` is bounded to [0, bytes_read] */
+            *out_is_line_formed = HM_TRUE;
+            return HM_OK;
+        }
+    }
+    return HM_OK;
 }
