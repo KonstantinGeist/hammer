@@ -21,7 +21,7 @@
 
 typedef struct {
     hmAllocator* allocator;
-    hmArray      array;     /* A string builder is basically an array with additional logic on top. */
+    hmArray      array;     /* A string builder is basically an array of chars with additional logic on top. */
 } hmStringBuilder;
 
 /* Creates a string builder, which allows to efficiently construct strings. */
