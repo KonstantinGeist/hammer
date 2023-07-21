@@ -82,9 +82,6 @@ static hmError hmMemoryReader_close(hmReader* reader)
 
 hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader)
 {
-    if (!mem_size) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmMemoryReaderData* data = hmAlloc(allocator, sizeof(hmMemoryReaderData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;

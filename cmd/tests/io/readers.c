@@ -143,6 +143,25 @@ static void test_memory_reader_does_not_allow_to_read_past_buffer()
     }
 }
 
+static void test_can_create_memory_reader_from_empty_string()
+{
+    hmAllocator allocator;
+    hmReader reader;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateMemoryReader(&allocator, "", 0, &reader);
+    HM_TEST_ASSERT_OK(err);
+    char read_buffer[SMALL_READ_BUFFER_SIZE];
+    hm_nint bytes_read;
+    err = hmReaderRead(&reader, read_buffer, sizeof(read_buffer), &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read == 0);
+    err = hmReaderClose(&reader);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_can_create_read_close)
     HM_TEST_RUN(test_memory_can_create_seek_read_close)
@@ -150,4 +169,5 @@ HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer)
     HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests)
     HM_TEST_RUN(test_memory_reader_does_not_allow_to_read_past_buffer)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_create_memory_reader_from_empty_string)
 HM_TEST_SUITE_END()
