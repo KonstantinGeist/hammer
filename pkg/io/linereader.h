@@ -16,6 +16,7 @@
 
 #include <core/string.h>
 #include <core/stringbuilder.h>
+#include <collections/array.h>
 #include <io/reader.h>
 
 typedef struct {
@@ -25,6 +26,8 @@ typedef struct {
     char*           buffer;
     hm_nint         buffer_size;
     hm_nint         buffer_index;
+    hm_nint         bytes_read;
+    hm_bool         has_more_lines;
     hm_bool         close_source_reader;
 } hmLineReader;
 
@@ -38,5 +41,13 @@ hmError hmCreateLineReader(
 );
 hmError hmLineReaderDispose(hmLineReader* line_reader);
 hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line);
+
+hmError hmReadAllLines(
+    hmAllocator* allocator,
+    hmReader     reader,
+    char*        buffer,
+    hm_nint      buffer_size,
+    hmArray*     in_array
+);
 
 #endif /* HM_LINE_READER_H */
