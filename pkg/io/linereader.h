@@ -27,7 +27,7 @@ typedef struct {
     hm_nint         buffer_size;         /* The size of the scratch memory for buffered reading. */
     hm_nint         buffer_index;        /* The current index inside buffered data when scanning the buffer for newlines. */
     hm_nint         bytes_read;          /* The number of read bytes can be less than `buffer_size`, so we remember that. */
-    hm_bool         has_more_lines;      /* Becomes HM_TRUE the first time `source_reader` returns 0 read bytes. */
+    hm_bool         has_more_lines;      /* Becomes HM_FALSE the first time `source_reader` returns 0 read bytes. */
     hm_bool         close_source_reader; /* If true, the source reader will be closed when the line reader is disposed. */
 } hmLineReader;
 

@@ -97,7 +97,7 @@ static void test_line_reader_can_read_several_lines_impl(hm_nint buffer_size, hm
     hmReader memory_reader;
     hm_bool is_lines_initialized = HM_FALSE;
     hmError err = hmCreateMemoryReader(&allocator, c_content, strlen(c_content), &memory_reader);
-    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmArray lines;
     err = hmReadAllLines(&allocator, memory_reader, buffer, buffer_size, &lines);
@@ -164,9 +164,50 @@ static void test_line_reader_expects_empty_reader()
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
+static hmError hmFailingReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
+{
+    return HM_ERROR_PLATFORM_DEPENDENT;
+}
+
+static hmError hmFailingReader_seek(hmReader* reader, hm_nint offset)
+{
+    return HM_ERROR_PLATFORM_DEPENDENT;
+}
+
+static hmError hmFailingReader_close(hmReader* reader)
+{
+    return HM_ERROR_PLATFORM_DEPENDENT;
+}
+
+static hmError hmCreateFailingReader(hmReader* in_reader)
+{
+    in_reader->read = &hmFailingReader_read;
+    in_reader->seek = &hmFailingReader_seek;
+    in_reader->close = &hmFailingReader_close;
+    in_reader->data = HM_NULL;
+    return HM_OK;
+}
+
+static void test_line_reader_propagates_errors_from_source_reader()
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmReader reader;
+    err = hmCreateFailingReader(&reader);
+    HM_TEST_ASSERT_OK(err);
+    char buffer[LINE_READER_BUFFER_SIZE];
+    hmArray lines;
+    err = hmReadAllLines(&allocator, reader, buffer, sizeof(buffer), &lines);
+    HM_TEST_ASSERT(err == HM_ERROR_PLATFORM_DEPENDENT);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_expects_empty_reader)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_propagates_errors_from_source_reader)
 HM_TEST_SUITE_END()
