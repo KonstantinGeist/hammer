@@ -53,9 +53,9 @@ static hm_bool hmIsValidMetadataName(hmString* name)
     if (!length) {
         return HM_FALSE;
     }
-    hm_char* chars = hmStringGetChars(name);
+    char* chars = hmStringGetChars(name);
     for (hm_nint i = 0; i < length; i++) {
-        hm_char c = chars[i];
+        char c = chars[i];
         hm_bool is_digit = (c >= '0' && c <= '9');
         hm_bool is_valid = (c >= 'a' && c <= 'z')
                         || (c >= 'A' && c <= 'Z')

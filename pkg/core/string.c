@@ -27,7 +27,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
     hm_nint length_in_bytes = strlen(content);
     hm_nint length_in_bytes_with_null = 0;
     HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
-    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_in_bytes_with_null);
+    char* content_copy = (char*)hmAlloc(allocator, length_in_bytes_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -48,7 +48,7 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
     }
     hm_nint length_in_bytes_with_null = 0;
     HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
-    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_in_bytes_with_null);
+    char* content_copy = (char*)hmAlloc(allocator, length_in_bytes_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
@@ -65,7 +65,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    in_string->content = (hm_char*)content;
+    in_string->content = (char*)content;
     in_string->allocator_opt = HM_NULL;
     in_string->length_in_bytes = HM_EMPTY_STRING_LENGTH_IN_BYTES; /* it will be computed lazily in hmStringGetLengthInBytes(..) */
     return HM_OK;
@@ -73,7 +73,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 
 hmError hmCreateEmptyStringView(hmString* in_string)
 {
-    in_string->content = (hm_char*)"";
+    in_string->content = (char*)"";
     in_string->allocator_opt = HM_NULL;
     in_string->length_in_bytes = 0;
     return HM_OK;

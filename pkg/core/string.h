@@ -18,7 +18,7 @@
 #include <core/allocator.h>
 
 typedef struct {
-    hm_char*     content;         /* The actual string content. If the `allocator` is specified, the content is owned by the string
+    char*        content;         /* The actual string content. If the `allocator` is specified, the content is owned by the string
                                     (and disposed in hmStringDispose(..) Otherwise, it's just a view string. */
     hmAllocator* allocator_opt;   /* See `content` above on the implications of this field's optionality. */
     hm_nint      length_in_bytes; /* String's length in bytes is remembered to avoid O(n) lookups every time we need a string's length. */
