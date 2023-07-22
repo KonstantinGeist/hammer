@@ -18,10 +18,10 @@
 #include <core/allocator.h>
 
 typedef struct {
-    hm_char*     content;       /* The actual string content. If the `allocator` is specified, the content is owned by the string
-                                  (and disposed in hmStringDispose(..) Otherwise, it's just a view string. */
-    hmAllocator* allocator_opt; /* See `content` above on the implications of this field's optionality. */
-    hm_nint      length;        /* String's length is remembered to avoid O(n) lookups every time we need a string's length. */
+    hm_char*     content;         /* The actual string content. If the `allocator` is specified, the content is owned by the string
+                                    (and disposed in hmStringDispose(..) Otherwise, it's just a view string. */
+    hmAllocator* allocator_opt;   /* See `content` above on the implications of this field's optionality. */
+    hm_nint      length_in_bytes; /* String's length in bytes is remembered to avoid O(n) lookups every time we need a string's length. */
 } hmString;
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
@@ -33,7 +33,7 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
    It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
    the actual string. Empty strings with zero length are allowed.
    Strings are immutable. */
-hmError hmCreateStringFromCStringWithLength(hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string);
+hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const char* content, hm_nint length_in_bytes, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string
    is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived
@@ -54,7 +54,7 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2);
 /* Hashes a string. For `salt`, see hmHash(..) */
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
 /* Returns the length of the string. The length may be computed lazily and is cached inside the string. */
-hm_nint hmStringGetLength(hmString* string);
+hm_nint hmStringGetLengthInBytes(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. */

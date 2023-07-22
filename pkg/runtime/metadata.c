@@ -49,7 +49,7 @@ hmError hmMetadataLoaderEnumMetadata(
 
 static hm_bool hmIsValidMetadataName(hmString* name)
 {
-    hm_nint length = hmStringGetLength(name);
+    hm_nint length = hmStringGetLengthInBytes(name);
     if (!length) {
         return HM_FALSE;
     }

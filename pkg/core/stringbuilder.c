@@ -66,7 +66,7 @@ hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* al
     }
     const char* chars = hmArrayGetRaw(&string_builder->array, const char);
     hm_nint count = hmArrayGetCount(&string_builder->array);
-    return hmCreateStringFromCStringWithLength(allocator_opt, chars, count, in_string);
+    return hmCreateStringFromCStringWithLengthInBytes(allocator_opt, chars, count, in_string);
 }
 
 hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator_opt, char** out_c_string)

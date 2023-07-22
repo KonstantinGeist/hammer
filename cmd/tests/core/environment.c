@@ -47,10 +47,12 @@ static void test_can_get_executable_file_path()
     hmString executable_file_path;
     hmError err = hmGetExecutableFilePath(&allocator, &executable_file_path);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(hmStringGetLength(&executable_file_path) > 0);
-    hm_nint last_part_length = strlen(LAST_EXECUTABLE_FILE_PATH_PART);
-    const char* c_ctring = hmStringGetCString(&executable_file_path) + hmStringGetLength(&executable_file_path) - last_part_length;
-    for(hm_nint i = 0; i < last_part_length; i++) {
+    HM_TEST_ASSERT(hmStringGetLengthInBytes(&executable_file_path) > 0);
+    hm_nint last_part_length_in_bytes = strlen(LAST_EXECUTABLE_FILE_PATH_PART);
+    const char* c_ctring = hmStringGetCString(&executable_file_path)
+                         + hmStringGetLengthInBytes(&executable_file_path)
+                         - last_part_length_in_bytes;
+    for(hm_nint i = 0; i < last_part_length_in_bytes; i++) {
         HM_TEST_ASSERT(LAST_EXECUTABLE_FILE_PATH_PART[i] == c_ctring[i]);
     }
 #ifdef HM_UNIX
@@ -71,7 +73,7 @@ static void test_can_get_os_version()
     hmString os_version;
     hmError err = hmGetOSVersion(&allocator, &os_version);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(hmStringGetLength(&os_version) > 0);
+    HM_TEST_ASSERT(hmStringGetLengthInBytes(&os_version) > 0);
 HM_TEST_ON_FINALIZE
     if (err == HM_OK) {
         err = hmStringDispose(&os_version);

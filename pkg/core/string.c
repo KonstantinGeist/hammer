@@ -17,46 +17,46 @@
 #include <core/math.h>
 #include <core/utils.h>
 
-#define HM_EMPTY_STRING_LENGTH HM_NINT_MAX
+#define HM_EMPTY_STRING_LENGTH_IN_BYTES HM_NINT_MAX
 
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    hm_nint length = strlen(content);
-    hm_nint length_with_null = 0;
-    HM_TRY(hmAddNint(length, 1, &length_with_null));
-    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_with_null);
+    hm_nint length_in_bytes = strlen(content);
+    hm_nint length_in_bytes_with_null = 0;
+    HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
+    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_in_bytes_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    hmCopyMemory(content_copy, content, length_with_null);
+    hmCopyMemory(content_copy, content, length_in_bytes_with_null);
     in_string->content = content_copy;
     in_string->allocator_opt = allocator;
-    in_string->length = length;
+    in_string->length_in_bytes = length_in_bytes;
     return HM_OK;
 }
 
-hmError hmCreateStringFromCStringWithLength(hmAllocator* allocator, const char* content, hm_nint length, hmString* in_string)
+hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const char* content, hm_nint length_in_bytes, hmString* in_string)
 {
     if (!content) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
-    if (!length) { /* special case as an optimization */
+    if (!length_in_bytes) { /* special case as an optimization */
         return hmCreateEmptyStringView(in_string);
     }
-    hm_nint length_with_null = 0;
-    HM_TRY(hmAddNint(length, 1, &length_with_null));
-    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_with_null);
+    hm_nint length_in_bytes_with_null = 0;
+    HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
+    hm_char* content_copy = (hm_char*)hmAlloc(allocator, length_in_bytes_with_null);
     if (!content_copy) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    hmCopyMemory(content_copy, content, length);
-    content_copy[length] = '\0'; /* null terminator */
+    hmCopyMemory(content_copy, content, length_in_bytes);
+    content_copy[length_in_bytes] = '\0'; /* null terminator */
     in_string->content = content_copy;
     in_string->allocator_opt = allocator;
-    in_string->length = length;
+    in_string->length_in_bytes = length_in_bytes;
     return HM_OK;
 }
 
@@ -67,7 +67,7 @@ hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
     }
     in_string->content = (hm_char*)content;
     in_string->allocator_opt = HM_NULL;
-    in_string->length = HM_EMPTY_STRING_LENGTH; /* it will be computed lazily in hmStringGetLength(..) */
+    in_string->length_in_bytes = HM_EMPTY_STRING_LENGTH_IN_BYTES; /* it will be computed lazily in hmStringGetLengthInBytes(..) */
     return HM_OK;
 }
 
@@ -75,7 +75,7 @@ hmError hmCreateEmptyStringView(hmString* in_string)
 {
     in_string->content = (hm_char*)"";
     in_string->allocator_opt = HM_NULL;
-    in_string->length = 0;
+    in_string->length_in_bytes = 0;
     return HM_OK;
 }
 
@@ -107,19 +107,19 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2)
 
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt)
 {
-    return hmHash(string->content, hmStringGetLength(string), salt);
+    return hmHash(string->content, hmStringGetLengthInBytes(string), salt);
 }
 
-hm_nint hmStringGetLength(hmString* string)
+hm_nint hmStringGetLengthInBytes(hmString* string)
 {
-    if (string->length != HM_EMPTY_STRING_LENGTH) {
-        return string->length;
+    if (string->length_in_bytes != HM_EMPTY_STRING_LENGTH_IN_BYTES) {
+        return string->length_in_bytes;
     }
-    /* As HM_EMPTY_STRING_LENGTH is set to HM_NINT_MAX, which is a valid string length, there's a chance that
+    /* As HM_EMPTY_STRING_LENGTH_IN_BYTES is set to HM_NINT_MAX, which is a valid string length, there's a chance that
        it's a false positive and we'll end up recalculating the length over and over again; however, strings of size
        HM_NINT_MAX are extremely unlikely to exist in the wild. */
-    string->length = strlen((const char*)string->content);
-    return string->length;
+    string->length_in_bytes = strlen((const char*)string->content);
+    return string->length_in_bytes;
 }
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt)
