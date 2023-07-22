@@ -131,6 +131,16 @@ static void test_detects_millis_overflow_when_adding()
     HM_TEST_ASSERT(result == HM_MILLIS_MAX);
 }
 
+static void test_detects_underflow_when_subtracting()
+{
+    hm_nint result = 0;
+    hmError err = hmSubNint(3, 1, &result);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(result == 2);
+    err = hmSubNint(1, 3, &result);
+    HM_TEST_ASSERT(err == HM_ERROR_UNDERFLOW);
+}
+
 static void test_abs()
 {
     hm_int32 result = 0;
@@ -153,5 +163,6 @@ HM_TEST_SUITE_BEGIN(math)
     HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_3_nints)
     HM_TEST_RUN_WITHOUT_OOM(test_detects_nint_overflow_when_adding_and_multiplying)
     HM_TEST_RUN_WITHOUT_OOM(test_detects_millis_overflow_when_adding)
+    HM_TEST_RUN_WITHOUT_OOM(test_detects_underflow_when_subtracting)
     HM_TEST_RUN_WITHOUT_OOM(test_abs)
 HM_TEST_SUITE_END()

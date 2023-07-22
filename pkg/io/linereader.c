@@ -12,6 +12,7 @@
 * ******************************************************************************/
 
 #include <io/linereader.h>
+#include <core/math.h>
 
 static hm_bool hmLineReaderShouldReadFromSourceReader(hmLineReader* line_reader);
 static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_reader);
@@ -146,10 +147,13 @@ static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_r
 /* See hmLineReaderReadLine(..) for the overview of the algorithm. */
 static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_reader)
 {
+    hm_nint buffer_with_index_offset = 0, remaining_size = 0;
+    HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
+    HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
     HM_TRY(hmStringBuilderAppendCStringWithLength(
         &line_reader->next_line_builder,
-        line_reader->buffer + line_reader->buffer_index,
-        line_reader->bytes_read - line_reader->buffer_index
+        hmCastNintToPointer(buffer_with_index_offset, char*),
+        remaining_size
     ));
     line_reader->buffer_index = 0;
     return HM_OK;
@@ -172,10 +176,13 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
         }
         /* We can't read from the source reader anymore but there's some stuff still found in the buffer => form it as the
            next (and last) line. */
+        hm_nint buffer_with_index_offset = 0, remaining_size = 0;
+        HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
+        HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
         HM_TRY(hmStringBuilderAppendCStringWithLength(
             &line_reader->next_line_builder,
-            line_reader->buffer + line_reader->buffer_index,
-            line_reader->bytes_read - line_reader->buffer_index
+            hmCastNintToPointer(buffer_with_index_offset, char*),
+            remaining_size
         ));
         hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
         hm_bool is_string_initialized = err == HM_OK;
@@ -199,23 +206,25 @@ static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmSt
     *out_is_line_formed = HM_FALSE;
     for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
         if (line_reader->buffer[i] == '\n') {  /* TODO iterate as UTF8 code points */
-            /* No safe math for `line_reader->buffer + line_reader->buffer_index` because the resulting value is
-                bounded to [buffer, buffer + buffer_size). */
+            hm_nint buffer_with_index_offset = 0, remaining_size = 0;
+            HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
+            HM_TRY(hmSubNint(i, line_reader->buffer_index, &remaining_size));
             HM_TRY(hmStringBuilderAppendCStringWithLength(
                 &line_reader->next_line_builder,
-                line_reader->buffer + line_reader->buffer_index,
-                i - line_reader->buffer_index
+                hmCastNintToPointer(buffer_with_index_offset, char*),
+                remaining_size
             ));
             hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
             hm_bool is_string_initialized = err == HM_OK;
             err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->next_line_builder));
-            if (err != HM_OK) {
+            if (err == HM_OK) {
+                err = hmMergeErrors(err, hmAddNint(i, 1, &line_reader->buffer_index));
+            } else {
                 if (is_string_initialized) {
                     err = hmMergeErrors(err, hmStringDispose(in_line));
                 }
                 return err;
             }
-            line_reader->buffer_index = i + 1; /* no safe math, because `i + 1` is bounded to [0, bytes_read] */
             *out_is_line_formed = HM_TRUE;
             return HM_OK;
         }
