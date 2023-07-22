@@ -152,8 +152,21 @@ static void test_line_reader_ignores_trailing_new_line()
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
+static void test_line_reader_expects_empty_reader()
+{
+    hmAllocator allocator;
+    hmLineReader line_reader;
+    char buffer[LINE_READER_BUFFER_SIZE];
+    create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, sizeof(buffer));
+    hmString string;
+    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
+    dispose_line_reader_and_allocator(&line_reader, &allocator);
+}
+
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_expects_empty_reader)
 HM_TEST_SUITE_END()
