@@ -21,7 +21,7 @@
 
 static char* line_reader_lines[] = {
     "Hello, World!",
-    "Good Bye World!",
+    "Goodbye, World!",
     "Trailing"
 };
 
@@ -130,7 +130,30 @@ static void test_line_reader_can_read_several_lines()
     }
 }
 
+static void test_line_reader_ignores_trailing_new_line()
+{
+    hmAllocator allocator;
+    hmLineReader line_reader;
+    char buffer[LINE_READER_BUFFER_SIZE];
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!\n\n", buffer, sizeof(buffer));
+    hmString string1, string2, string3;
+    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello, World!"));
+    err = hmLineReaderReadLine(&line_reader, &string2);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string2, ""));
+    err = hmLineReaderReadLine(&line_reader, &string3);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
+    err = hmStringDispose(&string1);
+    HM_TEST_ASSERT_OK(err);
+    err = hmStringDispose(&string2);
+    HM_TEST_ASSERT_OK(err);
+    dispose_line_reader_and_allocator(&line_reader, &allocator);
+}
+
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
 HM_TEST_SUITE_END()

@@ -49,13 +49,14 @@ hmError hmLineReaderDispose(hmLineReader* line_reader);
    Reading is buffered, with the scratch memory and the buffer size specified as `buffer` and `buffer_size` in the
    constructor. Lines should be separated by "\n".
    When there are no more lines in the source reader, returns HM_ERROR_INVALID_STATE (by analogy with queues etc.)
-   All reading errors from the underlying source reader are simply propagated. */
+   All reading errors from the underlying source reader are simply propagated.
+   NOTE If the stream ends with a trailing newline (for example, "Hello World\n"), no empty line is returned. */
 hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line);
 
 /* A helper function which creates a temporary line reader from the given `reader`, reads all lines, accumulates them
    in an array, and then disposes of the temporary line reader.
    For the arguments and behavior, see hmCreateLineReader(..) and hmLineReaderReadLine(..)
-   Note: `reader` is never automatically closed by this function. */
+   NOTE `reader` is never automatically closed by this function. */
 hmError hmReadAllLines(
     hmAllocator* allocator,
     hmReader     reader,
