@@ -37,7 +37,7 @@ typedef unsigned char hm_utf8char;
             length -= offset;
         }
 */
-static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset);
+static hmError hmNextRune(const hm_utf8char* content, hm_nint length_in_bytes, hm_rune* out_rune, hm_nint* out_offset);
 #define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 #define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80) /* to be used in hmNextRune(..) */
 
@@ -210,9 +210,9 @@ static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint off
     return HM_OK;
 }
 
-static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset)
+static hmError hmNextRune(const hm_utf8char* content, hm_nint length_in_bytes, hm_rune* out_rune, hm_nint* out_offset)
 {
-    if (!length) {
+    if (!length_in_bytes) {
         *out_rune = 0;
         *out_offset = 0;
         return HM_OK;
@@ -230,7 +230,7 @@ static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* o
         return HM_ERROR_INVALID_DATA;
     }
     const hm_utf8char* content_end;
-    HM_TRY(hmAddOffsetToUTF8Chars(content, length, &content_end));
+    HM_TRY(hmAddOffsetToUTF8Chars(content, length_in_bytes, &content_end));
     /* 2-byte sequence */
     if (ch < 0xE0) {
         if (content >= content_end /* must have 1 valid continuation character */
