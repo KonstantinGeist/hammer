@@ -35,6 +35,8 @@ typedef uint32_t hm_uint32;
 typedef int32_t hm_int32;
 typedef uint64_t hm_uint64;
 typedef uint64_t hm_millis;
+/* Represents a Unicode code point (in the 32-bit range). The name follows Go's convention to make it clear
+   it's different from the usual "char". */
 typedef int32_t hm_rune;
 
 typedef uint8_t hm_bool;

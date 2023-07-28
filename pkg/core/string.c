@@ -23,9 +23,23 @@
    which is not guaranteed to be unsigned. So we define an explicitly signed UTF8 char type. */
 typedef unsigned char hm_utf8char;
 
+/* Allows to iterate over runes in a UTF8 string (UTF8 is a variable-sized encoding so you can't just increment the index
+   when iterating):
+   `out_rune` is the next decoded rune.
+   `out_offset` is the size of the decoded rune which tells the offset for the next rune.
+   If the returned offset is equal to 0, iteration is over.
+
+    The function is to be called in a loop:
+
+        while ((err = hmNextRune(content, length, &rune, &offset)) == HM_OK && offset > 0) {
+            // Use the rune here.
+            content += offset;
+            length -= offset;
+        }
+*/
 static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset);
 #define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
-#define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80)
+#define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80) /* to be used in hmNextRune(..) */
 
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
@@ -208,7 +222,7 @@ static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* o
     }
     /* 2-byte sequence */
     if (utf8_char < 0xE0) {
-        if (content >= content_end /* must have 1 valid continuation characters */
+        if (content >= content_end /* must have 1 valid continuation character */
         || !hmIsContinuationUTF8Char(*content)) {
             return HM_ERROR_INVALID_DATA;
         }

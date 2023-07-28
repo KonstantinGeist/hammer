@@ -356,14 +356,14 @@ static void worker_throughput_calculate_times(hm_bool with_tick_count, hm_float6
     }
 }
 
-// Tests enqueueing THROUGHPUT_WORK_ITEM_COUNT items + works as a benchmark (raw response time in milliseconds,
-// i.e. we measure our system's overhead). Uses all available CPU cores and also additionally subtracts the time
-// it takes to make hmGetTickCount() calls.
+/* Tests enqueueing THROUGHPUT_WORK_ITEM_COUNT items + works as a benchmark (raw response time in milliseconds,
+ * i.e. we measure our system's overhead). Uses all available CPU cores and also additionally subtracts the time
+ * it takes to make hmGetTickCount() calls. */
 static void test_worker_throughput()
 {
     hm_float64 total_time_without_tick_count, average_latency_with_tick_count, total_time_with_tick_count, enqueue_time;
-    worker_throughput_calculate_times(HM_FALSE, HM_NULL, &total_time_without_tick_count, HM_NULL); // with_tick_count = HM_FALSE
-    worker_throughput_calculate_times(HM_TRUE, &average_latency_with_tick_count, &total_time_with_tick_count, &enqueue_time); // with_tick_count = HM_TRUE
+    worker_throughput_calculate_times(HM_FALSE, HM_NULL, &total_time_without_tick_count, HM_NULL); /* with_tick_count = HM_FALSE */
+    worker_throughput_calculate_times(HM_TRUE, &average_latency_with_tick_count, &total_time_with_tick_count, &enqueue_time); /* with_tick_count = HM_TRUE */
     hm_float64 tick_count_ratio = total_time_with_tick_count / total_time_without_tick_count;
     hm_float64 corrected_average_latency = average_latency_with_tick_count / tick_count_ratio;
     hm_float64 enqueue_rate = ((hm_float64)THROUGHPUT_WORK_ITEM_COUNT / enqueue_time) * 1000.0;

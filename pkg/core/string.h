@@ -26,13 +26,15 @@ typedef struct {
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
    internal buffer when the object is disposed of. See also hmCreateStringViewFromCString.
-   Strings are immutable. */
+   Strings are immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
+   certain functions such as hmStringIndexRune(..) do check that it's a valid UTF8 string. */
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string);
 /* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
    as an argument (the null terminator is not included in the length).
    It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
    the actual string. Empty strings with zero length are allowed.
-   Strings are immutable. */
+   Strings are immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
+   certain functions such as hmStringIndexRune(..) do check that it's a valid UTF8 string. */
 hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const char* content, hm_nint length_in_bytes, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
    the string and does not own the internal buffer. The string view will be invalidated after the referenced string
@@ -63,6 +65,9 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
 #define hmStringGetChars(string) ((string)->content)
 /* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
+/* Returns the index (offset into the byte array) of the given rune in `out_index`.
+   If the rune is not found, returns HM_ERROR_NOT_FOUND.
+   If the string is not a well-formed UTF8 string, returns HM_ERROR_INVALID_DATA. */
 hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index);
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);

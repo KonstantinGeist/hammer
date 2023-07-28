@@ -186,7 +186,7 @@ static void test_can_index_rune_in_string_in_cyrillic()
     hmError err = hmCreateStringViewFromCString(STRING_CONTENT_IN_CYRILLIC, &string);
     HM_TEST_ASSERT_OK(err);
     hm_nint index = 0;
-    err = hmStringIndexRune(&string, (hm_rune)0x043C, &index); /* Tries to find character "CYRILLIC SMALL LETTER EM" */
+    err = hmStringIndexRune(&string, (hm_rune)0x043C, &index); /* tries to find character "CYRILLIC SMALL LETTER EM" */
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(index == 14);
 }
