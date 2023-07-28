@@ -19,6 +19,14 @@
 
 #define HM_EMPTY_STRING_LENGTH_IN_BYTES HM_NINT_MAX
 
+/* UTF8-related math expects chars to be unsigned, while our string's content is just `char*` for C interoperability,
+   which is not guaranteed to be unsigned. So we define an explicitly signed UTF8 char type. */
+typedef unsigned char hm_utf8char;
+
+static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset);
+#define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
+#define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80)
+
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
     if (!content) {
@@ -159,4 +167,95 @@ hm_bool hmStringRefEqualsFunc(void* value1, void* value2)
     hmString* string1 = *((hmString**)value1);
     hmString* string2 = *((hmString**)value2);
     return hmStringEquals(string1, string2);
+}
+
+hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index)
+{
+    const hm_utf8char* content = hmStringGetUTF8Chars(string);
+    hm_nint length = hmStringGetLengthInBytes(string);
+    hmError err = HM_OK;
+    hm_rune rune = 0;
+    hm_nint offset = 0, index = 0;
+    while ((err = hmNextRune(content, length, &rune, &offset)) == HM_OK && offset > 0) {
+        if (rune == rune_to_index) {
+            *out_index = index;
+            return HM_OK;
+        }
+        content += offset;
+        index += offset;
+        length -= offset;
+    }
+    return err != HM_OK ? err : HM_ERROR_NOT_FOUND;
+}
+
+static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset) {
+    const hm_utf8char* content_end = content + length;
+    if (!length) {
+        *out_rune = 0;
+        *out_offset = 0;
+        return HM_OK;
+    }
+    hm_rune utf8_char = *content++;
+    /* 1-byte sequence */
+    if (utf8_char < 0x80) {
+        *out_rune = utf8_char;
+        *out_offset = 1;
+        return HM_OK;
+    }
+    /* Must be between 0xC2 and 0xF4 inclusive to be valid. */
+    if ((hm_uint32)(utf8_char - 0xC2) > (0xF4 - 0xC2)) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    /* 2-byte sequence */
+    if (utf8_char < 0xE0) {
+        if (content >= content_end /* must have 1 valid continuation characters */
+        || !hmIsContinuationUTF8Char(*content)) {
+            return HM_ERROR_INVALID_DATA;
+        }
+        *out_rune = ((utf8_char & 0x1F) << 6) | (*content & 0x3F);
+        *out_offset = 2;
+        return HM_OK;
+    }
+    /* 3-byte sequence */
+    if (utf8_char < 0xF0) {
+        if ((content + 1 >= content_end) /* must have 2 valid continuation characters */
+        || !hmIsContinuationUTF8Char(*content)
+        || !hmIsContinuationUTF8Char(content[1])) {
+            return HM_ERROR_INVALID_DATA;
+        }
+        /* Checks for surrogate chars. */
+        if (utf8_char == 0xED && *content > 0x9F) {
+            return HM_ERROR_INVALID_DATA;
+        }
+        utf8_char = ((utf8_char & 0xF) << 12) | ((*content & 0x3F) << 6) | (content[1] & 0x3F);
+        if (utf8_char < 0x800) {
+            return HM_ERROR_INVALID_DATA;
+        }
+        *out_rune = utf8_char;
+        *out_offset = 3;
+        return HM_OK;
+    }
+    /* 4-byte sequence */
+    if ((content + 2 >= content_end) /* must have 3 valid continuation characters */
+    || !hmIsContinuationUTF8Char(*content)
+    || !hmIsContinuationUTF8Char(content[1])
+    || !hmIsContinuationUTF8Char(content[2])) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    /* Is it in the correct range (0x10000 - 0x10FFFF)? */
+    if (utf8_char == 0xF0) {
+        if (*content < 0x90) {
+            return HM_ERROR_INVALID_DATA;
+        }
+    } else if (utf8_char == 0xF4) {
+        if (*content > 0x8F) {
+            return HM_ERROR_INVALID_DATA;
+        }
+    }
+    *out_rune = ((utf8_char & 7) << 18)
+             | ((content[0] & 0x3F) << 12)
+             | ((content[1] & 0x3F) << 6)
+             |  (content[2] & 0x3F);
+    *out_offset = 4;
+    return HM_OK;
 }

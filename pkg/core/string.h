@@ -53,7 +53,7 @@ hm_bool hmStringEqualsToCString(hmString* string, const char* content);
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
 /* Hashes a string. For `salt`, see hmHash(..) */
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
-/* Returns the length of the string. The length may be computed lazily and is cached inside the string. */
+/* Returns the length of the string in bytes. The length may be computed lazily and is cached inside the string. */
 hm_nint hmStringGetLengthInBytes(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
@@ -63,6 +63,7 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
 #define hmStringGetChars(string) ((string)->content)
 /* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
+hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index);
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);

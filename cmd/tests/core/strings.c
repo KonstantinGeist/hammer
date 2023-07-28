@@ -17,6 +17,7 @@
 #include <string.h> /* for strlen(..) */
 
 #define STRING_CONTENT "Hello, World!"
+#define STRING_CONTENT_IN_CYRILLIC "Привет, мир!"
 #define STRING_CONTENT_TRIMMED "Hello"
 #define DIFFERENT_STRING_CONTENT "different string content"
 #define HASH_SALT 34545
@@ -168,6 +169,28 @@ static void test_different_salt_returns_different_string_hashes()
     HM_TEST_ASSERT(hmStringHash(&string, 0) != hmStringHash(&string, 1));
 }
 
+static void test_can_index_rune_in_string_in_latin()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT, &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)'W', &index);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(index == 7);
+}
+
+static void test_can_index_rune_in_string_in_cyrillic()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT_IN_CYRILLIC, &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)0x043C, &index); /* Tries to find character "CYRILLIC SMALL LETTER EM" */
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(index == 14);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -180,4 +203,6 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_with_zero_length)
     HM_TEST_RUN(test_can_create_empty_string_view);
     HM_TEST_RUN(test_different_salt_returns_different_string_hashes);
+    HM_TEST_RUN_WITHOUT_OOM(test_can_index_rune_in_string_in_latin)
+    HM_TEST_RUN_WITHOUT_OOM(test_can_index_rune_in_string_in_cyrillic)
 HM_TEST_SUITE_END()
