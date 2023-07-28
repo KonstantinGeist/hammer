@@ -191,6 +191,26 @@ static void test_can_index_rune_in_string_in_cyrillic()
     HM_TEST_ASSERT(index == 14);
 }
 
+static void test_index_rune_returns_not_found_error()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT_IN_CYRILLIC, &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)'z', &index);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
+}
+
+static void test_index_rune_expects_empty_strings()
+{
+    hmString string;
+    hmError err = hmCreateEmptyStringView(&string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)'z', &index);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -203,6 +223,8 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_with_zero_length)
     HM_TEST_RUN(test_can_create_empty_string_view);
     HM_TEST_RUN(test_different_salt_returns_different_string_hashes);
-    HM_TEST_RUN_WITHOUT_OOM(test_can_index_rune_in_string_in_latin)
-    HM_TEST_RUN_WITHOUT_OOM(test_can_index_rune_in_string_in_cyrillic)
+    HM_TEST_RUN(test_can_index_rune_in_string_in_latin)
+    HM_TEST_RUN(test_can_index_rune_in_string_in_cyrillic)
+    HM_TEST_RUN(test_index_rune_returns_not_found_error)
+    HM_TEST_RUN(test_index_rune_expects_empty_strings)
 HM_TEST_SUITE_END()
