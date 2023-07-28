@@ -202,71 +202,86 @@ hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_
     return err != HM_OK ? err : HM_ERROR_NOT_FOUND;
 }
 
-static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset) {
-    const hm_utf8char* content_end = content + length;
+static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint offset, const hm_utf8char** out_result)
+{
+    hm_nint result;
+    HM_TRY(hmAddNint(hmCastPointerToNint(utf8_chars), offset, &result));
+    *out_result = hmCastNintToPointer(result, const hm_utf8char*);
+    return HM_OK;
+}
+
+static hmError hmNextRune(const hm_utf8char* content, hm_nint length, hm_rune* out_rune, hm_nint* out_offset)
+{
     if (!length) {
         *out_rune = 0;
         *out_offset = 0;
         return HM_OK;
     }
-    hm_rune utf8_char = *content++;
+    hm_int32 ch = *content;
+    HM_TRY(hmAddOffsetToUTF8Chars(content, 1, &content));
     /* 1-byte sequence */
-    if (utf8_char < 0x80) {
-        *out_rune = utf8_char;
+    if (ch < 0x80) {
+        *out_rune = ch;
         *out_offset = 1;
         return HM_OK;
     }
     /* Must be between 0xC2 and 0xF4 inclusive to be valid. */
-    if ((hm_uint32)(utf8_char - 0xC2) > (0xF4 - 0xC2)) {
+    if ((hm_uint32)(ch - 0xC2) > (0xF4 - 0xC2)) { /* no safe math for "- 0xC2" because `ch` is signed and it can safely wrap around */
         return HM_ERROR_INVALID_DATA;
     }
+    const hm_utf8char* content_end;
+    HM_TRY(hmAddOffsetToUTF8Chars(content, length, &content_end));
     /* 2-byte sequence */
-    if (utf8_char < 0xE0) {
+    if (ch < 0xE0) {
         if (content >= content_end /* must have 1 valid continuation character */
         || !hmIsContinuationUTF8Char(*content)) {
             return HM_ERROR_INVALID_DATA;
         }
-        *out_rune = ((utf8_char & 0x1F) << 6) | (*content & 0x3F);
+        *out_rune = ((ch & 0x1F) << 6) | (*content & 0x3F);
         *out_offset = 2;
         return HM_OK;
     }
     /* 3-byte sequence */
-    if (utf8_char < 0xF0) {
-        if ((content + 1 >= content_end) /* must have 2 valid continuation characters */
+    if (ch < 0xF0) {
+        const hm_utf8char* content_plus_one;
+        HM_TRY(hmAddOffsetToUTF8Chars(content, 1, &content_plus_one));
+        if ((content_plus_one >= content_end) /* must have 2 valid continuation characters */
         || !hmIsContinuationUTF8Char(*content)
         || !hmIsContinuationUTF8Char(content[1])) {
             return HM_ERROR_INVALID_DATA;
         }
         /* Checks for surrogate chars. */
-        if (utf8_char == 0xED && *content > 0x9F) {
+        if (ch == 0xED && *content > 0x9F) {
             return HM_ERROR_INVALID_DATA;
         }
-        utf8_char = ((utf8_char & 0xF) << 12) | ((*content & 0x3F) << 6) | (content[1] & 0x3F);
-        if (utf8_char < 0x800) {
+        ch = ((ch & 0xF) << 12) | ((*content & 0x3F) << 6) | (content[1] & 0x3F);
+        if (ch < 0x800) {
             return HM_ERROR_INVALID_DATA;
         }
-        *out_rune = utf8_char;
+        *out_rune = ch;
         *out_offset = 3;
         return HM_OK;
     }
     /* 4-byte sequence */
-    if ((content + 2 >= content_end) /* must have 3 valid continuation characters */
+    const hm_utf8char* content_plus_two;
+    HM_TRY(hmAddOffsetToUTF8Chars(content, 2, &content_plus_two));
+    if ((content_plus_two >= content_end) /* must have 3 valid continuation characters */
     || !hmIsContinuationUTF8Char(*content)
     || !hmIsContinuationUTF8Char(content[1])
     || !hmIsContinuationUTF8Char(content[2])) {
         return HM_ERROR_INVALID_DATA;
     }
     /* Is it in the correct range (0x10000 - 0x10FFFF)? */
-    if (utf8_char == 0xF0) {
+    if (ch == 0xF0) {
         if (*content < 0x90) {
             return HM_ERROR_INVALID_DATA;
         }
-    } else if (utf8_char == 0xF4) {
+    } else if (ch == 0xF4) {
         if (*content > 0x8F) {
             return HM_ERROR_INVALID_DATA;
         }
     }
-    *out_rune = ((utf8_char & 7) << 18)
+    *out_rune = ((ch & 7) << 18)
              | ((content[0] & 0x3F) << 12)
              | ((content[1] & 0x3F) << 6)
              |  (content[2] & 0x3F);
