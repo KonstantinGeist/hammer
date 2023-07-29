@@ -222,6 +222,17 @@ static void test_can_index_last_rune()
     HM_TEST_ASSERT(index == 20);
 }
 
+static void test_index_rune_returns_invalid_data_error()
+{
+    unsigned char chars[3] = { 0xC4, 0x0A, 0x0 };
+    hmString string;
+    hmError err = hmCreateStringViewFromCString((const char*)chars, &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)'!', &index);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_DATA);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -239,4 +250,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_index_rune_returns_not_found_error)
     HM_TEST_RUN(test_index_rune_expects_empty_strings)
     HM_TEST_RUN(test_can_index_last_rune)
+    HM_TEST_RUN(test_index_rune_returns_invalid_data_error)
 HM_TEST_SUITE_END()
