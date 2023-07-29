@@ -211,6 +211,17 @@ static void test_index_rune_expects_empty_strings()
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
 }
 
+static void test_can_index_last_rune()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString(STRING_CONTENT_IN_CYRILLIC, &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint index = 0;
+    err = hmStringIndexRune(&string, (hm_rune)'!', &index);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(index == 20);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -227,4 +238,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_index_rune_in_string_in_cyrillic)
     HM_TEST_RUN(test_index_rune_returns_not_found_error)
     HM_TEST_RUN(test_index_rune_expects_empty_strings)
+    HM_TEST_RUN(test_can_index_last_rune)
 HM_TEST_SUITE_END()
