@@ -47,6 +47,9 @@ There are several conventions to follow:
   own solution would be pretty trivial to implement (with tests!)
 * Avoid arcane abbreviations, use concise, readable language.
 * A line of code should not be longer than 120 characters.
+* We use native integers (hm_nint, which is aliased to uintptr_t) for most uses of integers internally to make sure 
+  our runtime can access as much native resources as possible (their amount is different from platform to platform anyway).
+  However, the language itself should use fixed-size integers to be cross-platform and predictable.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

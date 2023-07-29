@@ -136,6 +136,8 @@ static hm_nint hmGetMaxConnectionBacklog()
         max_connection_backlog = SOMAXCONN;
         HM_FINALIZE;
     }
+    /* The following suppression exists because cppcheck doesn't understand that HM_FINALIZE is a goto. */
+    /* cppcheck-suppress negativeIndex */
     buffer[read_bytes] = 0; /* Null terminator. */
     /* The following suppression exists because cppcheck doesn't understand that HM_FINALIZE is a goto. */
     /* cppcheck-suppress redundantAssignment */

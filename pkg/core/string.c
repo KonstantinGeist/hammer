@@ -38,6 +38,7 @@ typedef unsigned char hm_utf8char;
         }
 */
 static hmError hmNextRune(const hm_utf8char* content, hm_nint length_in_bytes, hm_rune* out_rune, hm_nint* out_offset);
+static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint offset, const hm_utf8char** out_result);
 #define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 #define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80) /* to be used in hmNextRune(..) */
 
@@ -186,18 +187,18 @@ hm_bool hmStringRefEqualsFunc(void* value1, void* value2)
 hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index)
 {
     const hm_utf8char* content = hmStringGetUTF8Chars(string);
-    hm_nint length = hmStringGetLengthInBytes(string);
+    hm_nint length_in_bytes = hmStringGetLengthInBytes(string);
     hmError err = HM_OK;
     hm_rune rune = 0;
     hm_nint offset = 0, index = 0;
-    while ((err = hmNextRune(content, length, &rune, &offset)) == HM_OK && offset > 0) {
+    while ((err = hmNextRune(content, length_in_bytes, &rune, &offset)) == HM_OK && offset > 0) {
         if (rune == rune_to_index) {
             *out_index = index;
             return HM_OK;
         }
-        content += offset;
-        index += offset;
-        length -= offset;
+        HM_TRY(hmAddOffsetToUTF8Chars(content, offset, &content));;
+        HM_TRY(hmAddNint(index, offset, &index));
+        HM_TRY(hmSubNint(length_in_bytes, offset, &length_in_bytes));
     }
     return err != HM_OK ? err : HM_ERROR_NOT_FOUND;
 }
