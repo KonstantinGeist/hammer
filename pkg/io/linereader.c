@@ -205,7 +205,7 @@ static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmSt
 {
     *out_is_line_formed = HM_FALSE;
     for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
-        if (line_reader->buffer[i] == '\n') {  /* TODO iterate as UTF8 code points */
+        if (line_reader->buffer[i] == '\n') {  /* it's safe to look for '\n' in a UTF8 string as it's guaranteed to not be part of a code point by design */
             hm_nint buffer_with_index_offset = 0, remaining_size = 0;
             HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
             HM_TRY(hmSubNint(i, line_reader->buffer_index, &remaining_size));
