@@ -43,6 +43,7 @@ static void run_tests(hmTestSelector* test_selector)
         HM_TEST_RUN_SUITE(math);
         HM_TEST_RUN_SUITE(signatures);
         HM_TEST_RUN_SUITE(modules);
+        HM_TEST_RUN_SUITE(http_requests);
         HM_TEST_RUN_SUITE(sockets);
         /* Tests which rely on timing should come last for the faster tests to fail earlier. */
         HM_TEST_RUN_SUITE(mutexes);
