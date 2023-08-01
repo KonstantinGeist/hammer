@@ -19,9 +19,8 @@
 
 #define HASH_SALT 666
 
-// TODO add CRLF support as by the spec
 static const char* headers =
-    "GET / HTTP/1.1\n"
+    "GET /index HTTP/1.1\n"
     "Host: 127.0.0.1:8080\n"
     "Connection: keep-alive\n"
     "sec-ch-ua: \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"\n"
@@ -59,6 +58,8 @@ static void test_http_request_can_be_created_from_reader()
     );
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_request_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(&request) == HM_HTTP_METHOD_GET);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(&request), "/index"));
 HM_TEST_ON_FINALIZE
     if (is_request_initialized) {
         err = hmHTTPRequestDispose(&request);

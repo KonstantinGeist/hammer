@@ -15,6 +15,7 @@
 #define HM_HTTP_REQUEST_H
 
 #include <core/common.h>
+#include <core/string.h>
 #include <collections/hashmap.h>
 #include <io/reader.h>
 #include <net/http/common.h>
@@ -30,6 +31,7 @@ typedef struct {
                                       1) read the body via hmHTTPRequestGetBodyReader(..)
                                       2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
     hmHashMap    headers;          /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
+    hmString     url;              /* URL of the request. */
     hmHTTPMethod method;           /* The HTTP method: GET, POST, PUT etc. */
     hm_nint      max_header_size;  /* The maximum size of a single HTTP header (both key + value). */
     hm_nint      max_header_count; /* The maximum count of HTTP headers. */
@@ -56,5 +58,7 @@ hmError hmCreateHTTPRequestFromReader(
 hmError hmHTTPRequestDispose(hmHTTPRequest* request);
 /* Returns a reader which allows to read the body of the request. */
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request);
+#define hmHTTPRequestGetMethod(request) ((request)->method)
+#define hmHTTPRequestGetURL(request) (&(request)->url)
 
 #endif /* HM_HTTP_REQUEST_H */

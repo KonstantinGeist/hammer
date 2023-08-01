@@ -41,6 +41,7 @@ static hmError hmNextRune(const hm_utf8char* content, hm_nint length_in_bytes, h
 static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint offset, const hm_utf8char** out_result);
 #define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 #define hmIsContinuationUTF8Char(rune) (((rune) & 0xC0) == 0x80) /* to be used in hmNextRune(..) */
+#define hmIsASCII(ch) ((ch) < 0x80)
 
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
@@ -83,6 +84,22 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
     return HM_OK;
 }
 
+hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint start_index, hm_nint length_in_bytes, hmString* in_string)
+{
+    if (length_in_bytes == 0) {
+        return hmCreateEmptyStringView(in_string);
+    }
+    hm_nint end_index = 0;
+    HM_TRY(hmAddNint(start_index, length_in_bytes, &end_index));
+    hm_nint source_length_in_bytes = hmStringGetLengthInBytes(source);
+    if (start_index >= source_length_in_bytes || end_index > source_length_in_bytes) {
+        return HM_ERROR_OUT_OF_RANGE;
+    }
+    hm_nint source_with_start_index = 0;
+    HM_TRY(hmAddNint(hmCastPointerToNint(source->content), start_index, &source_with_start_index));
+    return hmCreateStringFromCStringWithLengthInBytes(allocator, hmCastNintToPointer(source_with_start_index, const char*), length_in_bytes, in_string);
+}
+
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 {
     if (!content) {
@@ -112,10 +129,45 @@ hmError hmStringDispose(hmString* string)
 
 hm_bool hmStringEqualsToCString(hmString* string, const char* content)
 {
-    if (!content) {
-        return HM_ERROR_INVALID_ARGUMENT;
+    return strcmp(string->content, content) == 0;
+}
+
+hm_bool hmStringStartsWithCStringAndLength(hmString* string, const char* prefix, hm_nint prefix_length)
+{
+    if (prefix_length > hmStringGetLengthInBytes(string)) {
+        return HM_FALSE;
     }
-    return strcmp((const char*)string->content, content) == 0;
+    return strncmp(string->content, prefix, prefix_length) == 0;
+}
+
+hm_bool hmStringEndsWithCStringAndLength(hmString* string, const char* suffix, hm_nint suffix_length)
+{
+    hm_nint string_length_in_bytes = hmStringGetLengthInBytes(string);
+    hm_nint offset = 0;
+    /* If it underflows (`suffix_length > string_length_in_bytes`), returns HM_ERROR_UNDERFLOW.
+       There's a check below for HM_OK which accounts for that. */
+    hmError err = hmSubNint(string_length_in_bytes, suffix_length, &offset);
+    if (err != HM_OK) {
+        return HM_FALSE;
+    }
+    hm_nint c_string_offset = 0;
+    err = hmAddNint(hmCastPointerToNint(string->content), offset, &c_string_offset);
+    if (err != HM_OK) {
+        return HM_FALSE;
+    }
+    return strncmp(hmCastNintToPointer(c_string_offset, const char*), suffix, suffix_length) == 0;
+}
+
+hm_bool hmStringStartsWithCString(hmString* string, const char* prefix)
+{
+    hm_nint prefix_length = strlen(prefix);
+    return hmStringStartsWithCStringAndLength(string, prefix, prefix_length);
+}
+
+hm_bool hmStringEndsWithCString(hmString* string, const char* suffix)
+{
+    hm_nint suffix_length = strlen(suffix);
+    return hmStringEndsWithCStringAndLength(string, suffix, suffix_length);
 }
 
 hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate)
@@ -221,13 +273,13 @@ static hmError hmNextRune(const hm_utf8char* content, hm_nint length_in_bytes, h
     hm_int32 ch = *content;
     HM_TRY(hmAddOffsetToUTF8Chars(content, 1, &content));
     /* 1-byte sequence */
-    if (ch < 0x80) {
+    if (hmIsASCII(ch)) {
         *out_rune = ch;
         *out_offset = 1;
         return HM_OK;
     }
     /* Must be between 0xC2 and 0xF4 inclusive to be valid. */
-    if ((hm_uint32)(ch - 0xC2) > (0xF4 - 0xC2)) { /* no safe math for "- 0xC2" because `ch` is signed and it can safely wrap around */
+    if ((hm_uint32)(ch - 0xC2) > (0xF4 - 0xC2)) { /* no safe math for "- 0xC2" because `ch` is signed and it go below zero */
         return HM_ERROR_INVALID_DATA;
     }
     const hm_utf8char* content_end;

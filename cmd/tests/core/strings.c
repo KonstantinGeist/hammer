@@ -233,6 +233,132 @@ static void test_index_rune_returns_invalid_data_error()
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_DATA);
 }
 
+static void test_can_check_if_starts_with_c_string()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool result = hmStringStartsWithCString(&string, "Hello");
+    HM_TEST_ASSERT(result);
+    result = hmStringStartsWithCString(&string, "Bye");
+    HM_TEST_ASSERT(!result);
+    result = hmStringStartsWithCString(&string, "ByeByeByeByeByeByeByeBye"); /* when the prefix is larger than the string */
+    HM_TEST_ASSERT(!result);
+    result = hmStringStartsWithCString(&string, "");
+    HM_TEST_ASSERT(result);
+    err = hmCreateEmptyStringView(&string);
+    HM_TEST_ASSERT_OK(err);
+    result = hmStringStartsWithCString(&string, "Hello");
+    HM_TEST_ASSERT(!result);
+}
+
+static void test_can_check_if_ends_with_c_string()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &string);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool result = hmStringEndsWithCString(&string, "World!");
+    HM_TEST_ASSERT(result);
+    result = hmStringEndsWithCString(&string, "Void");
+    HM_TEST_ASSERT(!result);
+    result = hmStringEndsWithCString(&string, "WorldWorldWorldWorld"); /* when the suffix is larger than the string */
+    HM_TEST_ASSERT(!result);
+    result = hmStringEndsWithCString(&string, "");
+    HM_TEST_ASSERT(result);
+    err = hmCreateEmptyStringView(&string);
+    HM_TEST_ASSERT_OK(err);
+    result = hmStringEndsWithCString(&string, "World!");
+    HM_TEST_ASSERT(!result);
+}
+
+static void test_can_create_substring()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmString source;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool is_substring_initialized = HM_FALSE;
+    hmString substring;
+    err = hmCreateSubstring(&allocator, &source, 1, 4, &substring);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_substring_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&substring, "ello"));
+HM_TEST_ON_FINALIZE
+    if (is_substring_initialized) {
+        err = hmStringDispose(&substring);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_can_create_substring_with_zero_length()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmString source;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    hmString substring;
+    err = hmCreateSubstring(&allocator, &source, 0, 0, &substring);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&substring, ""));
+HM_TEST_ON_FINALIZE
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_can_create_substring_from_whole_string()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmString source;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    hm_bool is_substring_initialized = HM_FALSE;
+    hmString substring;
+    err = hmCreateSubstring(&allocator, &source, 0, strlen("Hello, World!"), &substring);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_substring_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&substring, "Hello, World!"));
+HM_TEST_ON_FINALIZE
+    if (is_substring_initialized) {
+        err = hmStringDispose(&substring);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_cannot_create_substring_with_out_bounds_index()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmString source;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    hmString substring;
+    err = hmCreateSubstring(&allocator, &source, 100, 1, &substring);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY || err == HM_ERROR_OUT_OF_RANGE);
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_cannot_create_substring_larger_than_string()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmString source;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    hmString substring;
+    err = hmCreateSubstring(&allocator, &source, 0, 100, &substring);
+    HM_TEST_ASSERT(err == HM_ERROR_OUT_OF_MEMORY || err == HM_ERROR_OUT_OF_RANGE);
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -251,4 +377,11 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_index_rune_expects_empty_strings)
     HM_TEST_RUN(test_can_index_last_rune)
     HM_TEST_RUN(test_index_rune_returns_invalid_data_error)
+    HM_TEST_RUN(test_can_check_if_starts_with_c_string)
+    HM_TEST_RUN(test_can_check_if_ends_with_c_string)
+    HM_TEST_RUN(test_can_create_substring)
+    HM_TEST_RUN(test_can_create_substring_with_zero_length)
+    HM_TEST_RUN(test_can_create_substring_from_whole_string)
+    HM_TEST_RUN(test_cannot_create_substring_with_out_bounds_index)
+    HM_TEST_RUN(test_cannot_create_substring_larger_than_string)
 HM_TEST_SUITE_END()

@@ -15,7 +15,7 @@
 #define HM_HTTP_COMMON_H
 
 typedef int hmHTTPMethod;
-#define HM_HTTP_METHOD_GET ((HM_HTTP_METHOD)0)
-#define HM_HTTP_METHOD_POST ((HM_HTTP_METHOD)1)
+#define HM_HTTP_METHOD_GET ((hmHTTPMethod)0)
+#define HM_HTTP_METHOD_POST ((hmHTTPMethod)1)
 
 #endif /* HM_HTTP_COMMON_H */

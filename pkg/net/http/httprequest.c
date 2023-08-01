@@ -17,6 +17,12 @@
 #include <collections/array.h>
 #include <io/linereader.h>
 
+#define HM_GET_METHOD_LITERAL "GET "
+#define HM_GET_METHOD_LITERAL_SIZE 4
+
+#define HM_HTTP_VERSION_LITERAL " HTTP/1.1"
+#define HM_HTTP_VERSION_LITERAL_SIZE 9
+
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request);
 
 hmError hmCreateHTTPRequestFromReader(
@@ -38,16 +44,21 @@ hmError hmCreateHTTPRequestFromReader(
         hash_salt,
         &in_request->headers
     );
-    if (err != HM_OK && close_reader) {
-        return hmMergeErrors(err, hmReaderClose(&reader));
+    if (err != HM_OK) {
+        if (close_reader) {
+            err = hmMergeErrors(err, hmReaderClose(&reader));
+        }
+        return err;
     }
     in_request->allocator = allocator;
     in_request->reader = reader;
     in_request->close_reader = close_reader;
+    in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_header_size = max_header_size;
     in_request->max_header_count = max_header_count;
+    err = hmCreateEmptyStringView(&in_request->url);
     /* Must be called the last because depends on the fields above. */
-    err = hmHTTPRequestParseRequestLineAndHeaderFields(in_request);
+    err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
     if (err != HM_OK) {
         err = hmMergeErrors(err, hmHTTPRequestDispose(in_request));
     }
@@ -60,6 +71,7 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
     if (request->close_reader) {
         err = hmMergeErrors(err, hmReaderClose(&request->reader));
     }
+    err = hmMergeErrors(err, hmStringDispose(&request->url));
     return hmMergeErrors(err, hmHashMapDispose(&request->headers));
 }
 
@@ -72,8 +84,26 @@ hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
 
 static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
 {
-    
-    return HM_OK;
+    /* HTTP method. */
+    if (hmStringStartsWithCStringAndLength(string, HM_GET_METHOD_LITERAL, HM_GET_METHOD_LITERAL_SIZE)) {
+        request->method = HM_HTTP_METHOD_GET;
+    } else {
+        return HM_ERROR_INVALID_DATA;
+    }
+    /* HTTP version. */
+    if (!hmStringEndsWithCStringAndLength(string, HM_HTTP_VERSION_LITERAL, HM_HTTP_VERSION_LITERAL_SIZE)) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    hm_nint url_length = 0;
+    HM_TRY(hmSubNint(hmStringGetLengthInBytes(string), HM_GET_METHOD_LITERAL_SIZE, &url_length));
+    HM_TRY(hmSubNint(url_length, HM_HTTP_VERSION_LITERAL_SIZE, &url_length));
+    return hmCreateSubstring(
+        request->allocator,
+        string,
+        HM_GET_METHOD_LITERAL_SIZE,
+        url_length,
+        &request->url
+    );
 }
 
 static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
@@ -113,11 +143,8 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     hmString string;
     while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
         err = hmHTTPRequestParseRequestLineOrHeaderField(request, &string, header_count);
-        err = hmMergeErrors(err, hmStringDispose(&string)); /* in the HTTP request, derived strings (if any) are retained, not the original one */
-        err = hmMergeErrors(err, hmAddNint(header_count, 1, &header_count));
-        if (err != HM_OK) {
-            break;
-        }
+        HM_TRY_OR_FINALIZE(err, hmMergeErrors(err, hmStringDispose(&string))); /* in the HTTP request, derived strings (if any) are retained, not the original one */
+        HM_TRY_OR_FINALIZE(err, hmMergeErrors(err, hmAddNint(header_count, 1, &header_count)));
     }
     /* According to the specification of hmLineReaderReadLine(..), error code HM_ERROR_INVALID_STATE tells that there
        are no more lines in the line reader, so we convert it to HM_OK, because it's not actually an error as far as
@@ -128,5 +155,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     if (err == HM_OK && header_count == 0) { /* no headers at all */
         err = HM_ERROR_INVALID_DATA;
     }
+    /* cppcheck-suppress unknownMacro */
+HM_ON_FINALIZE
     return hmMergeErrors(err, hmLineReaderDispose(&line_reader));
 }

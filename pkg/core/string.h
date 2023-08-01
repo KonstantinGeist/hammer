@@ -43,6 +43,8 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
    String views should not be disposed, but it should be safe to try to dispose them.
    Strings are immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
+/* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`. */
+hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint start_index, hm_nint length_in_bytes, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
    Strings are immutable. */
 hmError hmCreateEmptyStringView(hmString* in_string);
@@ -51,6 +53,16 @@ hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in
 hmError hmStringDispose(hmString* string);
 /* A quick way to compare if then given string contains the given content. */
 hm_bool hmStringEqualsToCString(hmString* string, const char* content);
+/* Returns true of the string starts with the given C string literal and length.
+   Behavior is undefined if `prefix_length` is greater than the actual length of `prefix`. */
+hm_bool hmStringStartsWithCStringAndLength(hmString* string, const char* prefix, hm_nint prefix_length);
+/* Returns true of the string ends with the given C string literal and length.
+   Behavior is undefined if `suffix_length` is greater than the actual length of `suffix`. */
+hm_bool hmStringEndsWithCStringAndLength(hmString* string, const char* suffix, hm_nint suffix_length);
+/* Returns true of the string starts with the given C string literal. Implemented via hmStringStartsWithCStringAndLengthInBytes(..) */
+hm_bool hmStringStartsWithCString(hmString* string, const char* prefix);
+/* Returns true of the string ends with the given C string literal. Implemented via hmStringEndsWithCStringAndLengthInBytes(..) */
+hm_bool hmStringEndsWithCString(hmString* string, const char* suffix);
 /* Compares two Hammer strings for equality. */
 hm_bool hmStringEquals(hmString* string1, hmString* string2);
 /* Hashes a string. For `salt`, see hmHash(..) */
