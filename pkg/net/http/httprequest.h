@@ -58,6 +58,12 @@ hmError hmCreateHTTPRequestFromReader(
 hmError hmHTTPRequestDispose(hmHTTPRequest* request);
 /* Returns a reader which allows to read the body of the request. */
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request);
+/* Returns a header by its key and index (there can be several values per key) in `header_ref`.
+   The value is owned by the HTTP request object and should not be disposed. The value is valid as long as the HTTP request
+   object is valid.
+   Returns HM_ERROR_NOT_FOUND if no value is found for the given key/index pair.
+   Usually, for most headers, zero can be passed for `index`. */
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint index, hmString** header_ref);
 #define hmHTTPRequestGetMethod(request) ((request)->method)
 #define hmHTTPRequestGetURL(request) (&(request)->url)
 

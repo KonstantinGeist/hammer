@@ -111,7 +111,7 @@ hmError hmHashMapGet(hmHashMap* hash_map, void* key, void* in_value);
 /* Same as hmHashMapGet, except returns a pointer to the value directly as stored in the hashmap, instead of copying it by value.
    The value is stable after rehashing. However, the reference will point to a different object if a different value is
    put in the map with the same key. The reference is invalidated when it's removed from the map.
-   Useful as in optimizations, as it avoids copying/moving the object, which can be also updated in-place. */
+   Useful in optimizations, as it avoids copying/moving the object, which can be also updated in-place. */
 hmError hmHashMapGetRef(hmHashMap* hash_map, void* key, void** in_value);
 /* Returns true if an item by the given key is found in the hashmap. Similar to checking hmHashMapGet(..) for HM_ERROR_NOT_FOUND,
    except it's more performant and has a simpler interface. */

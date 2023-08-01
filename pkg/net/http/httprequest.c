@@ -56,7 +56,7 @@ hmError hmCreateHTTPRequestFromReader(
     in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_header_size = max_header_size;
     in_request->max_header_count = max_header_count;
-    err = hmCreateEmptyStringView(&in_request->url);
+    err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
     /* Must be called the last because depends on the fields above. */
     err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
     if (err != HM_OK) {
@@ -80,6 +80,17 @@ hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
     /* We use the same reader from hmCreateHTTPRequestFromReader(..), except now its position must be at the beginning
        of the body when the first call to hmHTTPRequestGetBodyReader(..) is made. */
     return &request->reader;
+}
+
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint index, hmString** header_ref)
+{
+    void* values_ref;
+    HM_TRY(hmHashMapGetRef(&request->headers, key, &values_ref));
+    if (index >= hmArrayGetCount((hmArray*)values_ref)) {
+        return HM_ERROR_NOT_FOUND;
+    }
+    *header_ref = hmArrayGetRaw((hmArray*)values_ref, hmString);
+    return HM_OK;
 }
 
 static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
@@ -108,7 +119,56 @@ static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
 
 static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
 {
-    return HM_OK;
+    hm_nint colon_index;
+    hmError err = hmStringIndexRune(string, (hm_rune)':', &colon_index);
+    if (err == HM_ERROR_NOT_FOUND) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    hmString key, value;
+    void* values_ref;
+    hmArray values;
+    hm_bool is_key_owned_by_function = HM_FALSE,
+            is_value_owned_by_function = HM_FALSE,
+            is_values_owned_by_function = HM_FALSE;
+    HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, 0, colon_index, &key));
+    is_key_owned_by_function = HM_TRUE;
+    hm_nint value_start_index = 0, value_length = 0;
+    HM_TRY_OR_FINALIZE(err, hmAddNint(colon_index, 1, &value_start_index));
+    HM_TRY_OR_FINALIZE(err, hmSubNint(hmStringGetLengthInBytes(string), colon_index, &value_length));
+    HM_TRY_OR_FINALIZE(err, hmSubNint(value_length, 1, &value_length));
+    HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, value_start_index, value_length, &value));
+    is_value_owned_by_function = HM_TRUE;
+    err = hmHashMapGetRef(&request->headers, &key, &values_ref);
+    if (err == HM_ERROR_NOT_FOUND) {
+        err = HM_OK;
+        HM_TRY_OR_FINALIZE(err, hmCreateArray(
+            request->allocator,
+            sizeof(hmString),
+            HM_ARRAY_DEFAULT_CAPACITY,
+            &hmStringDisposeFunc,
+            &values
+        ));
+        is_values_owned_by_function = HM_TRUE;
+        HM_TRY_OR_FINALIZE(err, hmHashMapPut(&request->headers, &key, &values));
+        is_key_owned_by_function = HM_FALSE;
+        is_values_owned_by_function = HM_FALSE;
+        HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&request->headers, &key, &values_ref));
+    } else if (err != HM_OK) {
+        HM_FINALIZE;
+    }
+    HM_TRY_OR_FINALIZE(err, hmArrayAdd((hmArray*)values_ref, &value));
+    is_value_owned_by_function = HM_FALSE;
+HM_ON_FINALIZE
+    if (is_key_owned_by_function) {
+        err = hmMergeErrors(err, hmStringDispose(&key));
+    }
+    if (is_value_owned_by_function) {
+        err = hmMergeErrors(err, hmStringDispose(&value));
+    }
+    if (is_values_owned_by_function) {
+        err = hmMergeErrors(err, hmArrayDispose(&values));
+    }
+    return err;
 }
 
 static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request, hmString* string, hm_nint header_count)

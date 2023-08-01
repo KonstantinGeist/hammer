@@ -19,7 +19,7 @@
 
 #define HASH_SALT 666
 
-static const char* headers =
+static const char* get_headers =
     "GET /index HTTP/1.1\n"
     "Host: 127.0.0.1:8080\n"
     "Connection: keep-alive\n"
@@ -36,7 +36,7 @@ static const char* headers =
     "Accept-Encoding: gzip, deflate, br\n"
     "Accept-Language: en-US,en;q=0.9\n";
 
-static void test_http_request_can_be_created_from_reader()
+static void test_http_request_with_headers_and_func(const char* headers, void(*func)(hmHTTPRequest* request))
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
@@ -58,14 +58,37 @@ static void test_http_request_can_be_created_from_reader()
     );
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_request_initialized = HM_TRUE;
-    HM_TEST_ASSERT(hmHTTPRequestGetMethod(&request) == HM_HTTP_METHOD_GET);
-    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(&request), "/index"));
+    func(&request);
 HM_TEST_ON_FINALIZE
     if (is_request_initialized) {
         err = hmHTTPRequestDispose(&request);
         HM_TEST_ASSERT_OK(err);
     }
     HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+    hmString key;
+    hmError err = hmCreateStringViewFromCString("Accept-Encoding", &key);
+    HM_TEST_ASSERT_OK(err);
+    hmString* value_ref;
+    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, " gzip, deflate, br"));
+    err = hmHTTPRequestGetHeaderRef(request, &key, 1, &value_ref);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
+    err = hmCreateStringViewFromCString("Non-Existing-Key", &key);
+    HM_TEST_ASSERT_OK(err);
+    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
+}
+
+static void test_http_request_can_be_created_from_reader()
+{
+    test_http_request_with_headers_and_func(get_headers, &test_http_request_can_be_created_from_valid_headers_func);
 }
 
 HM_TEST_SUITE_BEGIN(http_requests)
