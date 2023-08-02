@@ -359,6 +359,19 @@ static void test_cannot_create_substring_larger_than_string()
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_can_compare_if_string_starts_or_ends_with_c_string()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringStartsWithCStringAndLength(&string, "Hello,", 6));
+    HM_TEST_ASSERT(hmStringEndsWithCStringAndLength(&string, " World!", 7));
+    HM_TEST_ASSERT(!hmStringStartsWithCStringAndLength(&string, "World!", 7));
+    HM_TEST_ASSERT(!hmStringEndsWithCStringAndLength(&string, "Hello,", 6));
+    HM_TEST_ASSERT(hmStringStartsWithCStringAndLength(&string, "", 0));
+    HM_TEST_ASSERT(hmStringEndsWithCStringAndLength(&string, "", 0));
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -384,4 +397,5 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_substring_from_whole_string)
     HM_TEST_RUN(test_cannot_create_substring_with_out_bounds_index)
     HM_TEST_RUN(test_cannot_create_substring_larger_than_string)
+    HM_TEST_RUN(test_can_compare_if_string_starts_or_ends_with_c_string)
 HM_TEST_SUITE_END()
