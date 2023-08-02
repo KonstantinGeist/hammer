@@ -117,12 +117,21 @@ static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
     );
 }
 
+/* Parses header fields in the following formats:
+   - "Key: Value"
+   - "Key:Value"
+   Anything else is not supported. */
 static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
 {
-    hm_nint colon_index;
+    hm_nint colon_index = 0;
     hmError err = hmStringIndexRune(string, (hm_rune)':', &colon_index);
     if (err == HM_ERROR_NOT_FOUND) {
         return HM_ERROR_INVALID_DATA;
+    }
+    hm_nint whitespace_index = 0;
+    HM_TRY(hmAddNint(colon_index, 1, &whitespace_index));
+    if (whitespace_index >= hmStringGetLengthInBytes(string) || hmStringGetChars(string)[whitespace_index] != ' ') {
+        whitespace_index = colon_index;
     }
     hmString key, value;
     void* values_ref;
@@ -133,8 +142,8 @@ static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
     HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, 0, colon_index, &key));
     is_key_owned_by_function = HM_TRUE;
     hm_nint value_start_index = 0, value_length = 0;
-    HM_TRY_OR_FINALIZE(err, hmAddNint(colon_index, 1, &value_start_index));
-    HM_TRY_OR_FINALIZE(err, hmSubNint(hmStringGetLengthInBytes(string), colon_index, &value_length));
+    HM_TRY_OR_FINALIZE(err, hmAddNint(whitespace_index, 1, &value_start_index));
+    HM_TRY_OR_FINALIZE(err, hmSubNint(hmStringGetLengthInBytes(string), whitespace_index, &value_length));
     HM_TRY_OR_FINALIZE(err, hmSubNint(value_length, 1, &value_length));
     HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, value_start_index, value_length, &value));
     is_value_owned_by_function = HM_TRUE;

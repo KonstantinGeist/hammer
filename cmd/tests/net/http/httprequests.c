@@ -77,7 +77,7 @@ static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPReque
     hmString* value_ref;
     err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, " gzip, deflate, br"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "gzip, deflate, br"));
     err = hmHTTPRequestGetHeaderRef(request, &key, 1, &value_ref);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
     err = hmCreateStringViewFromCString("Non-Existing-Key", &key);

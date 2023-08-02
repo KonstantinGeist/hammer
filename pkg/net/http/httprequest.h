@@ -39,12 +39,16 @@ typedef struct {
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.
+   HTTP requests in Hammer don't strictly follow the HTTP standard:
+   1) optional whitespaces: only 1 whitespace between ":" and header values allowed;
+   2) UTF8 assumed.
+   HTTP requests support only basic interoperability with other systems and browsers.
    If `close_reader` is true, the reader is closed inside hmHTTPRequestDispose(..) automatically, or if this function fails
    (basically, this HTTP request object owns the reader).
   `max_header_size` specifies the maximum size of a single HTTP header (both key + value). Returns HM_ERROR_LIMIT_EXCEEDED
    if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_SIZE.
   `max_header_count` specifies the maximum count of HTTP headers. Returns HM_ERROR_LIMIT_EXCEEDED if it's exceeded.
-  It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT.
+   It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT.
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary. */
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
