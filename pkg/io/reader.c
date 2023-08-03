@@ -96,3 +96,87 @@ hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint me
     in_reader->data = data;
     return HM_OK;
 }
+
+hm_nint hmMemoryReaderGetPosition(hmReader* reader)
+{
+    hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
+    return data->offset;
+}
+
+/* ******************* */
+/*    LimitedReader.   */
+/* ******************* */
+
+typedef struct {
+    hmAllocator* allocator;           /* The allocator which governs this structure's lifetime. */
+    hmReader     source_reader;       /* The source reader. */
+    hm_nint      limit_in_bytes;      /* The Read(..) operation should return HM_ERROR_LIMIT_EXCEEDED if the number of read bytes exceeds this value. */
+    hm_nint      total_bytes_read;    /* The amount of bytes read so far. Compared to `limit_in_bytes. */
+    hm_bool      close_source_reader; /* If true, closes the source reader automatically when the limited reader is closed. */
+} hmLimitedReaderData;
+
+static hmError hmLimitedReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
+{
+    if (!size) {
+        *out_bytes_read = 0;
+        return HM_OK; /* do nothing because we were told to read 0 bytes */
+    }
+    hmLimitedReaderData* data = (hmLimitedReaderData*)reader->data;
+    if (data->total_bytes_read >= data->limit_in_bytes) { /* immediately fail if we hit the limit in a previous call; ">=" instead of "==" is just in case */
+        return HM_ERROR_LIMIT_EXCEEDED;
+    }
+    hm_nint remaning_bytes_to_read = 0;
+    HM_TRY(hmSubNint(data->limit_in_bytes, data->total_bytes_read, &remaning_bytes_to_read));
+    if (remaning_bytes_to_read < size) {
+        size = remaning_bytes_to_read;
+    }
+    HM_TRY(hmReaderRead(&data->source_reader, buffer, size, out_bytes_read));
+    if (*out_bytes_read > size) { /* ill-behaving source reader */
+        return HM_ERROR_INVALID_STATE;
+    }
+    HM_TRY(hmAddNint(data->total_bytes_read, *out_bytes_read, &data->total_bytes_read));
+    if (data->total_bytes_read >= data->limit_in_bytes) { /* we just exceeded the limit; ">=" instead of "==" is just in case */
+        return HM_ERROR_LIMIT_EXCEEDED;
+    }
+    return HM_OK;
+}
+
+static hmError hmLimitedReader_seek(hmReader* reader, hm_nint offset)
+{
+    return HM_ERROR_NOT_IMPLEMENTED;
+}
+
+static hmError hmLimitedReader_close(hmReader* reader)
+{
+    hmLimitedReaderData* data = (hmLimitedReaderData*)reader->data;
+    hmError err = HM_OK;
+    if (data->close_source_reader) {
+        err = hmReaderClose(&data->source_reader);
+    }
+    hmFree(data->allocator, (char*)reader->data);
+    return err;
+}
+
+hmError hmCreateLimitedReader(
+   hmAllocator* allocator,
+   hmReader     source_reader,
+   hm_bool      close_source_reader,
+   hm_nint      limit_in_bytes,
+   hmReader*    in_reader
+)
+{
+    hmLimitedReaderData* data = hmAlloc(allocator, sizeof(hmLimitedReaderData));
+    if (!data) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    data->allocator = allocator;
+    data->source_reader = source_reader;
+    data->close_source_reader = close_source_reader;
+    data->limit_in_bytes = limit_in_bytes;
+    data->total_bytes_read = 0;
+    in_reader->read = &hmLimitedReader_read;
+    in_reader->seek = &hmLimitedReader_seek;
+    in_reader->close = &hmLimitedReader_close;
+    in_reader->data = data;
+    return HM_OK;
+}

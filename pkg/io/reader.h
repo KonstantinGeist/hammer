@@ -38,5 +38,19 @@ hmError hmReaderClose(hmReader *reader);
 /* Creates a reader which reads from a given fixed memory block and initialized data pointed to by in_reader.
    Useful when data is constructed in-memory; for example, in tests. */
 hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint mem_size, hmReader* in_reader);
+/* Gets the current position of the memory reader. Useful for tests.
+   The behavior is undefined if `reader` is not a memory reader. */
+hm_nint hmMemoryReaderGetPosition(hmReader* reader);
+/* Creates a limited reader which wraps another reader `source_reader` and returns HM_ERROR_LIMIT_EXCEEDED if more than
+   `limit_in_bytes` bytes is read from `source_reader`. Useful when limiting the amount of data to be read, for example
+   in the web context. If `close_source_reader` is set to true, the limited reader closes the buffer it wraps when it's
+   closed itself. Returns HM_ERROR_NOT_IMPLEMENTED for hmReaderSeek(..) */
+hmError hmCreateLimitedReader(
+   hmAllocator* allocator,
+   hmReader     source_reader,
+   hm_bool      close_source_reader,
+   hm_nint      limit_in_bytes,
+   hmReader*    in_reader
+);
 
 #endif /* HM_READER_H */
