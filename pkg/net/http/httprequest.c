@@ -29,8 +29,7 @@ hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
     hm_bool        close_reader,
-    hm_nint        max_header_size,
-    hm_nint        max_header_count,
+    hm_nint        max_headers_size,
     hm_uint32      hash_salt,
     hmHTTPRequest* in_request
 )
@@ -54,8 +53,7 @@ hmError hmCreateHTTPRequestFromReader(
     in_request->reader = reader;
     in_request->close_reader = close_reader;
     in_request->method = HM_HTTP_METHOD_GET;
-    in_request->max_header_size = max_header_size;
-    in_request->max_header_count = max_header_count;
+    in_request->max_headers_size = max_headers_size;
     err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
     /* Must be called the last because depends on the fields above. */
     err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
@@ -160,12 +158,14 @@ static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
         is_values_owned_by_function = HM_TRUE;
         HM_TRY_OR_FINALIZE(err, hmHashMapPut(&request->headers, &key, &values));
         is_key_owned_by_function = HM_FALSE;
+        /* cppcheck-suppress redundantAssignment */
         is_values_owned_by_function = HM_FALSE;
         HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&request->headers, &key, &values_ref));
     } else if (err != HM_OK) {
         HM_FINALIZE;
     }
     HM_TRY_OR_FINALIZE(err, hmArrayAdd((hmArray*)values_ref, &value));
+    /* cppcheck-suppress redundantAssignment */
     is_value_owned_by_function = HM_FALSE;
 HM_ON_FINALIZE
     if (is_key_owned_by_function) {
@@ -182,32 +182,38 @@ HM_ON_FINALIZE
 
 static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request, hmString* string, hm_nint header_count)
 {
-    hmError err = HM_OK;
-    if (hmStringGetLengthInBytes(string) > request->max_header_size || header_count > request->max_header_count) {
-        return HM_ERROR_LIMIT_EXCEEDED;
-    }
     hm_bool is_request_line = header_count == 0;
     if (is_request_line) {
-        return hmMergeErrors(err, hmParseHTTPRequestLine(request, string));
+        return hmParseHTTPRequestLine(request, string);
     } else {
-        return hmMergeErrors(err, hmParseHTTPHeaderField(request, string));
+        return hmParseHTTPHeaderField(request, string);
     }
 }
 
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request)
 {
-    /* Reusing the default max header size limit as the internal buffer size for reading. */
-    char buffer[HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_SIZE];
-    hmLineReader line_reader;
-    HM_TRY(hmCreateLineReader(
+    hmReader limited_reader;
+    HM_TRY(hmCreateLimitedReader(
         request->allocator,
         request->reader,
-        HM_FALSE, /* close_source_reader = HM_FALSE */
+        HM_FALSE, /* close_source_reader = HM_TRUE, because the reader will continue to be used after parsing the headers */
+        request->max_headers_size,
+        &limited_reader
+    ));
+    /* Reusing the default max header size limit as the internal buffer size for reading. */
+    char buffer[HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE];
+    hmLineReader line_reader;
+    hm_bool is_line_reader_initialized = HM_FALSE;
+    hmError err = HM_OK;
+    HM_TRY_OR_FINALIZE(err, hmCreateLineReader(
+        request->allocator,
+        limited_reader,
+        HM_FALSE, /* close_source_reader = HM_TRUE, same as above */
         buffer,
         sizeof(buffer),
         &line_reader
     ));
-    hmError err = HM_OK;
+    is_line_reader_initialized = HM_TRUE;
     hm_nint header_count = 0;
     hmString string;
     while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
@@ -226,5 +232,8 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     }
     /* cppcheck-suppress unknownMacro */
 HM_ON_FINALIZE
-    return hmMergeErrors(err, hmLineReaderDispose(&line_reader));
+    if (is_line_reader_initialized) {
+        err = hmMergeErrors(err, hmLineReaderDispose(&line_reader));
+    }
+    return hmMergeErrors(err, hmReaderClose(&limited_reader));
 }

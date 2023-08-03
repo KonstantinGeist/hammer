@@ -51,8 +51,7 @@ static void test_http_request_with_headers_and_func(const char* headers, void(*f
         &allocator,
         memory_reader,
         HM_TRUE,
-        HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_SIZE,
-        HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT,
+        HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
         HASH_SALT,
         &request
     );

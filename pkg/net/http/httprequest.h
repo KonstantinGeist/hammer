@@ -20,10 +20,8 @@
 #include <io/reader.h>
 #include <net/http/common.h>
 
-/* See hmCreateHTTPRequestFromReader(..). The limit is close to that of popular web servers. */
-#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_SIZE (8*1024)
-/* See hmCreateHTTPRequestFromReader(..). The limit is close to that of popular web servers. */
-#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT 100
+/* See hmCreateHTTPRequestFromReader(..). */
+#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024)
 
 typedef struct {
     hmAllocator* allocator;
@@ -33,8 +31,7 @@ typedef struct {
     hmHashMap    headers;          /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
     hmString     url;              /* URL of the request. */
     hmHTTPMethod method;           /* The HTTP method: GET, POST, PUT etc. */
-    hm_nint      max_header_size;  /* The maximum size of a single HTTP header (both key + value). */
-    hm_nint      max_header_count; /* The maximum count of HTTP headers. */
+    hm_nint      max_headers_size; /* The maximum size of all HTTP headers. */
     hm_bool      close_reader;     /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
 } hmHTTPRequest;
 
@@ -45,8 +42,8 @@ typedef struct {
    HTTP requests support only basic interoperability with other systems and browsers.
    If `close_reader` is true, the reader is closed inside hmHTTPRequestDispose(..) automatically, or if this function fails
    (basically, this HTTP request object owns the reader).
-  `max_header_size` specifies the maximum size of a single HTTP header (both key + value). Returns HM_ERROR_LIMIT_EXCEEDED
-   if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_SIZE.
+  `max_headers_size` specifies the maximum size of all HTTP headers in the request (both key + value). Returns HM_ERROR_LIMIT_EXCEEDED
+   if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE.
   `max_header_count` specifies the maximum count of HTTP headers. Returns HM_ERROR_LIMIT_EXCEEDED if it's exceeded.
    It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT.
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary. */
@@ -54,8 +51,7 @@ hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
     hm_bool        close_reader,
-    hm_nint        max_header_size,
-    hm_nint        max_header_count,
+    hm_nint        max_headers_size,
     hm_uint32      hash_salt,
     hmHTTPRequest* in_request
 );
