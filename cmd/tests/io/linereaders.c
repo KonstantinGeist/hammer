@@ -113,9 +113,6 @@ static void test_line_reader_can_read_several_lines_impl(hm_nint buffer_size, hm
         hmString* raw = hmArrayGetRaw(&lines, hmString);
         for (hm_nint i = 0; i < line_count; i++) {
             HM_TEST_ASSERT(hmStringEqualsToCString(&raw[i], line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))]));
-            /*if (!hmStringEqualsToCString(&raw[i], line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))])) {
-                printf("MISMATCH: %s != %s\n", hmStringGetChars(&raw[i]), line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))]);
-            }*/
         }
     HM_TEST_ON_FINALIZE
         err = hmReaderClose(&memory_reader);
