@@ -49,6 +49,37 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_http_request_with_error_and_func(const char* headers, hmError expected_error)
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmReader memory_reader;
+    hmError err = hmCreateMemoryReader(&allocator, headers, strlen(headers), &memory_reader);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmHTTPRequest request;
+    hm_bool is_request_initialized = HM_FALSE;
+    err = hmCreateHTTPRequestFromReader(
+        &allocator,
+        memory_reader,
+        HM_TRUE,
+        HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
+        HASH_SALT,
+        &request
+    );
+    HM_TEST_ASSERT_ERROR_OR_OOM(expected_error, err);
+    if (err == HM_OK) {
+        is_request_initialized = HM_TRUE;
+    }
+HM_TEST_ON_FINALIZE
+    if (is_request_initialized) {
+        err = hmHTTPRequestDispose(&request);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPRequest* request)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
@@ -126,7 +157,16 @@ static void test_http_request_supports_multiple_values_under_single_key()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_multiple_values_under_single_key_func);
 }
 
+static void test_http_request_rejects_malformed_requests()
+{
+    test_http_request_with_error_and_func("RUN /index HTTP/1.1", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error_and_func("GET /index HTTP/11.1", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error_and_func("", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error_and_func("GET", HM_ERROR_INVALID_DATA);
+}
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
+    HM_TEST_RUN(test_http_request_rejects_malformed_requests)
 HM_TEST_SUITE_END()
