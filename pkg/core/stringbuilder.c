@@ -22,20 +22,20 @@
 
 hmError hmCreateStringBuilder(hmAllocator* allocator, hmStringBuilder* in_string_builder)
 {
-    HM_TRY(hmCreateArray(allocator, sizeof(char), HM_ARRAY_DEFAULT_CAPACITY, HM_NULL, &in_string_builder->array));
+    HM_TRY(hmCreateArray(allocator, sizeof(char), HM_ARRAY_DEFAULT_CAPACITY, HM_NULL, &in_string_builder->buffer));
     in_string_builder->allocator = allocator;
     return HM_OK;
 }
 
 hmError hmStringBuilderDispose(hmStringBuilder* string_builder)
 {
-    return hmArrayDispose(&string_builder->array);
+    return hmArrayDispose(&string_builder->buffer);
 }
 
 hmError hmStringBuilderAppendCString(hmStringBuilder* string_builder, const char* c_string)
 {
     hm_nint length = strlen(c_string);
-    return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
+    return hmArrayAddRange(&string_builder->buffer, (void*)c_string, length);
 }
 
 hmError hmStringBuilderAppendCStrings(hmStringBuilder* string_builder, ...)
@@ -56,7 +56,7 @@ hmError hmStringBuilderAppendCStrings(hmStringBuilder* string_builder, ...)
 
 hmError hmStringBuilderAppendCStringWithLength(hmStringBuilder* string_builder, const char* c_string, hm_nint length)
 {
-    return hmArrayAddRange(&string_builder->array, (void*)c_string, length);
+    return hmArrayAddRange(&string_builder->buffer, (void*)c_string, length);
 }
 
 hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* allocator_opt, hmString* in_string)
@@ -64,9 +64,40 @@ hmError hmStringBuilderToString(hmStringBuilder* string_builder, hmAllocator* al
     if (!allocator_opt) {
         allocator_opt = string_builder->allocator;
     }
-    const char* chars = hmArrayGetRaw(&string_builder->array, const char);
-    hm_nint count = hmArrayGetCount(&string_builder->array);
-    return hmCreateStringFromCStringWithLengthInBytes(allocator_opt, chars, count, in_string);
+    const char* buffer_chars = hmArrayGetRaw(&string_builder->buffer, const char);
+    hm_nint buffer_length_in_bytes = hmArrayGetCount(&string_builder->buffer);
+    return hmCreateStringFromCStringWithLengthInBytes(allocator_opt, buffer_chars, buffer_length_in_bytes, in_string);
+}
+
+hmError hmStringBuilderToStringWithStartIndexAndLengthInBytes(
+   hmStringBuilder* string_builder,
+   hmAllocator*     allocator_opt,
+   hm_nint          start_index,
+   hm_nint          length_in_bytes,
+   hmString*        in_string
+)
+{
+    if (!allocator_opt) {
+        allocator_opt = string_builder->allocator;
+    }
+    const char* buffer_chars = hmArrayGetRaw(&string_builder->buffer, const char);
+    hm_nint buffer_length_in_bytes = hmArrayGetCount(&string_builder->buffer);
+    if (start_index >= buffer_length_in_bytes) {
+        return HM_ERROR_OUT_OF_RANGE;
+    }
+    hm_nint end_index = 0;
+    HM_TRY(hmAddNint(start_index, length_in_bytes, &end_index));
+    if (end_index > buffer_length_in_bytes) {
+        return HM_ERROR_OUT_OF_RANGE;
+    }
+    hm_nint chars_with_start_index_address = 0;
+    HM_TRY(hmAddNint(hmCastPointerToNint(buffer_chars), start_index, &chars_with_start_index_address));
+    return hmCreateStringFromCStringWithLengthInBytes(
+        allocator_opt,
+        hmCastNintToPointer(chars_with_start_index_address, char*),
+        length_in_bytes,
+        in_string
+    );
 }
 
 hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* allocator_opt, char** out_c_string)
@@ -74,21 +105,21 @@ hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* a
     if (!allocator_opt) {
         allocator_opt = string_builder->allocator;
     }
-    const char* content = hmArrayGetRaw(&string_builder->array, const char);
-    hm_nint length = hmArrayGetCount(&string_builder->array);
-    hm_nint length_with_null = 0;
-    HM_TRY(hmAddNint(length, 1, &length_with_null));
-    char* content_copy = (char*)hmAlloc(allocator_opt, length_with_null);
-    if (!content_copy) {
+    const char* buffer_chars = hmArrayGetRaw(&string_builder->buffer, const char);
+    hm_nint length_in_bytes = hmArrayGetCount(&string_builder->buffer);
+    hm_nint length_in_bytes_with_null = 0;
+    HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
+    char* result = (char*)hmAlloc(allocator_opt, length_in_bytes_with_null);
+    if (!result) {
         return HM_ERROR_OUT_OF_MEMORY;
     }
-    hmCopyMemory(content_copy, content, length);
-    content_copy[length] = '\0'; /* null terminator */
-    *out_c_string = content_copy;
+    hmCopyMemory(result, buffer_chars, length_in_bytes);
+    result[length_in_bytes] = '\0'; /* null terminator */
+    *out_c_string = result;
     return HM_OK;
 }
 
 hmError hmStringBuilderClear(hmStringBuilder* string_builder)
 {
-    return hmArrayClear(&string_builder->array);
+    return hmArrayClear(&string_builder->buffer);
 }

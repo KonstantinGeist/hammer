@@ -171,7 +171,7 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
     }
     if (bytes_read == 0) { /* can't read from the buffer anymore => reached the end of the stream */
         line_reader->has_more_lines = HM_FALSE;
-        if (hmStringBuilderGetLength(&line_reader->next_line_builder) == 0) { /* no more lines => the end */
+        if (hmStringBuilderGetLengthInBytes(&line_reader->next_line_builder) == 0) { /* no more lines => the end */
             return HM_ERROR_INVALID_STATE;
         }
         /* We can't read from the source reader anymore but there's some stuff still found in the buffer => form it as the
