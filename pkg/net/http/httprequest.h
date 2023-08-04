@@ -44,8 +44,6 @@ typedef struct {
    (basically, this HTTP request object owns the reader).
   `max_headers_size` specifies the maximum size of all HTTP headers in the request (both key + value). Returns HM_ERROR_LIMIT_EXCEEDED
    if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE.
-  `max_header_count` specifies the maximum count of HTTP headers. Returns HM_ERROR_LIMIT_EXCEEDED if it's exceeded.
-   It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADER_COUNT.
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary. */
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,

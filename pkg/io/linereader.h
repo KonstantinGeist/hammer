@@ -33,7 +33,8 @@ typedef struct {
 
 /* A line reader takes a `source_reader` and progressively reads lines separated by newlines from it via hmLineReaderReadLine(..) (see).
    If `close_source_reader` is true, `source_reader` is automatically closed when the line reader is disposed.
-  `buffer` and `buffer_size` specify the internal scratch buffer which will be used. Useful for tests and to control memory usage. */
+  `buffer` and `buffer_size` specify the internal scratch buffer which will be used. Useful for tests and to control memory usage.
+   Recognizes CRLF newlines (\r\n) as well. */
 hmError hmCreateLineReader(
     hmAllocator*  allocator,
     hmReader      source_reader,

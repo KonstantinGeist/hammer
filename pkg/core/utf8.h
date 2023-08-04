@@ -17,7 +17,7 @@
 #include <core/common.h>
 
 /* UTF8-related math expects chars to be unsigned, while our string's content is just `char*` for C interoperability,
-   which is not guaranteed to be unsigned. So we define an explicitly signed UTF8 char type.
+   which is not guaranteed to be unsigned. So we define an explicitly unsigned UTF8 char type.
    See hmNextUTF8Rune(..) */
 typedef unsigned char hm_utf8char;
 
@@ -34,6 +34,8 @@ typedef unsigned char hm_utf8char;
             content += offset;
             length -= offset;
         }
+    
+    Returns HM_ERROR_INVALID_DATA if `content` doesn't contain a valid UTF8 string.
 */
 hmError hmNextUTF8Rune(const hm_utf8char* content, hm_nint length_in_bytes, hm_rune* out_rune, hm_nint* out_offset);
 
