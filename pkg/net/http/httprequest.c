@@ -87,7 +87,8 @@ hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint
     if (index >= hmArrayGetCount((hmArray*)values_ref)) {
         return HM_ERROR_NOT_FOUND;
     }
-    *header_ref = hmArrayGetRaw((hmArray*)values_ref, hmString);
+    hmString* values = hmArrayGetRaw((hmArray*)values_ref, hmString);
+    *header_ref = &values[index];
     return HM_OK;
 }
 

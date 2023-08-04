@@ -38,7 +38,8 @@ typedef struct {
 /* Creates an HTTP request by reading from the given `reader`.
    HTTP requests in Hammer don't strictly follow the HTTP standard:
    1) optional whitespaces: only 1 whitespace between ":" and header values allowed;
-   2) UTF8 assumed.
+   2) UTF8 assumed;
+   3) supports both \n and \r\n (CRLF) newlines.
    HTTP requests support only basic interoperability with other systems and browsers.
    If `close_reader` is true, the reader is closed inside hmHTTPRequestDispose(..) automatically, or if this function fails
    (basically, this HTTP request object owns the reader).
