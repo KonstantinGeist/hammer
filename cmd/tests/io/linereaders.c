@@ -113,6 +113,9 @@ static void test_line_reader_can_read_several_lines_impl(hm_nint buffer_size, hm
         hmString* raw = hmArrayGetRaw(&lines, hmString);
         for (hm_nint i = 0; i < line_count; i++) {
             HM_TEST_ASSERT(hmStringEqualsToCString(&raw[i], line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))]));
+            /*if (!hmStringEqualsToCString(&raw[i], line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))])) {
+                printf("MISMATCH: %s != %s\n", hmStringGetChars(&raw[i]), line_reader_lines[i % (sizeof(line_reader_lines) / sizeof(char*))]);
+            }*/
         }
     HM_TEST_ON_FINALIZE
         err = hmReaderClose(&memory_reader);
@@ -137,7 +140,7 @@ static void test_line_reader_can_read_several_lines()
     }
 }
 
-/*static void test_line_reader_ignores_trailing_new_line()
+static void test_line_reader_ignores_trailing_new_line()
 {
     hmAllocator allocator;
     hmLineReader line_reader;
@@ -157,7 +160,7 @@ static void test_line_reader_can_read_several_lines()
     err = hmStringDispose(&string2);
     HM_TEST_ASSERT_OK(err);
     dispose_line_reader_and_allocator(&line_reader, &allocator);
-}*/
+}
 
 static void test_line_reader_expects_empty_reader()
 {
@@ -214,7 +217,7 @@ static void test_line_reader_propagates_errors_from_source_reader()
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
-    //HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_expects_empty_reader)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_propagates_errors_from_source_reader)
 HM_TEST_SUITE_END()

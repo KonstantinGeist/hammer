@@ -82,7 +82,7 @@ hmError hmStringBuilderToStringWithStartIndexAndLengthInBytes(
     }
     const char* buffer_chars = hmArrayGetRaw(&string_builder->buffer, const char);
     hm_nint buffer_length_in_bytes = hmArrayGetCount(&string_builder->buffer);
-    if (start_index >= buffer_length_in_bytes) {
+    if (start_index > buffer_length_in_bytes) {
         return HM_ERROR_OUT_OF_RANGE;
     }
     hm_nint end_index = 0;
