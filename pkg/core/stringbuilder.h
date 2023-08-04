@@ -55,5 +55,7 @@ hmError hmStringBuilderToCString(hmStringBuilder* string_builder, hmAllocator* a
 hmError hmStringBuilderClear(hmStringBuilder* string_builder);
 /* Returns the length of the string builder in bytes (the number of appended characters). */
 #define hmStringBuilderGetLengthInBytes(sb) (hmArrayGetCount(&((sb)->buffer)))
+/* Returns the underlying buffer of the string builder for quicker retrieval. */
+#define hmStringBuilderGetChars(sb) (hmArrayGetRaw(&((sb)->buffer), const char))
 
 #endif /* HM_STRINGBUILDER_H */

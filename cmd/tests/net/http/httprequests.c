@@ -20,21 +20,21 @@
 #define HASH_SALT 666
 
 static const char* get_headers =
-    "GET /index HTTP/1.1\n"
-    "Host: 127.0.0.1:8080\n"
-    "Connection: keep-alive\n"
-    "sec-ch-ua: \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"\n"
-    "sec-ch-ua-mobile: ?0\n"
-    "sec-ch-ua-platform: \"Linux\"\n"
-    "Upgrade-Insecure-Requests: 1\n"
-    "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\n"
-    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\n"
-    "Sec-Fetch-Site: none\n"
-    "Sec-Fetch-Mode: navigate\n"
-    "Sec-Fetch-User: ?1\n"
-    "Sec-Fetch-Dest: document\n"
-    "Accept-Encoding: gzip, deflate, br\n"
-    "Accept-Language: en-US,en;q=0.9\n";
+    "GET /index HTTP/1.1\r\n"
+    "Host: 127.0.0.1:8080\r\n"
+    "Connection: keep-alive\r\n"
+    "sec-ch-ua: \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"114\", \"Google Chrome\";v=\"114\"\r\n"
+    "sec-ch-ua-mobile: ?0\r\n"
+    "sec-ch-ua-platform: \"Linux\"\r\n"
+    "Upgrade-Insecure-Requests: 1\r\n"
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36\r\n"
+    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\n"
+    "Sec-Fetch-Site: none\r\n"
+    "Sec-Fetch-Mode: navigate\r\n"
+    "Sec-Fetch-User: ?1\r\n"
+    "Sec-Fetch-Dest: document\r\n"
+    "Accept-Encoding: gzip, deflate, br\r\n"
+    "Accept-Language: en-US,en;q=0.9\r\n";
 
 static void test_http_request_with_headers_and_func(const char* headers, void(*func)(hmHTTPRequest* request))
 {

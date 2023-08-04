@@ -144,17 +144,34 @@ static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_r
     line_reader->bytes_read = 0;
 }
 
+static hmError hmLineReaderAppendToNextLineBuilder(hmLineReader* line_reader, char* chars, hm_nint length_in_bytes)
+{
+    return hmStringBuilderAppendCStringWithLength(&line_reader->next_line_builder, chars, length_in_bytes);
+}
+
+static hmError hmLineReaderCreateLineFromNextLineBuilder(hmLineReader* line_reader, hmString* in_line)
+{
+    hm_nint line_length_in_bytes = hmStringBuilderGetLengthInBytes(&line_reader->next_line_builder);
+    /* Support for CRLF newlines: removes '\r's.
+       No safe math for "line_length_in_bytes - 1" and "line_length_in_bytes--" because the bounds are checked in "line_length_in_bytes > 0". */
+    if (line_length_in_bytes > 0 && hmStringBuilderGetChars(&line_reader->next_line_builder)[line_length_in_bytes - 1] == '\r') {
+        line_length_in_bytes--;
+    }
+    return hmStringBuilderToStringWithStartIndexAndLengthInBytes(&line_reader->next_line_builder, HM_NULL, 0, line_length_in_bytes, in_line);
+}
+
+static hmError hmLineReaderResetNextLineBuilder(hmLineReader* line_reader)
+{
+    return hmStringBuilderClear(&line_reader->next_line_builder);
+}
+
 /* See hmLineReaderReadLine(..) for the overview of the algorithm. */
 static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_reader)
 {
     hm_nint buffer_with_index_offset = 0, remaining_size = 0;
     HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
     HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
-    HM_TRY(hmStringBuilderAppendCStringWithLength(
-        &line_reader->next_line_builder,
-        hmCastNintToPointer(buffer_with_index_offset, char*),
-        remaining_size
-    ));
+    HM_TRY(hmLineReaderAppendToNextLineBuilder(line_reader, hmCastNintToPointer(buffer_with_index_offset, char*), remaining_size));
     line_reader->buffer_index = 0;
     return HM_OK;
 }
@@ -179,14 +196,10 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
         hm_nint buffer_with_index_offset = 0, remaining_size = 0;
         HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
         HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
-        HM_TRY(hmStringBuilderAppendCStringWithLength(
-            &line_reader->next_line_builder,
-            hmCastNintToPointer(buffer_with_index_offset, char*),
-            remaining_size
-        ));
-        hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
+        HM_TRY(hmLineReaderAppendToNextLineBuilder(line_reader, hmCastNintToPointer(buffer_with_index_offset, char*), remaining_size));
+        hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, in_line);
         hm_bool is_string_initialized = err == HM_OK;
-        err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->next_line_builder));
+        err = hmMergeErrors(err, hmLineReaderResetNextLineBuilder(line_reader));
         if (err != HM_OK) {
             if (is_string_initialized) {
                 err = hmMergeErrors(err, hmStringDispose(in_line));
@@ -209,14 +222,10 @@ static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmSt
             hm_nint buffer_with_index_offset = 0, remaining_size = 0;
             HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
             HM_TRY(hmSubNint(i, line_reader->buffer_index, &remaining_size));
-            HM_TRY(hmStringBuilderAppendCStringWithLength(
-                &line_reader->next_line_builder,
-                hmCastNintToPointer(buffer_with_index_offset, char*),
-                remaining_size
-            ));
-            hmError err = hmStringBuilderToString(&line_reader->next_line_builder, HM_NULL, in_line);
+            HM_TRY(hmLineReaderAppendToNextLineBuilder(line_reader, hmCastNintToPointer(buffer_with_index_offset, char*), remaining_size));
+            hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, in_line);
             hm_bool is_string_initialized = err == HM_OK;
-            err = hmMergeErrors(err, hmStringBuilderClear(&line_reader->next_line_builder));
+            err = hmMergeErrors(err, hmLineReaderResetNextLineBuilder(line_reader));
             if (err == HM_OK) {
                 err = hmMergeErrors(err, hmAddNint(i, 1, &line_reader->buffer_index));
             } else {
