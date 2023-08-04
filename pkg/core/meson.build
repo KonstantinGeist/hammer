@@ -8,5 +8,6 @@ core_sources = files(
     'string.c',
     'stringpool.c',
     'stringbuilder.c',
+    'utf8.c',
     'utils.c'
 )
