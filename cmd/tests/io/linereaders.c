@@ -272,6 +272,26 @@ static void test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines()
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
+static void test_line_readers_crlf_newline_can_straddle_two_buffer_reads()
+{
+    hmAllocator allocator;
+    hmLineReader line_reader;
+    char buffer[4]; /*  */
+    create_line_reader_and_allocator(&line_reader, &allocator, "123\r\n456", buffer, HM_TRUE, sizeof(buffer));
+    hmString string;
+    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "123"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "456"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    dispose_line_reader_and_allocator(&line_reader, &allocator);
+}
+
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
@@ -280,4 +300,5 @@ HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_propagates_errors_from_source_reader)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_readers_crlf_newline_can_straddle_two_buffer_reads)
 HM_TEST_SUITE_END()
