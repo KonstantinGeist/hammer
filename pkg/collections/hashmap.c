@@ -279,7 +279,7 @@ HM_ON_FINALIZE
 
 static hm_nint hmHashMapGetBucketIndex(hmHashMap* hash_map, void* key)
 {
-    hm_uint32 hash;
+    hm_uint32 hash = 0;
     if (hash_map->hash_func_opt) {
         hash = hash_map->hash_func_opt(key, hash_map->hash_salt);
     } else {

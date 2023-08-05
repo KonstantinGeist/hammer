@@ -146,7 +146,7 @@ hm_millis hmThreadGetProcessorTime(hmThread* thread)
 {
     hmThreadPlatformData* platform_data = hmThreadGetPlatformData(thread);
     struct timespec ts;
-    clockid_t cid;
+    clockid_t cid = 0;
     if (pthread_getcpuclockid(platform_data->posix_thread, &cid)) {
         return 0;
     }

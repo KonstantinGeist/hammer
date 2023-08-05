@@ -179,7 +179,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
     }
     /* The self-pipe trick for interprocess communication between the current process and
        the started process (see below). */
-    int pipefds[2];
+    int pipefds[2] = {0};
     if (pipe(pipefds)) {
         return HM_ERROR_PLATFORM_DEPENDENT;
     }
@@ -213,7 +213,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
         close(pipefds[1]);
         /* Tries to read one byte from the pipe. If it's successful, that means the child process failed to launch. */
         int bytes_read = 0;
-        int err;
+        int err = 0;
         while ((bytes_read = read(pipefds[0], &err, sizeof(errno))) == -1) {
             if (errno != EAGAIN && errno != EINTR) {
                 break;
@@ -224,7 +224,7 @@ static hmError hmStartUnixProcess(const char* path, char** unix_args, char** uni
             return HM_ERROR_NOT_FOUND;
         }
         if (wait_for_exit) {
-            int status;
+            int status = 0;
             while (waitpid(pid, &status, 0) == -1) {
                 if (errno != EINTR) {
                     return HM_ERROR_PLATFORM_DEPENDENT;

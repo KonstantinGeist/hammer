@@ -136,7 +136,7 @@ static hmError hmImageFileMetadataLoader_enumMetadata(
 {
     hmImageFileMetadataLoaderData* data = (hmImageFileMetadataLoaderData*)metadata_loader->data;
     hmError err = HM_OK;
-    sqlite3* db;
+    sqlite3* db = HM_NULL;
     int sqlite_err = sqlite3_open_v2(hmStringGetCString(&data->image_path), &db, SQLITE_OPEN_READONLY, HM_NULL);
     if (sqlite_err != SQLITE_OK) {
         return HM_ERROR_NOT_FOUND;

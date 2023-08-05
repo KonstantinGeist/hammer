@@ -180,7 +180,7 @@ static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_
 static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
 {
     *out_is_line_formed = HM_FALSE;
-    hm_nint bytes_read;
+    hm_nint bytes_read = 0;
     HM_TRY(hmReaderRead(&line_reader->source_reader, line_reader->buffer, line_reader->buffer_size, &bytes_read));
     /* A check to avoid buffer overflows, as we don't know if the underlying reader behaves correctly. */
     if (bytes_read > line_reader->buffer_size) {

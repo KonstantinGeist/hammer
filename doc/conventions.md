@@ -50,6 +50,9 @@ There are several conventions to follow:
 * We use native integers (hm_nint, which is aliased to uintptr_t) for most uses of integers internally to make sure 
   our runtime can access as much native resources as possible (their amount is different from platform to platform anyway).
   However, the language itself should use fixed-size integers to be cross-platform and predictable.
+* Always initialize scalar variables immediately after declaration: for example, never write "void* p;", write "void* p = HM_NULL",
+  even if it's to be immediatelly initialized by a function. We don't want to accidentally read uninitialized data.
+  Structs are an exception.
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),

@@ -37,7 +37,7 @@ hmError hmNextUTF8Rune(const hm_utf8char* content, hm_nint length_in_bytes, hm_r
     if ((hm_uint32)(ch - 0xC2) > (0xF4 - 0xC2)) { /* no safe math for "- 0xC2" because `ch` is signed and it go below zero */
         return HM_ERROR_INVALID_DATA;
     }
-    const hm_utf8char* content_end;
+    const hm_utf8char* content_end = HM_NULL;
     HM_TRY(hmAddOffsetToUTF8Chars(content, length_in_bytes, &content_end));
     /* 2-byte sequence */
     if (ch < 0xE0) {
@@ -51,7 +51,7 @@ hmError hmNextUTF8Rune(const hm_utf8char* content, hm_nint length_in_bytes, hm_r
     }
     /* 3-byte sequence */
     if (ch < 0xF0) {
-        const hm_utf8char* content_plus_one;
+        const hm_utf8char* content_plus_one = HM_NULL;
         HM_TRY(hmAddOffsetToUTF8Chars(content, 1, &content_plus_one));
         if ((content_plus_one >= content_end) /* must have 2 valid continuation characters */
         || !hmIsContinuationUTF8Char(*content)
@@ -71,7 +71,7 @@ hmError hmNextUTF8Rune(const hm_utf8char* content, hm_nint length_in_bytes, hm_r
         return HM_OK;
     }
     /* 4-byte sequence */
-    const hm_utf8char* content_plus_two;
+    const hm_utf8char* content_plus_two = HM_NULL;
     HM_TRY(hmAddOffsetToUTF8Chars(content, 2, &content_plus_two));
     if ((content_plus_two >= content_end) /* must have 3 valid continuation characters */
     || !hmIsContinuationUTF8Char(*content)
@@ -99,7 +99,7 @@ hmError hmNextUTF8Rune(const hm_utf8char* content, hm_nint length_in_bytes, hm_r
 
 static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint offset, const hm_utf8char** out_result)
 {
-    hm_nint result;
+    hm_nint result = 0;
     HM_TRY(hmAddNint(hmCastPointerToNint(utf8_chars), offset, &result));
     *out_result = hmCastNintToPointer(result, const hm_utf8char*);
     return HM_OK;

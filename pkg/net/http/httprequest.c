@@ -155,7 +155,7 @@ static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
         whitespace_index = colon_index;
     }
     hmString key, value;
-    void* values_ref;
+    void* values_ref = HM_NULL;
     hmArray values;
     hm_bool is_key_owned_by_function = HM_FALSE,
             is_value_owned_by_function = HM_FALSE,

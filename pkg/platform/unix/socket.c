@@ -64,7 +64,7 @@ hmError hmCreateSocket(
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
     struct addrinfo* addrinfo;
-    char port_str[32];
+    char port_str[32] = {0};
     sprintf(port_str, "%d", (int)port);
     int r = getaddrinfo(hmStringGetCString(host), port_str, &hints, &addrinfo);
     if (r) {

@@ -130,7 +130,7 @@ static hm_nint hmGetMaxConnectionBacklog()
         HM_FINALIZE;
     }
     is_file_opened = HM_TRUE;
-    char buffer[32];
+    char buffer[32] = {0};
     ssize_t read_bytes = read(file_desc, buffer, sizeof(buffer));
     if (read_bytes == -1) {
         max_connection_backlog = SOMAXCONN;

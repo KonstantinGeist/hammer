@@ -18,7 +18,7 @@
 
 static hm_uint32 wyr32(const hm_uint8 *p)
 {
-    hm_uint32 v;
+    hm_uint32 v = 0;
     hmCopyMemory(&v, p, sizeof(hm_uint32));
     return v;
 }
