@@ -29,18 +29,21 @@ typedef struct {
     hm_nint         bytes_read;          /* The number of read bytes can be less than `buffer_size`, so we remember that. */
     hm_bool         has_more_lines;      /* Becomes HM_FALSE the first time `source_reader` returns 0 read bytes. */
     hm_bool         close_source_reader; /* If true, the source reader will be closed when the line reader is disposed. */
+    hm_bool         has_crlf_newlines;   /* Tells if newlines should be treated as CRLF ("\r\n") instead of LF ("\n"). */
 } hmLineReader;
 
 /* A line reader takes a `source_reader` and progressively reads lines separated by newlines from it via hmLineReaderReadLine(..) (see).
    If `close_source_reader` is true, `source_reader` is automatically closed when the line reader is disposed.
   `buffer` and `buffer_size` specify the internal scratch buffer which will be used. Useful for tests and to control memory usage.
-   Recognizes CRLF newlines (\r\n) as well. */
+   If `has_crlf_newlines` is set to HM_TRUE, treats newlines as CRLF ("\r\n") instead of LF ("\n"). For example, the HTTP protocol
+   supports only CRLF newlines. */
 hmError hmCreateLineReader(
     hmAllocator*  allocator,
     hmReader      source_reader,
     hm_bool       close_source_reader,
     char*         buffer,
     hm_nint       buffer_size,
+    hm_bool       has_crlf_newlines,
     hmLineReader* in_line_reader
 );
 /* Disposes of the line reader. If `close_source_reader` is true, also closes the source reader specified in the
@@ -63,6 +66,7 @@ hmError hmReadAllLines(
     hmReader     reader,
     char*        buffer,
     hm_nint      buffer_size,
+    hm_bool      has_crlf_newlines,
     hmArray*     in_array
 );
 

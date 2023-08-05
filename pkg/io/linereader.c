@@ -26,6 +26,7 @@ hmError hmCreateLineReader(
     hm_bool       close_source_reader,
     char*         buffer,
     hm_nint       buffer_size,
+    hm_bool       has_crlf_newlines,
     hmLineReader* in_line_reader
 )
 {
@@ -41,6 +42,7 @@ hmError hmCreateLineReader(
     in_line_reader->bytes_read = 0;
     in_line_reader->has_more_lines = HM_TRUE;
     in_line_reader->close_source_reader = close_source_reader;
+    in_line_reader->has_crlf_newlines = has_crlf_newlines;
     return HM_OK;
 }
 
@@ -57,11 +59,11 @@ hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line)
 {
     /* The loop is quite simple:
        - reads from the source reader into the buffer if necessary (may form the next line if it can't read from the
-         source reader anymore but there's still some stuff remaining in the buffer)
-       - scans the buffer for the next line (i.e. by looking for the first "\n")
-       - appends remaining stuff in the buffer to the next line if the previous scanning of the buffer was not successful
-        (i.e. the next line spans several buffered reading calls because it's large)
-       - repeats until one of the functions above forms a line */
+         source reader anymore and there's still some stuff remaining in the buffer);
+       - scans the buffer for the next line (i.e. by looking for the first "\n") and forms a new line on success;
+       - appends remaining stuff in the buffer to the next line if the previous scanning of the buffer for "\n" was not
+         successful (i.e. the next line spans several buffered reading calls because it's large);
+       - repeats until one of the functions above forms a line. */
     if (!line_reader->has_more_lines) {
         return HM_ERROR_INVALID_STATE;
     }
@@ -88,6 +90,7 @@ hmError hmReadAllLines(
     hmReader     reader,
     char*        buffer,
     hm_nint      buffer_size,
+    hm_bool      has_crlf_newlines,
     hmArray*     in_array
 )
 {
@@ -98,6 +101,7 @@ hmError hmReadAllLines(
         HM_FALSE, /* close_source_reader = HM_FALSE */
         buffer,
         buffer_size,
+        has_crlf_newlines,
         &line_reader
     ));
     hmError err = HM_OK;
@@ -152,9 +156,13 @@ static hmError hmLineReaderAppendToNextLineBuilder(hmLineReader* line_reader, ch
 static hmError hmLineReaderCreateLineFromNextLineBuilder(hmLineReader* line_reader, hmString* in_line)
 {
     hm_nint line_length_in_bytes = hmStringBuilderGetLengthInBytes(&line_reader->next_line_builder);
-    /* Support for CRLF newlines: removes '\r's.
+    /* Support for CRLF newlines: removes "\r" before "\n" (this function accepts lines which are always split by "\n"
+       whether we want CRLF or LF newlines).
        No safe math for "line_length_in_bytes - 1" and "line_length_in_bytes--" because the bounds are checked in "line_length_in_bytes > 0". */
-    if (line_length_in_bytes > 0 && hmStringBuilderGetChars(&line_reader->next_line_builder)[line_length_in_bytes - 1] == '\r') {
+    if (line_reader->has_crlf_newlines
+        && line_length_in_bytes > 0
+        && hmStringBuilderGetChars(&line_reader->next_line_builder)[line_length_in_bytes - 1] == '\r')
+    {
         line_length_in_bytes--;
     }
     return hmStringBuilderToStringWithStartIndexAndLengthInBytes(&line_reader->next_line_builder, HM_NULL, 0, line_length_in_bytes, in_line);
@@ -213,12 +221,35 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
     return HM_OK;
 }
 
+static hm_bool hmLineReaderIsNewline(hmLineReader* line_reader, hm_nint index)
+{
+    /* Note: it's safe to look for '\n' in a UTF8 string as it's guaranteed to not be part of any non-ASCII code point by design. */
+    if (line_reader->has_crlf_newlines) {
+        if (line_reader->buffer[index] != '\n') {
+            return HM_FALSE;
+        }
+        /* Looks for the preceding "\r" in the buffer as there's some space in it before "\n". */
+        if (index > line_reader->buffer_index) {
+            return line_reader->buffer[index - 1] == '\r'; /* no safe math because "index" can't be 0 after "index > line_reader->buffer_index" */
+        }
+        /* Checks for "\r" in the next line builder. */
+        hm_nint next_line_builder_length_in_bytes = hmStringBuilderGetLengthInBytes(&line_reader->next_line_builder);
+        if (next_line_builder_length_in_bytes == 0) { /* it's empty => not a CLRF newline */
+            return HM_FALSE;
+        }
+        /* No safe math for "next_line_builder_length_in_bytes - 1" because we checked above that "next_line_builder_length_in_bytes > 0" */
+        return hmStringBuilderGetChars(&line_reader->next_line_builder)[next_line_builder_length_in_bytes - 1] == '\r';
+    } else {
+        return line_reader->buffer[index] == '\n';
+    }
+}
+
 /* See hmLineReaderReadLine(..) for the overview of the algorithm. */
 static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
 {
     *out_is_line_formed = HM_FALSE;
     for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
-        if (line_reader->buffer[i] == '\n') {  /* it's safe to look for '\n' in a UTF8 string as it's guaranteed to not be part of a code point by design */
+        if (hmLineReaderIsNewline(line_reader, i)) {
             hm_nint buffer_with_index_offset = 0, remaining_size = 0;
             HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
             HM_TRY(hmSubNint(i, line_reader->buffer_index, &remaining_size));

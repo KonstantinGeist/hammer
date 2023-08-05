@@ -27,10 +27,11 @@ static char* line_reader_lines[] = {
 
 static void create_line_reader_and_allocator(
     hmLineReader* line_reader,
-    hmAllocator* allocator,
-    const char* mem,
-    char* buffer,
-    hm_nint buffer_size
+    hmAllocator*  allocator,
+    const char*   mem,
+    char*         buffer,
+    hm_bool       has_crlf_newlines,
+    hm_nint       buffer_size
 )
 {
     HM_TEST_INIT_ALLOC(allocator);
@@ -44,6 +45,7 @@ static void create_line_reader_and_allocator(
         HM_TRUE, /* close_source_reader = HM_TRUE */
         buffer,
         buffer_size,
+        has_crlf_newlines,
         line_reader
     );
     HM_TEST_ASSERT_OK(err);
@@ -62,7 +64,7 @@ static void test_line_reader_supports_never_being_read()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!", buffer, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!", buffer, HM_FALSE, sizeof(buffer));
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
@@ -92,13 +94,13 @@ static void create_line_reader_content(hmAllocator* allocator, hm_nint line_coun
 static void test_line_reader_can_read_several_lines_impl(hm_nint buffer_size, hm_nint line_count)
 {
     for (hm_nint j = 0; j < 2; j++) {
-        hm_bool is_clrf = j == 0;
+        hm_bool has_crlf_newlines = j == 0;
         hmAllocator allocator;
         HM_TEST_INIT_ALLOC(&allocator);
         HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
         char* buffer = hmAllocOnStack(buffer_size);
         hmString content;
-        create_line_reader_content(&allocator, line_count, is_clrf, &content);
+        create_line_reader_content(&allocator, line_count, has_crlf_newlines, &content);
         const char* c_content = hmStringGetCString(&content);
         hmReader memory_reader;
         hm_bool is_lines_initialized = HM_FALSE;
@@ -106,7 +108,14 @@ static void test_line_reader_can_read_several_lines_impl(hm_nint buffer_size, hm
         HM_TEST_ASSERT_OK(err);
         HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
         hmArray lines;
-        err = hmReadAllLines(&allocator, memory_reader, buffer, buffer_size, &lines);
+        err = hmReadAllLines(
+            &allocator,
+            memory_reader,
+            buffer,
+            buffer_size,
+            has_crlf_newlines,
+            &lines
+        );
         HM_TEST_ASSERT_OK_OR_OOM(err);
         is_lines_initialized = HM_TRUE;
         HM_TEST_ASSERT(hmArrayGetCount(&lines) == line_count);
@@ -142,7 +151,7 @@ static void test_line_reader_ignores_trailing_new_line()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!\n\n", buffer, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!\n\n", buffer, HM_FALSE, sizeof(buffer));
     hmString string1, string2, string3;
     hmError err = hmLineReaderReadLine(&line_reader, &string1);
     HM_TEST_ASSERT_OK(err);
@@ -164,7 +173,7 @@ static void test_line_reader_expects_empty_reader()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, HM_FALSE, sizeof(buffer));
     hmString string;
     hmError err = hmLineReaderReadLine(&line_reader, &string);
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
@@ -205,10 +214,62 @@ static void test_line_reader_propagates_errors_from_source_reader()
     HM_TEST_ASSERT_OK(err);
     char buffer[LINE_READER_BUFFER_SIZE];
     hmArray lines;
-    err = hmReadAllLines(&allocator, reader, buffer, sizeof(buffer), &lines);
+    err = hmReadAllLines(
+        &allocator,
+        reader,
+        buffer,
+        sizeof(buffer),
+        HM_FALSE, /* has_crlf_newlines = HM_FALSE */
+        &lines
+    );
     HM_TEST_ASSERT(err == HM_ERROR_PLATFORM_DEPENDENT);
     err = hmAllocatorDispose(&allocator);
     HM_TEST_ASSERT_OK(err);
+}
+
+static void test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines()
+{
+    hmAllocator allocator;
+    hmLineReader line_reader;
+    char buffer[LINE_READER_BUFFER_SIZE];
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye,\nWorld!\r\n", buffer, HM_TRUE, sizeof(buffer));
+    hmString string;
+    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Hello,\nWorld!"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Goodbye,\nWorld!"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    dispose_line_reader_and_allocator(&line_reader, &allocator);
+}
+
+static void test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines()
+{
+    hmAllocator allocator;
+    hmLineReader line_reader;
+    char buffer[LINE_READER_BUFFER_SIZE];
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye", buffer, HM_FALSE, sizeof(buffer));
+    hmString string;
+    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Hello,"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "World!\r"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    err = hmLineReaderReadLine(&line_reader, &string);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Goodbye"));
+    err = hmStringDispose(&string);
+    HM_TEST_ASSERT_OK(err);
+    dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
 HM_TEST_SUITE_BEGIN(line_readers)
@@ -217,4 +278,6 @@ HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_expects_empty_reader)
     HM_TEST_RUN_WITHOUT_OOM(test_line_reader_propagates_errors_from_source_reader)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines)
+    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines)
 HM_TEST_SUITE_END()

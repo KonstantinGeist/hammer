@@ -117,7 +117,6 @@ static void test_http_request_can_be_created_from_reader()
         "Sec-Fetch-Dest: document\r\n"
         "Accept-Encoding: gzip, deflate, br\r\n"
         "Accept-Language: en-US,en;q=0.9\r\n";
-
     test_http_request_with_headers_and_func(headers, &test_http_request_can_be_created_from_valid_headers_func);
 }
 
@@ -153,7 +152,6 @@ static void test_http_request_supports_multiple_values_under_single_key()
         "Key1: 1\r\n"
         "Key1: 2\r\n"
         "Key2: 3\r\n";
-
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_multiple_values_under_single_key_func);
 }
 
@@ -188,10 +186,32 @@ static void test_http_request_supports_put_requests()
     test_http_request_with_headers_and_func("PUT /message/all HTTP/1.1", &test_http_request_supports_put_requests_func);
 }
 
+static void test_http_request_supports_lf_newlines_inside_fields_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+    hmString key;
+    hmError err = hmCreateStringViewFromCString("Key", &key);
+    HM_TEST_ASSERT_OK(err);
+    hmString* value_ref;
+    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value\nWith\nLF"));
+}
+
+static void test_http_request_supports_lf_newlines_inside_fields()
+{
+    const char* headers = 
+        "GET /index HTTP/1.1\r\n"
+        "Key: Value\nWith\nLF\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_lf_newlines_inside_fields_func);
+}
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
     HM_TEST_RUN(test_http_request_rejects_malformed_requests)
     HM_TEST_RUN(test_http_request_supports_post_requests)
     HM_TEST_RUN(test_http_request_supports_put_requests)
+    HM_TEST_RUN(test_http_request_supports_lf_newlines_inside_fields)
 HM_TEST_SUITE_END()

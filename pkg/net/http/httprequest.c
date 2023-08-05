@@ -234,6 +234,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
         HM_FALSE, /* close_source_reader = HM_TRUE, same as above */
         buffer,
         sizeof(buffer),
+        HM_TRUE,  /* has_crlf_newlines = HM_TRUE, as per the HTTP protocol */
         &line_reader
     ));
     is_line_reader_initialized = HM_TRUE;
