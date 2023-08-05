@@ -49,7 +49,7 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
-static void test_http_request_with_error_and_func(const char* headers, hmError expected_error)
+static void test_http_request_with_error(const char* headers, hmError expected_error)
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
@@ -159,15 +159,39 @@ static void test_http_request_supports_multiple_values_under_single_key()
 
 static void test_http_request_rejects_malformed_requests()
 {
-    test_http_request_with_error_and_func("RUN /index HTTP/1.1", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error_and_func("GET /index HTTP/11.1", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error_and_func("", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error_and_func("GET", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error_and_func("GET /index HTTP/1.1\r\nKey Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("RUN /index HTTP/1.1", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/11.1", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nKey Value", HM_ERROR_INVALID_DATA);
+}
+
+static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/news"));
+}
+
+static void test_http_request_supports_post_requests()
+{
+    test_http_request_with_headers_and_func("POST /news HTTP/1.1", &test_http_request_supports_post_requests_func);
+}
+
+static void test_http_request_supports_put_requests_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_PUT);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/message/all"));
+}
+
+static void test_http_request_supports_put_requests()
+{
+    test_http_request_with_headers_and_func("PUT /message/all HTTP/1.1", &test_http_request_supports_put_requests_func);
 }
 
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
     HM_TEST_RUN(test_http_request_rejects_malformed_requests)
+    HM_TEST_RUN(test_http_request_supports_post_requests)
+    HM_TEST_RUN(test_http_request_supports_put_requests)
 HM_TEST_SUITE_END()

@@ -20,6 +20,12 @@
 #define HM_GET_METHOD_LITERAL "GET "
 #define HM_GET_METHOD_LITERAL_SIZE 4
 
+#define HM_POST_METHOD_LITERAL "POST "
+#define HM_POST_METHOD_LITERAL_SIZE 5
+
+#define HM_PUT_METHOD_LITERAL "PUT "
+#define HM_PUT_METHOD_LITERAL_SIZE 4
+
 #define HM_HTTP_VERSION_LITERAL " HTTP/1.1"
 #define HM_HTTP_VERSION_LITERAL_SIZE 9
 
@@ -82,7 +88,7 @@ hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
 
 hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint index, hmString** header_ref)
 {
-    void* values_ref;
+    void* values_ref = HM_NULL;
     HM_TRY(hmHashMapGetRef(&request->headers, key, &values_ref));
     if (index >= hmArrayGetCount((hmArray*)values_ref)) {
         return HM_ERROR_NOT_FOUND;
@@ -92,25 +98,41 @@ hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint
     return HM_OK;
 }
 
-static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
+static hmError hmParseHTTPMethod(hmString* string, hmHTTPMethod* out_method, hm_nint* method_literal_size)
 {
-    /* HTTP method. */
     if (hmStringStartsWithCStringAndLength(string, HM_GET_METHOD_LITERAL, HM_GET_METHOD_LITERAL_SIZE)) {
-        request->method = HM_HTTP_METHOD_GET;
+        *out_method = HM_HTTP_METHOD_GET;
+        *method_literal_size = HM_GET_METHOD_LITERAL_SIZE;
+        return HM_OK;
+    } else if (hmStringStartsWithCStringAndLength(string, HM_POST_METHOD_LITERAL, HM_POST_METHOD_LITERAL_SIZE)) {
+        *out_method = HM_HTTP_METHOD_POST;
+        *method_literal_size = HM_POST_METHOD_LITERAL_SIZE;
+        return HM_OK;
+    } else if (hmStringStartsWithCStringAndLength(string, HM_PUT_METHOD_LITERAL, HM_PUT_METHOD_LITERAL_SIZE)) {
+        *out_method = HM_HTTP_METHOD_PUT;
+        *method_literal_size = HM_PUT_METHOD_LITERAL_SIZE;
+        return HM_OK;
     } else {
         return HM_ERROR_INVALID_DATA;
     }
+}
+
+static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
+{
+    /* HTTP method. */
+    hm_nint method_literal_size = 0;
+    HM_TRY(hmParseHTTPMethod(string, &request->method, &method_literal_size));
     /* HTTP version. */
     if (!hmStringEndsWithCStringAndLength(string, HM_HTTP_VERSION_LITERAL, HM_HTTP_VERSION_LITERAL_SIZE)) {
         return HM_ERROR_INVALID_DATA;
     }
     hm_nint url_length = 0;
-    HM_TRY(hmSubNint(hmStringGetLengthInBytes(string), HM_GET_METHOD_LITERAL_SIZE, &url_length));
+    HM_TRY(hmSubNint(hmStringGetLengthInBytes(string), method_literal_size, &url_length));
     HM_TRY(hmSubNint(url_length, HM_HTTP_VERSION_LITERAL_SIZE, &url_length));
     return hmCreateSubstring(
         request->allocator,
         string,
-        HM_GET_METHOD_LITERAL_SIZE,
+        method_literal_size,
         url_length,
         &request->url
     );
