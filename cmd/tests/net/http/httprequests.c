@@ -163,6 +163,7 @@ static void test_http_request_rejects_malformed_requests()
     test_http_request_with_error_and_func("GET /index HTTP/11.1", HM_ERROR_INVALID_DATA);
     test_http_request_with_error_and_func("", HM_ERROR_INVALID_DATA);
     test_http_request_with_error_and_func("GET", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error_and_func("GET /index HTTP/1.1\r\nKey Value", HM_ERROR_INVALID_DATA);
 }
 
 HM_TEST_SUITE_BEGIN(http_requests)
