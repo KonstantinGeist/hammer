@@ -207,6 +207,40 @@ static void test_http_request_supports_lf_newlines_inside_fields()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_lf_newlines_inside_fields_func);
 }
 
+static void test_http_request_respects_max_headers_size()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmReader memory_reader;
+    const char* headers = 
+        "GET /index HTTP/1.1\r\n"
+        "Key: Value\r\n";
+    hmError err = hmCreateMemoryReader(&allocator, headers, strlen(headers), &memory_reader);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hmHTTPRequest request;
+    hm_bool is_request_initialized = HM_FALSE;
+    err = hmCreateHTTPRequestFromReader(
+        &allocator,
+        memory_reader,
+        HM_TRUE,
+        strlen(headers) / 2,
+        HASH_SALT,
+        &request
+    );
+    HM_TEST_ASSERT_ERROR_OR_OOM(HM_ERROR_LIMIT_EXCEEDED, err);
+    if (err == HM_OK) {
+        is_request_initialized = HM_TRUE;
+    }
+HM_TEST_ON_FINALIZE
+    if (is_request_initialized) {
+        err = hmHTTPRequestDispose(&request);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
@@ -214,4 +248,5 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_supports_post_requests)
     HM_TEST_RUN(test_http_request_supports_put_requests)
     HM_TEST_RUN(test_http_request_supports_lf_newlines_inside_fields)
+    HM_TEST_RUN(test_http_request_respects_max_headers_size)
 HM_TEST_SUITE_END()
