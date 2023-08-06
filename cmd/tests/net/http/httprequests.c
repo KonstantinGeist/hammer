@@ -265,7 +265,7 @@ static void test_http_request_supports_optional_whitespace_around_header_fields(
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_optional_whitespace_around_header_fields_func);
 }
 
-static void test_http_request_supports_header_name_canonicaliaztion_func(hmHTTPRequest* request)
+static void test_http_request_supports_header_name_canonicalization_func(hmHTTPRequest* request)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -286,8 +286,8 @@ static void test_http_request_supports_header_name_canonicaliaztion()
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
         "X-my-request: Value1\r\n"
-        "X-My-rEqueSt: Value2\r\n";
-    test_http_request_with_headers_and_func(headers, &test_http_request_supports_header_name_canonicaliaztion_func);
+        "x-My-rEqueSt: Value2\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_header_name_canonicalization_func);
 }
 
 static void test_http_request_respects_header_name_restrictions()
