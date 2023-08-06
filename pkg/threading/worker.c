@@ -51,7 +51,7 @@ hmError hmCreateWorker(
     hmWorker*     in_worker
 )
 {
-    if (!worker_func || item_size > HM_WORKER_MAX_ITEM_SIZE) {
+    if (item_size > HM_WORKER_MAX_ITEM_SIZE) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmWorkerData* data = (hmWorkerData*)hmAlloc(allocator, sizeof(hmWorkerData));

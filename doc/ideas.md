@@ -23,4 +23,5 @@ Feature ideas:
 * structural typing
 * high-precision decimal type for financial applications
 * built-in package manager
+* permissions/capabilities
   and more.

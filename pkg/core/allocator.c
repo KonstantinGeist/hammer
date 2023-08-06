@@ -87,9 +87,6 @@ static hmError hmSystemAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateSystemAllocator(hmAllocator* in_allocator)
 {
-    if (!in_allocator) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     in_allocator->alloc = &hmSystemAllocator_alloc;
     in_allocator->free = &hmSystemAllocator_free;
     in_allocator->dispose = &hmSystemAllocator_dispose;
@@ -202,9 +199,6 @@ static hmError hmBumpPointerAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateBumpPointerAllocator(hmAllocator* base_allocator, hm_nint memory_limit, hmAllocator* in_allocator)
 {
-    if (!base_allocator || !in_allocator) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmBumpPointerAllocatorData* data = hmAlloc(base_allocator, sizeof(hmBumpPointerAllocatorData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -259,9 +253,6 @@ static hmError hmStatsAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateStatsAllocator(hmAllocator* base_allocator, hmAllocator* in_allocator)
 {
-    if (!base_allocator || !in_allocator) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmStatsAllocatorData* data = hmAlloc(base_allocator, sizeof(hmStatsAllocatorData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -329,9 +320,6 @@ static hmError hmOOMAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateOOMAllocator(hmAllocator* base_allocator, hm_nint failed_alloc_number, hmAllocator* in_allocator)
 {
-    if (!base_allocator || !in_allocator) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmOOMAllocatorData* data = hmAlloc(base_allocator, sizeof(hmOOMAllocatorData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -411,7 +399,7 @@ static hmError hmBufferAllocator_dispose(hmAllocator* allocator)
 
 hmError hmCreateBufferAllocator(char* buffer, hm_nint buffer_size, hmAllocator* fallback_allocator, hmAllocator* in_allocator)
 {
-    if (!buffer || buffer_size < sizeof(hmBufferAllocatorData) + HM_ALLOC_SIZE_ALIGNMENT) {
+    if (buffer_size < sizeof(hmBufferAllocatorData) + HM_ALLOC_SIZE_ALIGNMENT) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmBufferAllocatorData* data = (hmBufferAllocatorData*)buffer;

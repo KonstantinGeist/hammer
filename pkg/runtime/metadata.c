@@ -98,9 +98,6 @@ static hmError hmImageFileMetadataLoader_dispose(hmMetadataLoader* metadata_load
 
 hmError hmCreateImageFileMetadataLoader(hmAllocator* allocator, hmString* image_path, hmMetadataLoader* in_metadata_loader)
 {
-    if (!image_path) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmImageFileMetadataLoaderData* data = (hmImageFileMetadataLoaderData*)hmAlloc(allocator, sizeof(hmImageFileMetadataLoaderData));
     if (!data) {
         return HM_ERROR_OUT_OF_MEMORY;

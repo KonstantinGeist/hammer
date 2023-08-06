@@ -25,9 +25,6 @@ static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint off
 
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {
-    if (!content) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hm_nint length_in_bytes = strlen(content);
     hm_nint length_in_bytes_with_null = 0;
     HM_TRY(hmAddNint(length_in_bytes, 1, &length_in_bytes_with_null));
@@ -44,9 +41,6 @@ hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, h
 
 hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const char* content, hm_nint length_in_bytes, hmString* in_string)
 {
-    if (!content) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     if (!length_in_bytes) { /* special case as an optimization */
         return hmCreateEmptyStringView(in_string);
     }
@@ -82,9 +76,6 @@ hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint star
 
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string)
 {
-    if (!content) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     in_string->content = (char*)content;
     in_string->allocator_opt = HM_NULL;
     in_string->length_in_bytes = HM_EMPTY_STRING_LENGTH_IN_BYTES; /* it will be computed lazily in hmStringGetLengthInBytes(..) */
