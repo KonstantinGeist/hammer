@@ -26,14 +26,14 @@ typedef struct {
 
 /* Creates a Hammer string from a null-terminated C string. Duplicates the given string and owns it: deallocates the
    internal buffer when the object is disposed of. See also hmCreateStringViewFromCString.
-   Strings are immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
+   Strings are generally immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
    certain functions such as hmStringIndexRune(..) do check that it's a valid UTF8 string. */
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string);
 /* Same as hmCreateStringFromCString(..) except it doesn't rely on null termination -- instead, the length is provided
    as an argument (the null terminator is not included in the length).
    It's the responsibility of the caller to make sure there's no buffer overflow if length parameter is larger than
    the actual string. Empty strings with zero length are allowed.
-   Strings are immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
+   Strings are generally immutable. The encoding is expected to be UTF8; although it's not enforced in this constructor,
    certain functions such as hmStringIndexRune(..) do check that it's a valid UTF8 string. */
 hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const char* content, hm_nint length_in_bytes, hmString* in_string);
 /* Creates a Hammer string from a null-terminated C string. Unlike hmCreateStringFromCString (see), does not duplicate
@@ -41,12 +41,12 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
    is deleted; it's undefined behavior to try to use such a string afterwards. Mostly useful for creating short-lived
    views for reading, for example, as a key to a container (if the container promises to never retain the value).
    String views should not be disposed, but it should be safe to try to dispose them.
-   Strings are immutable. */
+   Strings are generally immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
 /* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`. */
 hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint start_index, hm_nint length_in_bytes, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
-   Strings are immutable. */
+   Strings are generally immutable. */
 hmError hmCreateEmptyStringView(hmString* in_string);
 /* Clones the given string as a new instance. */
 hmError hmStringDuplicate(hmAllocator* allocator, hmString* string, hmString* in_duplicate);
@@ -78,6 +78,8 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
    See also: hmStringGetCString(..), hmStringGetCharsForUpdate(..) */
 #define hmStringGetChars(string) ((string)->content)
 /* Returns the internal char array in `out_buffer` for in-place updates. If the string is a read-only view, returns HM_ERROR_INVALID_STATE.
+   Supports trimming the original char buffer with '\0' in the middle: string length will be recalculated in that case.
+   WARNING: don't update string content for strings used as keys to hashmaps etc.
    See also: hmStringGetCString(..), hmStringGetChars(..) */
 hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars);
 /* The comparison function of strings. Useful in hmArraySort(..) */

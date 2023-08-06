@@ -173,6 +173,7 @@ hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars)
     if (!string->allocator_opt) { /* no allocator? it's a view! */
         return HM_ERROR_INVALID_STATE;
     }
+    string->length_in_bytes = HM_EMPTY_STRING_LENGTH_IN_BYTES; /* to recalculate the length (see the docs) */
     *out_chars = string->content;
     return HM_OK;
 }

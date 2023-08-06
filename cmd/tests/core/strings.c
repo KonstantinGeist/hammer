@@ -372,6 +372,37 @@ static void test_can_compare_if_string_starts_or_ends_with_c_string()
     HM_TEST_ASSERT(hmStringEndsWithCStringAndLength(&string, "", 0));
 }
 
+static void test_string_length_is_recalculated_on_update()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmString source;
+    hmError err = hmCreateStringFromCString(&allocator, "Hello, World!", &source);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    HM_TEST_ASSERT(hmStringGetLengthInBytes(&source) == 13);
+    char* chars = HM_NULL;
+    err = hmStringGetCharsForUpdate(&source, &chars);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    chars[5] = 0;
+    HM_TEST_ASSERT(hmStringGetLengthInBytes(&source) == 5);
+HM_TEST_ON_FINALIZE
+    err = hmStringDispose(&source);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_cannot_update_string_view()
+{
+    hmString string;
+    hmError err = hmCreateStringViewFromCString("Hello, World!", &string);
+    HM_TEST_ASSERT_OK(err);
+    char* chars = HM_NULL;
+    err = hmStringGetCharsForUpdate(&string, &chars);
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
+}
+
 HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_can_create_string_from_c_string)
     HM_TEST_RUN(test_can_create_string_from_c_string_and_length)
@@ -398,4 +429,6 @@ HM_TEST_SUITE_BEGIN(strings)
     HM_TEST_RUN(test_cannot_create_substring_with_out_bounds_index)
     HM_TEST_RUN(test_cannot_create_substring_larger_than_string)
     HM_TEST_RUN(test_can_compare_if_string_starts_or_ends_with_c_string)
+    HM_TEST_RUN(test_string_length_is_recalculated_on_update)
+    HM_TEST_RUN_WITHOUT_OOM(test_cannot_update_string_view)
 HM_TEST_SUITE_END()
