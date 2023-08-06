@@ -25,7 +25,9 @@
    can result in request smuggling security vulnerabilities if there are multiple recipients of the message and each has
    its own unique interpretation of robustness"
 
-   As a result
+   From RFC9110:
+   "All general-purpose servers MUST support the methods GET and HEAD. All other methods are OPTIONAL".
+   So we implement them and a handlful of other most popular methods.
 */
 #define HM_GET_METHOD_LITERAL "GET "
 #define HM_GET_METHOD_LITERAL_SIZE 4
@@ -35,6 +37,12 @@
 
 #define HM_PUT_METHOD_LITERAL "PUT "
 #define HM_PUT_METHOD_LITERAL_SIZE 4
+
+#define HM_DELETE_METHOD_LITERAL "DELETE "
+#define HM_DELETE_METHOD_LITERAL_SIZE 7
+
+#define HM_HEAD_METHOD_LITERAL "HEAD "
+#define HM_HEAD_METHOD_LITERAL_SIZE 5
 
 #define HM_HTTP_VERSION_LITERAL " HTTP/1.1"
 #define HM_HTTP_VERSION_LITERAL_SIZE 9
@@ -137,6 +145,14 @@ static hmError hmParseHTTPMethod(hmString* line, hmHTTPMethod* out_method, hm_ni
     } else if (hmStringStartsWithCStringAndLength(line, HM_PUT_METHOD_LITERAL, HM_PUT_METHOD_LITERAL_SIZE)) {
         *out_method = HM_HTTP_METHOD_PUT;
         *method_literal_size = HM_PUT_METHOD_LITERAL_SIZE;
+        return HM_OK;
+    } else if (hmStringStartsWithCStringAndLength(line, HM_DELETE_METHOD_LITERAL, HM_DELETE_METHOD_LITERAL_SIZE)) {
+        *out_method = HM_HTTP_METHOD_DELETE;
+        *method_literal_size = HM_DELETE_METHOD_LITERAL_SIZE;
+        return HM_OK;
+    } else if (hmStringStartsWithCStringAndLength(line, HM_HEAD_METHOD_LITERAL, HM_HEAD_METHOD_LITERAL_SIZE)) {
+        *out_method = HM_HTTP_METHOD_HEAD;
+        *method_literal_size = HM_HEAD_METHOD_LITERAL_SIZE;
         return HM_OK;
     } else {
         return HM_ERROR_INVALID_DATA;

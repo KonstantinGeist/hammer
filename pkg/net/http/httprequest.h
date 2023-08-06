@@ -43,7 +43,7 @@ typedef struct {
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary.
    NOTE: HTTP requests in Hammer follow the HTTP standard (RFC9112) in the following ways:
    1) optional whitespaces around header values are supported;
-   2) supports GET, POST and PUT methods;
+   2) supports GET, POST, PUT, DELETE and HEAD methods;
    3) characters in header field names are restricted to the grammar defined by the protocol;
    4) anything other than HTTP1.1 is rejected;
    5) supports only CRLF newlines;
