@@ -52,5 +52,20 @@ hmError hmCreateLimitedReader(
    hm_nint      limit_in_bytes,
    hmReader*    in_reader
 );
+/* A composite reader represents several readers as a single reader:
+   - reads from the first reader until there's no more data in it;
+   - then reads from the second reader until there's no more data in it;
+   - etc.
+   `source_readers` is a list of readers to wrap, with `source_reader_count` specifying their count.
+   `close_source_readers` specifies, for each reader in `source_readers` at the corresponding indices, whether the source
+   readers should be closed when the composite reader closes. 
+   Returns HM_ERROR_NOT_IMPLEMENTED for hmReaderSeek(..) */
+hmError hmCreateCompositeReader(
+   hmAllocator*    allocator,
+   const hmReader* source_readers,
+   const hm_bool*  close_source_readers,
+   hm_nint         source_reader_count,
+   hmReader*       in_reader
+);
 
 #endif /* HM_READER_H */

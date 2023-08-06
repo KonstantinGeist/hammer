@@ -260,10 +260,6 @@ static hmError hmHTTPRequestCreateHeaderValue(hmHTTPRequest* request, hmString* 
     return hmCreateSubstring(request->allocator, line, value_start_index, value_length_in_bytes, in_value);
 }
 
-/* Parses header fields in the following formats:
-   - "Name: Value"
-   - "Name:Value"
-   Anything else is not supported. */
 static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* line)
 {
     hm_nint colon_index = 0;

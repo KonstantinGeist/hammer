@@ -200,6 +200,45 @@ static void test_limited_reader_limits_reads()
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_composite_reader_reads_from_all_source_readers()
+{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    HM_TEST_TRACK_OOM(&allocator, HM_FALSE);
+    hmReader source_reader1, source_reader2;
+    hmError err = hmCreateMemoryReader(&allocator, "1234", 4, &source_reader1);
+    HM_TEST_ASSERT_OK(err);
+    err = hmCreateMemoryReader(&allocator, "5678", 4, &source_reader2);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
+    hm_bool is_composite_reader_initialized = HM_FALSE;
+    hmReader source_readers[2] = {source_reader1, source_reader2};
+    hm_bool close_source_readers[2] = {HM_TRUE, HM_TRUE};
+    hmReader composite_reader;
+    err = hmCreateCompositeReader(&allocator, source_readers, close_source_readers, 2, &composite_reader);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_composite_reader_initialized = HM_TRUE;
+    char buffer[32] = {0};
+    hm_nint bytes_read = 0, total_bytes_read = 0;
+    do {
+        err = hmReaderRead(&composite_reader, buffer + total_bytes_read, sizeof(buffer), &bytes_read);
+        HM_TEST_ASSERT_OK_OR_OOM(err);
+        total_bytes_read += bytes_read;
+    } while (bytes_read > 0);
+    HM_TEST_ASSERT(hmCompareMemory(buffer, "12345678", 8) == 0);
+HM_TEST_ON_FINALIZE
+    if (is_composite_reader_initialized) {
+        err = hmReaderClose(&composite_reader);
+        HM_TEST_ASSERT_OK(err);
+    } else {
+        err = hmReaderClose(&source_reader1);
+        HM_TEST_ASSERT_OK(err);
+        err = hmReaderClose(&source_reader2);
+        HM_TEST_ASSERT_OK(err);
+    }
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
 HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_can_create_read_close)
     HM_TEST_RUN(test_memory_can_create_seek_read_close)
@@ -209,4 +248,5 @@ HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_does_not_allow_to_read_past_buffer)
     HM_TEST_RUN_WITHOUT_OOM(test_can_create_memory_reader_from_empty_string)
     HM_TEST_RUN(test_limited_reader_limits_reads)
+    HM_TEST_RUN(test_composite_reader_reads_from_all_source_readers)
 HM_TEST_SUITE_END()
