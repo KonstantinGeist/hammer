@@ -325,6 +325,63 @@ static void test_http_request_respects_header_name_restrictions()
     test_http_request_with_error("GET /index HTTP/1.1\r\nName1:Value1\r\n Name2:Value2", HM_ERROR_INVALID_DATA); /* line folding */
 }
 
+static void test_http_request_supports_post_method_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+}
+
+static void test_http_request_supports_post_method()
+{
+    const char* headers = 
+        "POST /index HTTP/1.1\r\n"
+        "Key: Value\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_post_method_func);
+}
+
+static void test_http_request_supports_put_method_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_PUT);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+}
+
+static void test_http_request_supports_put_method()
+{
+    const char* headers = 
+        "PUT /index HTTP/1.1\r\n"
+        "Key: Value\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_put_method_func);
+}
+
+static void test_http_request_supports_delete_method_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_DELETE);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+}
+
+static void test_http_request_supports_delete_method()
+{
+    const char* headers = 
+        "DELETE /index HTTP/1.1\r\n"
+        "Key: Value\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_delete_method_func);
+}
+
+static void test_http_request_supports_head_method_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_HEAD);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+}
+
+static void test_http_request_supports_head_method()
+{
+    const char* headers = 
+        "HEAD /index HTTP/1.1\r\n"
+        "Key: Value\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_head_method_func);
+}
+
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_name)
@@ -336,4 +393,8 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_supports_optional_whitespace_around_header_fields)
     HM_TEST_RUN(test_http_request_supports_header_name_canonicaliaztion)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_respects_header_name_restrictions)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_post_method)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_put_method)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_delete_method)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_head_method)
 HM_TEST_SUITE_END()
