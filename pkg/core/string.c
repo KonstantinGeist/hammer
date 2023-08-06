@@ -207,7 +207,7 @@ hm_bool hmStringRefEqualsFunc(void* value1, void* value2)
     return hmStringEquals(string1, string2);
 }
 
-hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index)
+hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index_opt)
 {
     const hm_utf8char* content = hmStringGetUTF8Chars(string);
     hm_nint length_in_bytes = hmStringGetLengthInBytes(string);
@@ -216,7 +216,9 @@ hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_
     hm_nint offset = 0, index = 0;
     while ((err = hmNextUTF8Rune(content, length_in_bytes, &rune, &offset)) == HM_OK && offset > 0) {
         if (rune == rune_to_index) {
-            *out_index = index;
+            if (out_index_opt) {
+                *out_index_opt = index;
+            }
             return HM_OK;
         }
         HM_TRY(hmAddOffsetToUTF8Chars(content, offset, &content));;

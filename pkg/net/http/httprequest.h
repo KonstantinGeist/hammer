@@ -21,7 +21,7 @@
 #include <net/http/common.h>
 
 /* See hmCreateHTTPRequestFromReader(..). */
-#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024)
+#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024) /* recommended minimum as per RFC9112 ("8000 octets") */
 
 typedef struct {
     hmAllocator* allocator;
@@ -36,16 +36,21 @@ typedef struct {
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.
-   HTTP requests in Hammer don't strictly follow the HTTP standard:
-   1) optional whitespaces: only 1 whitespace between ":" and header values allowed;
-   2) supports UTF8 in header fields;
-   3) supports only GET, POST and PUT methods.
-   HTTP requests support only basic interoperability with other systems and browsers.
    If `close_reader` is true, the reader is closed inside hmHTTPRequestDispose(..) automatically, or if this function fails
    (basically, this HTTP request object owns the reader).
-  `max_headers_size` specifies the maximum size of all HTTP headers in the request (both key + value). Returns HM_ERROR_LIMIT_EXCEEDED
+  `max_headers_size` specifies the maximum size of all HTTP headers in the request (both name + value). Returns HM_ERROR_LIMIT_EXCEEDED
    if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE.
-  `hash_salt` is used to prevent DoS attacks against the `headers` dictionary. */
+  `hash_salt` is used to prevent DoS attacks against the `headers` dictionary.
+   NOTE: HTTP requests in Hammer follow the HTTP standard (RFC9112) in the following ways:
+   1) optional whitespaces around header values are supported;
+   2) supports GET, POST and PUT methods;
+   3) characters in header field names are restricted to the grammar defined by the protocol;
+   4) anything other than HTTP1.1 is rejected;
+   5) supports only CRLF newlines;
+   6) optional whitespace is not supported for the request line (as allowed by the protocol).
+   Deviations from the HTTP standard:
+   1) supports UTF8 in header field values.
+   HTTP requests in Hammer should support only basic interoperability with other systems and browsers ("good enough"). */
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
@@ -57,12 +62,12 @@ hmError hmCreateHTTPRequestFromReader(
 hmError hmHTTPRequestDispose(hmHTTPRequest* request);
 /* Returns a reader which allows to read the body of the request. */
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request);
-/* Returns a header by its key and index (there can be several values per key) in `header_ref`.
+/* Returns a header by its name and index (there can be several values per name) in `header_ref`.
    The value is owned by the HTTP request object and should not be disposed. The value is valid as long as the HTTP request
    object is valid.
-   Returns HM_ERROR_NOT_FOUND if no value is found for the given key/index pair.
+   Returns HM_ERROR_NOT_FOUND if no value is found for the given name/index pair.
    Usually, for most headers, zero can be passed for `index`. */
-hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint index, hmString** header_ref);
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** header_ref);
 #define hmHTTPRequestGetMethod(request) ((request)->method)
 #define hmHTTPRequestGetURL(request) (&(request)->url)
 

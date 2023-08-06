@@ -77,10 +77,11 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
 #define hmStringGetChars(string) ((string)->content)
 /* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
-/* Returns the index (offset into the byte array) of the given rune in `out_index`.
+/* Returns the index (offset into the byte array) of the given rune in `out_index_opt`.
    If the rune is not found, returns HM_ERROR_NOT_FOUND.
-   If the string is not a well-formed UTF8 string, returns HM_ERROR_INVALID_DATA. */
-hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index);
+   If the string is not a well-formed UTF8 string, returns HM_ERROR_INVALID_DATA.
+   Parameter `out_index_opt` can be null for cases when we just want to see if the rune is present in the string. */
+hmError hmStringIndexRune(hmString* string, hm_rune rune_to_index, hm_nint* out_index_opt);
 
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt);
 hm_bool hmStringEqualsFunc(void* value1, void* value2);
