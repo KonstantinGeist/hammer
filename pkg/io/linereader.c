@@ -223,7 +223,7 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
 
 static hm_bool hmLineReaderIsNewline(hmLineReader* line_reader, hm_nint index)
 {
-    /* Note: it's safe to look for '\n' in a UTF8 string as it's guaranteed to not be part of any non-ASCII code point by design. */
+    /* NOTE: it's safe to look for '\n' in a UTF8 string as it's guaranteed to not be part of any non-ASCII code point by design. */
     if (line_reader->has_crlf_newlines) {
         if (line_reader->buffer[index] != '\n') {
             return HM_FALSE;

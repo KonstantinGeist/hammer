@@ -39,7 +39,7 @@ hmError hmStartProcess(
 )
 {
     char unix_args_buffer[HM_UNIX_ARGS_BUFFER_SIZE];
-    hmAllocator buffer_allocator; /* note: not required to dispose */
+    hmAllocator buffer_allocator; /* NOTE: not required to dispose */
     HM_TRY(hmCreateBufferAllocator(unix_args_buffer, sizeof(unix_args_buffer), allocator, &buffer_allocator));
     in_process->exit_code = 0;
     in_process->has_exited = HM_FALSE;

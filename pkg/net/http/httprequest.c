@@ -30,6 +30,7 @@
 #define HM_HTTP_VERSION_LITERAL_SIZE 9
 
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request);
+#define hmIsHTTPWhitespace(ch) ((ch) == ' ' || (ch) == '\t')
 
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
@@ -98,17 +99,17 @@ hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint
     return HM_OK;
 }
 
-static hmError hmParseHTTPMethod(hmString* string, hmHTTPMethod* out_method, hm_nint* method_literal_size)
+static hmError hmParseHTTPMethod(hmString* line, hmHTTPMethod* out_method, hm_nint* method_literal_size)
 {
-    if (hmStringStartsWithCStringAndLength(string, HM_GET_METHOD_LITERAL, HM_GET_METHOD_LITERAL_SIZE)) {
+    if (hmStringStartsWithCStringAndLength(line, HM_GET_METHOD_LITERAL, HM_GET_METHOD_LITERAL_SIZE)) {
         *out_method = HM_HTTP_METHOD_GET;
         *method_literal_size = HM_GET_METHOD_LITERAL_SIZE;
         return HM_OK;
-    } else if (hmStringStartsWithCStringAndLength(string, HM_POST_METHOD_LITERAL, HM_POST_METHOD_LITERAL_SIZE)) {
+    } else if (hmStringStartsWithCStringAndLength(line, HM_POST_METHOD_LITERAL, HM_POST_METHOD_LITERAL_SIZE)) {
         *out_method = HM_HTTP_METHOD_POST;
         *method_literal_size = HM_POST_METHOD_LITERAL_SIZE;
         return HM_OK;
-    } else if (hmStringStartsWithCStringAndLength(string, HM_PUT_METHOD_LITERAL, HM_PUT_METHOD_LITERAL_SIZE)) {
+    } else if (hmStringStartsWithCStringAndLength(line, HM_PUT_METHOD_LITERAL, HM_PUT_METHOD_LITERAL_SIZE)) {
         *out_method = HM_HTTP_METHOD_PUT;
         *method_literal_size = HM_PUT_METHOD_LITERAL_SIZE;
         return HM_OK;
@@ -117,42 +118,74 @@ static hmError hmParseHTTPMethod(hmString* string, hmHTTPMethod* out_method, hm_
     }
 }
 
-static hmError hmParseHTTPRequestLine(hmHTTPRequest* request, hmString* string)
+static hmError hmHTTPRequestParseRequestLine(hmHTTPRequest* request, hmString* line)
 {
     /* HTTP method. */
     hm_nint method_literal_size = 0;
-    HM_TRY(hmParseHTTPMethod(string, &request->method, &method_literal_size));
+    HM_TRY(hmParseHTTPMethod(line, &request->method, &method_literal_size));
     /* HTTP version. */
-    if (!hmStringEndsWithCStringAndLength(string, HM_HTTP_VERSION_LITERAL, HM_HTTP_VERSION_LITERAL_SIZE)) {
+    if (!hmStringEndsWithCStringAndLength(line, HM_HTTP_VERSION_LITERAL, HM_HTTP_VERSION_LITERAL_SIZE)) {
         return HM_ERROR_INVALID_DATA;
     }
     hm_nint url_length = 0;
-    HM_TRY(hmSubNint(hmStringGetLengthInBytes(string), method_literal_size, &url_length));
+    HM_TRY(hmSubNint(hmStringGetLengthInBytes(line), method_literal_size, &url_length));
     HM_TRY(hmSubNint(url_length, HM_HTTP_VERSION_LITERAL_SIZE, &url_length));
     return hmCreateSubstring(
         request->allocator,
-        string,
+        line,
         method_literal_size,
         url_length,
         &request->url
     );
 }
 
+static hmError hmHTTPRequestCreateHeaderKey(hmHTTPRequest* request, hmString* line, hm_nint colon_index, hmString* in_key)
+{
+    return hmCreateSubstring(request->allocator, line, 0, colon_index, in_key);
+}
+
+/* This function trims optional whitespace ("OWS") from both sides, according to the HTTP protocol. */
+static hmError hmHTTPRequestCreateHeaderValue(hmHTTPRequest* request, hmString* line, hm_nint colon_index, hmString* in_value)
+{
+    hm_nint value_start_index = 0;
+    HM_TRY(hmAddNint(colon_index, 1, &value_start_index)); /* +1 skips the colon itself */
+    hm_nint line_length_in_bytes = hmStringGetLengthInBytes(line);
+    if (line_length_in_bytes == 0 || value_start_index >= line_length_in_bytes) { /* additional checks just in case */
+        return HM_ERROR_INVALID_DATA;
+    }
+    char* chars = hmStringGetChars(line);
+    for (hm_nint i = value_start_index; i < line_length_in_bytes; i++) {
+        if (!hmIsHTTPWhitespace(chars[i])) {
+            break;
+        }
+        HM_TRY(hmAddNint(value_start_index, 1, &value_start_index));
+    }
+    hm_nint value_end_index = line_length_in_bytes; /* i.e. not inclusive */
+    /* No safe math for "line_length_in_bytes - 1" because the bounds were checked in "line_length_in_bytes == 0" above. */
+    for (hm_nint i = line_length_in_bytes - 1; i >= value_start_index; i--) {
+        if (!hmIsHTTPWhitespace(chars[i])) {
+            break;
+        }
+        HM_TRY(hmSubNint(value_end_index, 1, &value_end_index));
+    }
+    if (value_start_index >= value_end_index) { /* empty header value? => invalid header */
+        return HM_ERROR_INVALID_DATA;
+    }
+    hm_nint value_length_in_bytes = 0;
+    HM_TRY(hmSubNint(value_end_index, value_start_index, &value_length_in_bytes));
+    return hmCreateSubstring(request->allocator, line, value_start_index, value_length_in_bytes, in_value);
+}
+
 /* Parses header fields in the following formats:
    - "Key: Value"
    - "Key:Value"
    Anything else is not supported. */
-static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
+static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* line)
 {
     hm_nint colon_index = 0;
-    hmError err = hmStringIndexRune(string, (hm_rune)':', &colon_index);
+    hmError err = hmStringIndexRune(line, (hm_rune)':', &colon_index);
     if (err == HM_ERROR_NOT_FOUND) {
         return HM_ERROR_INVALID_DATA;
-    }
-    hm_nint whitespace_index = 0;
-    HM_TRY(hmAddNint(colon_index, 1, &whitespace_index));
-    if (whitespace_index >= hmStringGetLengthInBytes(string) || hmStringGetChars(string)[whitespace_index] != ' ') {
-        whitespace_index = colon_index;
     }
     hmString key, value;
     void* values_ref = HM_NULL;
@@ -160,13 +193,9 @@ static hmError hmParseHTTPHeaderField(hmHTTPRequest* request, hmString* string)
     hm_bool is_key_owned_by_function = HM_FALSE,
             is_value_owned_by_function = HM_FALSE,
             is_values_owned_by_function = HM_FALSE;
-    HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, 0, colon_index, &key));
+    HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateHeaderKey(request, line, colon_index, &key));
     is_key_owned_by_function = HM_TRUE;
-    hm_nint value_start_index = 0, value_length = 0;
-    HM_TRY_OR_FINALIZE(err, hmAddNint(whitespace_index, 1, &value_start_index));
-    HM_TRY_OR_FINALIZE(err, hmSubNint(hmStringGetLengthInBytes(string), whitespace_index, &value_length));
-    HM_TRY_OR_FINALIZE(err, hmSubNint(value_length, 1, &value_length));
-    HM_TRY_OR_FINALIZE(err, hmCreateSubstring(request->allocator, string, value_start_index, value_length, &value));
+    HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateHeaderValue(request, line, colon_index, &value));
     is_value_owned_by_function = HM_TRUE;
     err = hmHashMapGetRef(&request->headers, &key, &values_ref);
     if (err == HM_ERROR_NOT_FOUND) {
@@ -203,13 +232,13 @@ HM_ON_FINALIZE
     return err;
 }
 
-static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request, hmString* string, hm_nint header_count)
+static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request, hmString* line, hm_nint header_count)
 {
     hm_bool is_request_line = header_count == 0;
     if (is_request_line) {
-        return hmParseHTTPRequestLine(request, string);
+        return hmHTTPRequestParseRequestLine(request, line);
     } else {
-        return hmParseHTTPHeaderField(request, string);
+        return hmHTTPRequestParseHeaderField(request, line);
     }
 }
 

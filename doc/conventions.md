@@ -28,7 +28,8 @@ There are several conventions to follow:
 * All integer operations (addition, multiplication, subtraction, division) must be done with safe math functions as
   described in <core/math.h>, to avoid overflows/underflows. An exception to the rule is iteration variables (as they are bounded).
   Sometimes logic can guarantee a value will never practically overflow -- in that case, a comment must be written to
-  explain why no safe math function is used.
+  explain why no safe math function is used. Introduce such exceptions only when performance is top priority, and when
+  the unlikeliness of overflows is immediately visible in the surrounding code (due to bound checks).
 * Priorities: safety and stability > simplicity > performance.
 * Use the buffer allocator (see hmCreateBufferAllocator(..)) for temporary objects whenever possible.
   Allocate on stack whenever possible.

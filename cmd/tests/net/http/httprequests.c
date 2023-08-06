@@ -162,6 +162,7 @@ static void test_http_request_rejects_malformed_requests()
     test_http_request_with_error("", HM_ERROR_INVALID_DATA);
     test_http_request_with_error("GET", HM_ERROR_INVALID_DATA);
     test_http_request_with_error("GET /index HTTP/1.1\r\nKey Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nKey:    \t  \t\t   \t \r\n", HM_ERROR_INVALID_DATA);
 }
 
 static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
@@ -241,6 +242,27 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_http_request_supports_optional_whitespace_around_header_fields_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+    hmString key;
+    hmError err = hmCreateStringViewFromCString("Key", &key);
+    HM_TEST_ASSERT_OK(err);
+    hmString* value_ref;
+    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "\nValue\nWith\nOWS \t\t \n"));
+}
+
+static void test_http_request_supports_optional_whitespace_around_header_fields()
+{
+    const char* headers = 
+        "GET /index HTTP/1.1\r\n"
+        "Key:    \t\nValue\nWith\nOWS \t\t \n\t\t  \r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_optional_whitespace_around_header_fields_func);
+}
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
@@ -249,4 +271,5 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_supports_put_requests)
     HM_TEST_RUN(test_http_request_supports_lf_newlines_inside_fields)
     HM_TEST_RUN(test_http_request_respects_max_headers_size)
+    HM_TEST_RUN(test_http_request_supports_optional_whitespace_around_header_fields)
 HM_TEST_SUITE_END()

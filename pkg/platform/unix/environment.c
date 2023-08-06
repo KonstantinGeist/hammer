@@ -170,7 +170,7 @@ HM_ON_FINALIZE
 hmError hmGetOSVersion(hmAllocator* allocator, hmString* in_os_version)
 {
     char buffer_allocator_space[HM_OS_VERSION_BUFFER_SIZE];
-    hmAllocator buffer_allocator; /* note: not required to dispose */
+    hmAllocator buffer_allocator; /* NOTE: not required to dispose */
     HM_TRY(hmCreateBufferAllocator(buffer_allocator_space, sizeof(buffer_allocator_space), allocator, &buffer_allocator));
     hmStringBuilder string_builder;
     HM_TRY(hmCreateStringBuilder(&buffer_allocator, &string_builder));
@@ -208,7 +208,7 @@ static hmError hmFormatWithCurrentProcessId(
 )
 {
     char buffer_allocator_space[HM_SYSTEM_FILE_NAME_BUFFER_SIZE];
-    hmAllocator buffer_allocator; /* note: not required to dispose */
+    hmAllocator buffer_allocator; /* NOTE: not required to dispose */
     HM_TRY(hmCreateBufferAllocator(buffer_allocator_space, sizeof(buffer_allocator_space), allocator, &buffer_allocator));
     hmStringBuilder string_builder;
     HM_TRY(hmCreateStringBuilder(&buffer_allocator, &string_builder));
