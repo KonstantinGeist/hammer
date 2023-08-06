@@ -167,41 +167,6 @@ static void test_http_request_rejects_malformed_requests()
     test_http_request_with_error("GET /index HTTP/1.1\r\nValue:", HM_ERROR_INVALID_DATA);
 }
 
-static void test_http_request_respects_header_name_restrictions()
-{
-    test_http_request_with_error("GET /index HTTP/1.1\r\n!:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n\":Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n#:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n$:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n%:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n&:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n':Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n(:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n):Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n*:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n+:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n-:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n.:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n,:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n/:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n0:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n9:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n::Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n;:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n<:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n=:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n>:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n`:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\na:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\nz:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n{:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n|:Value", HM_OK);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n}:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\n\xc8:Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\nName:Va\rlue", HM_ERROR_INVALID_DATA); /* bare CR */
-    test_http_request_with_error("GET /index HTTP/1.1\r\nName1:Value1\r\n Name2:Value2", HM_ERROR_INVALID_DATA); /* line folding */
-}
-
 static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
@@ -300,6 +265,66 @@ static void test_http_request_supports_optional_whitespace_around_header_fields(
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_optional_whitespace_around_header_fields_func);
 }
 
+static void test_http_request_supports_header_name_canonicaliaztion_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
+    hmString name;
+    hmError err = hmCreateStringViewFromCString("X-My-Request", &name);
+    HM_TEST_ASSERT_OK(err);
+    hmString* value_ref;
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value1"));
+    err = hmHTTPRequestGetHeaderRef(request, &name, 1, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value2"));
+}
+
+static void test_http_request_supports_header_name_canonicaliaztion()
+{
+    const char* headers = 
+        "GET /index HTTP/1.1\r\n"
+        "X-my-request: Value1\r\n"
+        "X-My-rEqueSt: Value2\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_header_name_canonicaliaztion_func);
+}
+
+static void test_http_request_respects_header_name_restrictions()
+{
+    test_http_request_with_error("GET /index HTTP/1.1\r\n!:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n\":Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n#:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n$:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n%:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n&:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n':Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n(:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n):Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n*:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n+:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n-:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n.:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n,:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n/:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n0:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n9:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n::Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n;:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n<:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n=:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n>:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n`:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\na:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nz:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n{:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n|:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n}:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n\xc8:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName:Va\rlue", HM_ERROR_INVALID_DATA); /* bare CR */
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName1:Value1\r\n Name2:Value2", HM_ERROR_INVALID_DATA); /* line folding */
+}
+
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
     HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_name)
@@ -309,5 +334,6 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_supports_lf_newlines_inside_fields)
     HM_TEST_RUN(test_http_request_respects_max_headers_size)
     HM_TEST_RUN(test_http_request_supports_optional_whitespace_around_header_fields)
+    HM_TEST_RUN(test_http_request_supports_header_name_canonicaliaztion)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_respects_header_name_restrictions)
 HM_TEST_SUITE_END()
