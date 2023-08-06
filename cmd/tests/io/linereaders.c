@@ -30,8 +30,8 @@ static void create_line_reader_and_allocator(
     hmAllocator*  allocator,
     const char*   mem,
     char*         buffer,
-    hm_bool       has_crlf_newlines,
-    hm_nint       buffer_size
+    hm_nint       buffer_size,
+    hm_bool       has_crlf_newlines
 )
 {
     HM_TEST_INIT_ALLOC(allocator);
@@ -64,7 +64,7 @@ static void test_line_reader_supports_never_being_read()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!", buffer, HM_FALSE, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!", buffer, sizeof(buffer), HM_FALSE);
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
@@ -151,20 +151,37 @@ static void test_line_reader_ignores_trailing_new_line()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!\n\n", buffer, HM_FALSE, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello, World!\n\n", buffer, sizeof(buffer), HM_FALSE);
     hmString string1, string2, string3;
+    hm_bool is_string1_initialized = HM_FALSE,
+            is_string2_initialized = HM_FALSE,
+            is_string3_initialized = HM_FALSE;
     hmError err = hmLineReaderReadLine(&line_reader, &string1);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string1_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello, World!"));
     err = hmLineReaderReadLine(&line_reader, &string2);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string2_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string2, ""));
     err = hmLineReaderReadLine(&line_reader, &string3);
-    HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
-    err = hmStringDispose(&string1);
-    HM_TEST_ASSERT_OK(err);
-    err = hmStringDispose(&string2);
-    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT_ERROR_OR_OOM(err, HM_ERROR_INVALID_STATE);
+    if (err == HM_OK) {
+        is_string3_initialized = HM_TRUE;
+    }
+HM_TEST_ON_FINALIZE
+    if (is_string1_initialized) {
+        err = hmStringDispose(&string1);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string2_initialized) {
+        err = hmStringDispose(&string2);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string3_initialized) {
+        err = hmStringDispose(&string3);
+        HM_TEST_ASSERT_OK(err);
+    }
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
@@ -173,7 +190,7 @@ static void test_line_reader_expects_empty_reader()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, HM_FALSE, sizeof(buffer));
+    create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, sizeof(buffer), HM_FALSE);
     hmString string;
     hmError err = hmLineReaderReadLine(&line_reader, &string);
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
@@ -232,43 +249,66 @@ static void test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye,\nWorld!\r\n", buffer, HM_TRUE, sizeof(buffer));
-    hmString string;
-    hmError err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Hello,\nWorld!"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
-    err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Goodbye,\nWorld!"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye,\nWorld!\r\n", buffer, sizeof(buffer), HM_TRUE);
+    hmString string1, string2;
+    hm_bool is_string1_initialized = HM_FALSE,
+            is_string2_initialized = HM_FALSE;
+    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string1_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello,\nWorld!"));
+    err = hmLineReaderReadLine(&line_reader, &string2);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string2_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "Goodbye,\nWorld!"));
+HM_TEST_ON_FINALIZE
+    if (is_string1_initialized) {
+        err = hmStringDispose(&string1);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string2_initialized) {
+        err = hmStringDispose(&string2);
+        HM_TEST_ASSERT_OK(err);
+    }
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
 static void test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines()
+
 {
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[LINE_READER_BUFFER_SIZE];
-    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye", buffer, HM_FALSE, sizeof(buffer));
-    hmString string;
-    hmError err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Hello,"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
-    err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "World!\r"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
-    err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "Goodbye"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
+    create_line_reader_and_allocator(&line_reader, &allocator, "Hello,\nWorld!\r\nGoodbye", buffer, sizeof(buffer), HM_FALSE);
+    hmString string1, string2, string3;
+    hm_bool is_string1_initialized = HM_FALSE,
+            is_string2_initialized = HM_FALSE,
+            is_string3_initialized = HM_FALSE;
+    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string1_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello,"));
+    err = hmLineReaderReadLine(&line_reader, &string2);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string2_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "World!\r"));
+    err = hmLineReaderReadLine(&line_reader, &string3);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string3_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string3, "Goodbye"));
+HM_TEST_ON_FINALIZE
+    if (is_string1_initialized) {
+        err = hmStringDispose(&string1);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string2_initialized) {
+        err = hmStringDispose(&string2);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string3_initialized) {
+        err = hmStringDispose(&string3);
+        HM_TEST_ASSERT_OK(err);
+    }
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
@@ -277,28 +317,37 @@ static void test_line_readers_crlf_newline_can_straddle_two_buffer_reads()
     hmAllocator allocator;
     hmLineReader line_reader;
     char buffer[4]; /*  */
-    create_line_reader_and_allocator(&line_reader, &allocator, "123\r\n456", buffer, HM_TRUE, sizeof(buffer));
-    hmString string;
-    hmError err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "123"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
-    err = hmLineReaderReadLine(&line_reader, &string);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(&string, "456"));
-    err = hmStringDispose(&string);
-    HM_TEST_ASSERT_OK(err);
+    create_line_reader_and_allocator(&line_reader, &allocator, "123\r\n456", buffer, sizeof(buffer), HM_TRUE);
+    hmString string1, string2;
+    hm_bool is_string1_initialized = HM_FALSE,
+            is_string2_initialized = HM_FALSE;
+    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string1_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "123"));
+    err = hmLineReaderReadLine(&line_reader, &string2);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
+    is_string2_initialized = HM_TRUE;
+    HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "456"));
+HM_TEST_ON_FINALIZE
+    if (is_string1_initialized) {
+        err = hmStringDispose(&string1);
+        HM_TEST_ASSERT_OK(err);
+    }
+    if (is_string2_initialized) {
+        err = hmStringDispose(&string2);
+        HM_TEST_ASSERT_OK(err);
+    }
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
 
 HM_TEST_SUITE_BEGIN(line_readers)
     HM_TEST_RUN(test_line_reader_supports_never_being_read)
     HM_TEST_RUN(test_line_reader_can_read_several_lines)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_ignores_trailing_new_line)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_expects_empty_reader)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_propagates_errors_from_source_reader)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines)
-    HM_TEST_RUN_WITHOUT_OOM(test_line_readers_crlf_newline_can_straddle_two_buffer_reads)
+    HM_TEST_RUN(test_line_reader_ignores_trailing_new_line)
+    HM_TEST_RUN(test_line_reader_expects_empty_reader)
+    HM_TEST_RUN(test_line_reader_propagates_errors_from_source_reader)
+    HM_TEST_RUN(test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines)
+    HM_TEST_RUN(test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines)
+    HM_TEST_RUN(test_line_readers_crlf_newline_can_straddle_two_buffer_reads)
 HM_TEST_SUITE_END()
