@@ -21,7 +21,7 @@
 #include <net/http/common.h>
 
 /* See hmCreateHTTPRequestFromReader(..). */
-#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024)
+#define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024) /* recommended minimum as per RFC9112 ("8000 octets") */
 
 typedef struct {
     hmAllocator* allocator;
@@ -41,10 +41,13 @@ typedef struct {
   `max_headers_size` specifies the maximum size of all HTTP headers in the request (both name + value). Returns HM_ERROR_LIMIT_EXCEEDED
    if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE.
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary.
-   NOTE: HTTP requests in Hammer follow the HTTP standard in the following ways:
+   NOTE: HTTP requests in Hammer follow the HTTP standard (RFC9112) in the following ways:
    1) optional whitespaces around header values are supported;
    2) supports GET, POST and PUT methods;
-   3) characters in header field values are restricted to the grammar defined by the protocol.
+   3) characters in header field names are restricted to the grammar defined by the protocol;
+   4) anything other than HTTP1.1 is rejected;
+   5) supports only CRLF newlines;
+   6) optional whitespace is not supported for the request line (as allowed by the protocol).
    Deviations from the HTTP standard:
    1) supports UTF8 in header field values.
    HTTP requests in Hammer should support only basic interoperability with other systems and browsers ("good enough"). */

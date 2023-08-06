@@ -17,6 +17,16 @@
 #include <collections/array.h>
 #include <io/linereader.h>
 
+/* From RFC9112:
+   "Although the request-line grammar rule requires that each of the component elements be separated by a single SP octet,
+   recipients MAY instead parse on whitespace-delimited word boundaries and, aside from the CRLF terminator,
+   treat any form of whitespace as the SP separator while ignoring preceding or trailing whitespace; such whitespace
+   includes one or more of the following octets: SP, HTAB, VT (%x0B), FF (%x0C), or bare CR. However, lenient parsing
+   can result in request smuggling security vulnerabilities if there are multiple recipients of the message and each has
+   its own unique interpretation of robustness"
+
+   As a result
+*/
 #define HM_GET_METHOD_LITERAL "GET "
 #define HM_GET_METHOD_LITERAL_SIZE 4
 
@@ -259,6 +269,10 @@ HM_ON_FINALIZE
 
 static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request, hmString* line, hm_nint header_count)
 {
+    /* RFC9112: "A recipient of such a bare CR MUST consider that element to be invalid". */
+    if (hmStringIndexRune(line, (hm_rune)'\r', HM_NULL) == HM_OK) {
+        return HM_ERROR_INVALID_DATA;
+    }
     hm_bool is_request_line = header_count == 0;
     if (is_request_line) {
         return hmHTTPRequestParseRequestLine(request, line);

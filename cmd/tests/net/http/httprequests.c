@@ -198,6 +198,8 @@ static void test_http_request_respects_header_name_restrictions()
     test_http_request_with_error("GET /index HTTP/1.1\r\n|:Value", HM_OK);
     test_http_request_with_error("GET /index HTTP/1.1\r\n}:Value", HM_ERROR_INVALID_DATA);
     test_http_request_with_error("GET /index HTTP/1.1\r\n\xc8:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName:Va\rlue", HM_ERROR_INVALID_DATA); /* bare CR */
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName1:Value1\r\n Name2:Value2", HM_ERROR_INVALID_DATA); /* line folding */
 }
 
 static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
