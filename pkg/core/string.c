@@ -168,6 +168,15 @@ hm_nint hmStringGetLengthInBytes(hmString* string)
     return string->length_in_bytes;
 }
 
+hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars)
+{
+    if (!string->allocator_opt) { /* no allocator? it's a view! */
+        return HM_ERROR_INVALID_STATE;
+    }
+    *out_chars = string->content;
+    return HM_OK;
+}
+
 hm_uint32 hmStringHashFunc(void* key, hm_uint32 salt)
 {
     hmString* string = (hmString*)key;

@@ -43,8 +43,7 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
    String views should not be disposed, but it should be safe to try to dispose them.
    Strings are immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
-/* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`.
-   In-place modifications of the resulting string are allowed, as it's guaranteed to be a new string instance. */
+/* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`. */
 hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint start_index, hm_nint length_in_bytes, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
    Strings are immutable. */
@@ -72,10 +71,15 @@ hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
 hm_nint hmStringGetLengthInBytes(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
-   the contents are never mutated. */
+   the contents are never mutated. Use this function to pass the buffer to foreign code which supports C ABI.
+   See also: hmStringGetChars(..), hmStringGetCharsForUpdate(..) */
 #define hmStringGetCString(string) ((const char*)(string)->content)
-/* Returns the internal char arrays of the string for quicker access to the underlying data. */
+/* Returns the internal char array of the string for quicker read-only access to the underlying data.
+   See also: hmStringGetCString(..), hmStringGetCharsForUpdate(..) */
 #define hmStringGetChars(string) ((string)->content)
+/* Returns the internal char array in `out_buffer` for in-place updates. If the string is a read-only view, returns HM_ERROR_INVALID_STATE.
+   See also: hmStringGetCString(..), hmStringGetChars(..) */
+hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars);
 /* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
 /* Returns the index (offset into the byte array) of the given rune in `out_index_opt`.

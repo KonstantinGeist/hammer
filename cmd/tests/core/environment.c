@@ -49,7 +49,7 @@ static void test_can_get_executable_file_path()
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringGetLengthInBytes(&executable_file_path) > 0);
     hm_nint last_part_length_in_bytes = strlen(LAST_EXECUTABLE_FILE_PATH_PART);
-    const char* c_ctring = hmStringGetCString(&executable_file_path)
+    const char* c_ctring = hmStringGetChars(&executable_file_path)
                          + hmStringGetLengthInBytes(&executable_file_path)
                          - last_part_length_in_bytes;
     for(hm_nint i = 0; i < last_part_length_in_bytes; i++) {

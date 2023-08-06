@@ -165,9 +165,10 @@ static hmError hmHTTPRequestParseRequestLine(hmHTTPRequest* request, hmString* l
 }
 
 /* Canonicalization: "request-id" => "Request-Id", similar to how Go does it (because HTTP header names are case-insensitive, sadly). */
-static void hmCanonicalizeHTTPHeaderNameInPlace(hmString* name)
+static hmError hmCanonicalizeHTTPHeaderNameInPlace(hmString* name)
 {
-    char* chars = hmStringGetChars(name);
+    char* chars = HM_NULL;
+    HM_TRY(hmStringGetCharsForUpdate(name, &chars));
     hm_nint length_in_bytes = hmStringGetLengthInBytes(name);
     hm_bool should_capitalize = HM_TRUE;
     for (hm_nint i = 0; i < length_in_bytes; i++) {
@@ -188,6 +189,7 @@ static void hmCanonicalizeHTTPHeaderNameInPlace(hmString* name)
             should_capitalize = HM_TRUE;
         }
     }
+    return HM_OK;
 }
 
 /* Additionally validates that the header name is standard-conformant. */
@@ -203,8 +205,11 @@ static hmError hmHTTPRequestCreateHeaderName(hmHTTPRequest* request, hmString* l
         }
     }
     HM_TRY(hmCreateSubstring(request->allocator, line, 0, colon_index, in_name));
-    hmCanonicalizeHTTPHeaderNameInPlace(in_name); /* in-place modifications are allowed for strings returned from hmCreateSubstring(..) as per the spec */
-    return HM_OK;
+    hmError err = hmCanonicalizeHTTPHeaderNameInPlace(in_name);
+    if (err != HM_OK) {
+        err = hmMergeErrors(err, hmStringDispose(in_name));
+    }
+    return err;
 }
 
 /* This function trims optional whitespace ("OWS") from both sides, according to the HTTP protocol. */
