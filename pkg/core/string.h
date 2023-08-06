@@ -43,7 +43,8 @@ hmError hmCreateStringFromCStringWithLengthInBytes(hmAllocator* allocator, const
    String views should not be disposed, but it should be safe to try to dispose them.
    Strings are immutable. */
 hmError hmCreateStringViewFromCString(const char* content, hmString* in_string);
-/* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`. */
+/* Creates a substring from the given Hammer string `source`, starting from `start_index` and ending with `start + length_in_bytes`.
+   In-place modifications of the resulting string are allowed, as it's guaranteed to be a new string instance. */
 hmError hmCreateSubstring(hmAllocator* allocator, hmString* source, hm_nint start_index, hm_nint length_in_bytes, hmString* in_string);
 /* Creates an empty string view. Same as hmCreateStringViewFromCString("", ..)
    Strings are immutable. */

@@ -50,7 +50,9 @@ typedef struct {
    6) optional whitespace is not supported for the request line (as allowed by the protocol).
    Deviations from the HTTP standard:
    1) supports UTF8 in header field values.
-   HTTP requests in Hammer should support only basic interoperability with other systems and browsers ("good enough"). */
+   HTTP requests in Hammer should support only basic interoperability with other systems and browsers ("good enough").
+   We consider HTTP1.1 to be a legacy protocol for modern cloud solutions. It's left here to aid in quick testing and
+   for compatibility and interoperability with existing software, as it's the most ubiquitous web-based protocol. */
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
