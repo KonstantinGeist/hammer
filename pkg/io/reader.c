@@ -76,7 +76,7 @@ static hmError hmMemoryReader_seek(hmReader* reader, hm_nint offset)
 static hmError hmMemoryReader_close(hmReader* reader)
 {
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
-    hmFree(data->allocator, (char*)reader->data);
+    hmFree(data->allocator, data);
     return HM_OK;
 }
 
@@ -153,7 +153,7 @@ static hmError hmLimitedReader_close(hmReader* reader)
     if (data->close_source_reader) {
         err = hmReaderClose(&data->source_reader);
     }
-    hmFree(data->allocator, (char*)reader->data);
+    hmFree(data->allocator, data);
     return err;
 }
 
@@ -177,6 +177,93 @@ hmError hmCreateLimitedReader(
     in_reader->read = &hmLimitedReader_read;
     in_reader->seek = &hmLimitedReader_seek;
     in_reader->close = &hmLimitedReader_close;
+    in_reader->data = data;
+    return HM_OK;
+}
+
+/* ******************* */
+/*    LimitedReader.   */
+/* ******************* */
+
+typedef struct {
+    hmReader reader;       /* The wrapped reader. */
+    hm_bool  close_reader; /* If true, closes this source reader automatically when the composite reader is closed. */
+} hmCloseableSourceReader;
+
+typedef struct {
+    hmAllocator*             allocator;                   /* The allocator which governs this structure's lifetime. */
+    hm_nint                  source_reader_count;         /* Specifies the number of source readers in `closeable_source_readers`. */
+    hm_nint                  current_source_reader_index; /* Readers are activated in sequence for reading, and here we remember the current one. */
+    hmCloseableSourceReader  closeable_source_readers[1]; /* Enumerates the wrapped readers and whether they should be auto-closed.
+                                                             Note that the array is embedded inside hmCompositeReaderData to avoid allocation. */
+} hmCompositeReaderData;
+
+static hmError hmCompositeReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
+{
+    hmCompositeReaderData* data = (hmCompositeReaderData*)reader->data;
+    while (HM_TRUE) {
+        if (data->current_source_reader_index >= data->source_reader_count) { /* we have read from all the source readers completely */
+            *out_bytes_read = 0;
+            return HM_OK;
+        }
+        hmReader* current_source_reader = &data->closeable_source_readers[data->current_source_reader_index].reader;
+        HM_TRY(hmReaderRead(current_source_reader, buffer, size, out_bytes_read));
+        if (*out_bytes_read > 0) { /* something was read => all OK, finish for now */
+            return HM_OK;
+        }
+        /* The current source reader has been depleted => go to the next one. */
+        HM_TRY(hmAddNint(data->current_source_reader_index, 1, &data->current_source_reader_index));
+    }
+    return HM_OK;
+}
+
+static hmError hmCompositeReader_seek(hmReader* reader, hm_nint offset)
+{
+    return HM_ERROR_NOT_IMPLEMENTED;
+}
+
+static hmError hmCompositeReader_close(hmReader* reader)
+{
+    hmCompositeReaderData* data = (hmCompositeReaderData*)reader->data;
+    hmError err = HM_OK;
+    for (hm_nint i = 0; i < data->source_reader_count; i++) {
+        if (data->closeable_source_readers[i].close_reader) {
+            err = hmMergeErrors(err, hmReaderClose(&data->closeable_source_readers[i].reader));
+        }
+    }
+    hmFree(data->allocator, data);
+    return err;
+}
+
+hmError hmCreateCompositeReader(
+   hmAllocator*    allocator,
+   const hmReader* source_readers,
+   const hm_bool*  close_source_readers,
+   hm_nint         source_reader_count,
+   hmReader*       in_reader
+)
+{
+    if (!source_reader_count) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    hm_nint data_size = 0;
+    /* "source_reader_count - 1" accounts for "closeable_source_readers[1]" already embedded inside hmCompositeReaderData.
+       No safe math for "source_reader_count - 1" because it was validated earlier with "!source_reader_count". */
+    HM_TRY(hmAddMulNint(sizeof(hmCompositeReaderData), sizeof(hmCloseableSourceReader), source_reader_count - 1, &data_size));
+    hmCompositeReaderData* data = (hmCompositeReaderData*)hmAlloc(allocator, data_size);
+    if (!data) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    for (hm_nint i = 0; i < source_reader_count; i++) {
+        data->closeable_source_readers[i].reader = source_readers[i];
+        data->closeable_source_readers[i].close_reader = close_source_readers[i];
+    }
+    data->allocator = allocator;
+    data->source_reader_count = source_reader_count;
+    data->current_source_reader_index = 0;
+    in_reader->read = &hmCompositeReader_read;
+    in_reader->seek = &hmCompositeReader_seek;
+    in_reader->close = &hmCompositeReader_close;
     in_reader->data = data;
     return HM_OK;
 }
