@@ -84,18 +84,18 @@ static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPReque
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
-    hmString key;
-    hmError err = hmCreateStringViewFromCString("Accept-Encoding", &key);
+    hmString name;
+    hmError err = hmCreateStringViewFromCString("Accept-Encoding", &name);
     HM_TEST_ASSERT_OK(err);
     hmString* value_ref;
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "gzip, deflate, br"));
-    err = hmHTTPRequestGetHeaderRef(request, &key, 1, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 1, &value_ref);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
-    err = hmCreateStringViewFromCString("Non-Existing-Key", &key);
+    err = hmCreateStringViewFromCString("Non-Existing-Name", &name);
     HM_TEST_ASSERT_OK(err);
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
 }
 
@@ -120,39 +120,39 @@ static void test_http_request_can_be_created_from_reader()
     test_http_request_with_headers_and_func(headers, &test_http_request_can_be_created_from_valid_headers_func);
 }
 
-static void test_http_request_supports_multiple_values_under_single_key_func(hmHTTPRequest* request)
+static void test_http_request_supports_multiple_values_under_single_name_func(hmHTTPRequest* request)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
-    hmString key;
-    hmError err = hmCreateStringViewFromCString("Key1", &key);
+    hmString name;
+    hmError err = hmCreateStringViewFromCString("Name1", &name);
     HM_TEST_ASSERT_OK(err);
     hmString* value_ref;
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "1"));
-    err = hmHTTPRequestGetHeaderRef(request, &key, 1, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 1, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "2"));
-    err = hmHTTPRequestGetHeaderRef(request, &key, 2, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 2, &value_ref);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
-    err = hmCreateStringViewFromCString("Key2", &key);
+    err = hmCreateStringViewFromCString("Name2", &name);
     HM_TEST_ASSERT_OK(err);
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "3"));
-    err = hmHTTPRequestGetHeaderRef(request, &key, 1, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 1, &value_ref);
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND);
 }
 
-static void test_http_request_supports_multiple_values_under_single_key()
+static void test_http_request_supports_multiple_values_under_single_name()
 {
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
-        "Key1: 1\r\n"
-        "Key1: 2\r\n"
-        "Key2: 3\r\n";
-    test_http_request_with_headers_and_func(headers, &test_http_request_supports_multiple_values_under_single_key_func);
+        "Name1: 1\r\n"
+        "Name1: 2\r\n"
+        "Name2: 3\r\n";
+    test_http_request_with_headers_and_func(headers, &test_http_request_supports_multiple_values_under_single_name_func);
 }
 
 static void test_http_request_rejects_malformed_requests()
@@ -161,8 +161,43 @@ static void test_http_request_rejects_malformed_requests()
     test_http_request_with_error("GET /index HTTP/11.1", HM_ERROR_INVALID_DATA);
     test_http_request_with_error("", HM_ERROR_INVALID_DATA);
     test_http_request_with_error("GET", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\nKey Value", HM_ERROR_INVALID_DATA);
-    test_http_request_with_error("GET /index HTTP/1.1\r\nKey:    \t  \t\t   \t \r\n", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nName:    \t  \t\t   \t \r\n", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nValue:", HM_ERROR_INVALID_DATA);
+}
+
+static void test_http_request_respects_header_name_restrictions()
+{
+    test_http_request_with_error("GET /index HTTP/1.1\r\n!:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n\":Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n#:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n$:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n%:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n&:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n':Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n(:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n):Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n*:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n+:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n-:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n.:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n,:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n/:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n0:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n9:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n::Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n;:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n<:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n=:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n>:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n`:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\na:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\nz:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n{:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n|:Value", HM_OK);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n}:Value", HM_ERROR_INVALID_DATA);
+    test_http_request_with_error("GET /index HTTP/1.1\r\n\xc8:Value", HM_ERROR_INVALID_DATA);
 }
 
 static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
@@ -191,11 +226,11 @@ static void test_http_request_supports_lf_newlines_inside_fields_func(hmHTTPRequ
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
-    hmString key;
-    hmError err = hmCreateStringViewFromCString("Key", &key);
+    hmString name;
+    hmError err = hmCreateStringViewFromCString("Name", &name);
     HM_TEST_ASSERT_OK(err);
     hmString* value_ref;
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value\nWith\nLF"));
 }
@@ -204,7 +239,7 @@ static void test_http_request_supports_lf_newlines_inside_fields()
 {
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
-        "Key: Value\nWith\nLF\r\n";
+        "Name: Value\nWith\nLF\r\n";
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_lf_newlines_inside_fields_func);
 }
 
@@ -216,7 +251,7 @@ static void test_http_request_respects_max_headers_size()
     hmReader memory_reader;
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
-        "Key: Value\r\n";
+        "Name: Value\r\n";
     hmError err = hmCreateMemoryReader(&allocator, headers, strlen(headers), &memory_reader);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
@@ -246,11 +281,11 @@ static void test_http_request_supports_optional_whitespace_around_header_fields_
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
-    hmString key;
-    hmError err = hmCreateStringViewFromCString("Key", &key);
+    hmString name;
+    hmError err = hmCreateStringViewFromCString("Name", &name);
     HM_TEST_ASSERT_OK(err);
     hmString* value_ref;
-    err = hmHTTPRequestGetHeaderRef(request, &key, 0, &value_ref);
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "\nValue\nWith\nOWS \t\t \n"));
 }
@@ -259,17 +294,18 @@ static void test_http_request_supports_optional_whitespace_around_header_fields(
 {
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
-        "Key:    \t\nValue\nWith\nOWS \t\t \n\t\t  \r\n";
+        "Name:    \t\nValue\nWith\nOWS \t\t \n\t\t  \r\n";
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_optional_whitespace_around_header_fields_func);
 }
 
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
-    HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_key)
+    HM_TEST_RUN(test_http_request_supports_multiple_values_under_single_name)
     HM_TEST_RUN(test_http_request_rejects_malformed_requests)
     HM_TEST_RUN(test_http_request_supports_post_requests)
     HM_TEST_RUN(test_http_request_supports_put_requests)
     HM_TEST_RUN(test_http_request_supports_lf_newlines_inside_fields)
     HM_TEST_RUN(test_http_request_respects_max_headers_size)
     HM_TEST_RUN(test_http_request_supports_optional_whitespace_around_header_fields)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_respects_header_name_restrictions)
 HM_TEST_SUITE_END()

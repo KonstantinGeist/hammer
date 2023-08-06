@@ -32,6 +32,21 @@
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request);
 #define hmIsHTTPWhitespace(ch) ((ch) == ' ' || (ch) == '\t')
 
+static hm_nint valid_http_header_name_char_table[256] = {
+/*  0  1   2    3   4   5   6   7   8   9   10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27  28  29  30 31 */
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+/*  32  33  34  35  36  37  38  39  40  41  42  43  44  45  46  47  48  49  50  51  52  53  54  55  56  57  58  59  60  61  62  63 */
+    0,  1,  0,  1,  1,  1,  1,  1,  0,  0,  1,  1,  0,  1,  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  0,
+/*  64  65  66  67  68  69  70  71  72  73  74  75  76  77  78  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95 */
+    0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1,  1,
+/*  96  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 */
+    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  0,  1,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+};
+
 hmError hmCreateHTTPRequestFromReader(
     hmAllocator*   allocator,
     hmReader       reader,
@@ -87,10 +102,10 @@ hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
     return &request->reader;
 }
 
-hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* key, hm_nint index, hmString** header_ref)
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** header_ref)
 {
     void* values_ref = HM_NULL;
-    HM_TRY(hmHashMapGetRef(&request->headers, key, &values_ref));
+    HM_TRY(hmHashMapGetRef(&request->headers, name, &values_ref));
     if (index >= hmArrayGetCount((hmArray*)values_ref)) {
         return HM_ERROR_NOT_FOUND;
     }
@@ -139,9 +154,19 @@ static hmError hmHTTPRequestParseRequestLine(hmHTTPRequest* request, hmString* l
     );
 }
 
-static hmError hmHTTPRequestCreateHeaderKey(hmHTTPRequest* request, hmString* line, hm_nint colon_index, hmString* in_key)
+/* Additionally validates that the header name is standard-conformant. */
+static hmError hmHTTPRequestCreateHeaderName(hmHTTPRequest* request, hmString* line, hm_nint colon_index, hmString* in_name)
 {
-    return hmCreateSubstring(request->allocator, line, 0, colon_index, in_key);
+    if (colon_index == 0) {
+        return HM_ERROR_INVALID_DATA;
+    }
+    const hm_uint8* chars = (hm_uint8*)hmStringGetChars(line);
+    for (hm_nint i = 0; i < colon_index; i++) {
+        if (!valid_http_header_name_char_table[chars[i]]) {
+            return HM_ERROR_INVALID_DATA;
+        }
+    }
+    return hmCreateSubstring(request->allocator, line, 0, colon_index, in_name);
 }
 
 /* This function trims optional whitespace ("OWS") from both sides, according to the HTTP protocol. */
@@ -153,7 +178,7 @@ static hmError hmHTTPRequestCreateHeaderValue(hmHTTPRequest* request, hmString* 
     if (line_length_in_bytes == 0 || value_start_index >= line_length_in_bytes) { /* additional checks just in case */
         return HM_ERROR_INVALID_DATA;
     }
-    char* chars = hmStringGetChars(line);
+    const char* chars = hmStringGetChars(line);
     for (hm_nint i = value_start_index; i < line_length_in_bytes; i++) {
         if (!hmIsHTTPWhitespace(chars[i])) {
             break;
@@ -177,8 +202,8 @@ static hmError hmHTTPRequestCreateHeaderValue(hmHTTPRequest* request, hmString* 
 }
 
 /* Parses header fields in the following formats:
-   - "Key: Value"
-   - "Key:Value"
+   - "Name: Value"
+   - "Name:Value"
    Anything else is not supported. */
 static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* line)
 {
@@ -187,17 +212,17 @@ static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* l
     if (err == HM_ERROR_NOT_FOUND) {
         return HM_ERROR_INVALID_DATA;
     }
-    hmString key, value;
+    hmString name, value;
     void* values_ref = HM_NULL;
     hmArray values;
-    hm_bool is_key_owned_by_function = HM_FALSE,
+    hm_bool is_name_owned_by_function = HM_FALSE,
             is_value_owned_by_function = HM_FALSE,
             is_values_owned_by_function = HM_FALSE;
-    HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateHeaderKey(request, line, colon_index, &key));
-    is_key_owned_by_function = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateHeaderName(request, line, colon_index, &name));
+    is_name_owned_by_function = HM_TRUE;
     HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateHeaderValue(request, line, colon_index, &value));
     is_value_owned_by_function = HM_TRUE;
-    err = hmHashMapGetRef(&request->headers, &key, &values_ref);
+    err = hmHashMapGetRef(&request->headers, &name, &values_ref);
     if (err == HM_ERROR_NOT_FOUND) {
         err = HM_OK;
         HM_TRY_OR_FINALIZE(err, hmCreateArray(
@@ -208,11 +233,11 @@ static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* l
             &values
         ));
         is_values_owned_by_function = HM_TRUE;
-        HM_TRY_OR_FINALIZE(err, hmHashMapPut(&request->headers, &key, &values));
-        is_key_owned_by_function = HM_FALSE;
+        HM_TRY_OR_FINALIZE(err, hmHashMapPut(&request->headers, &name, &values));
+        is_name_owned_by_function = HM_FALSE;
         /* cppcheck-suppress redundantAssignment */
         is_values_owned_by_function = HM_FALSE;
-        HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&request->headers, &key, &values_ref));
+        HM_TRY_OR_FINALIZE(err, hmHashMapGetRef(&request->headers, &name, &values_ref));
     } else if (err != HM_OK) {
         HM_FINALIZE;
     }
@@ -220,8 +245,8 @@ static hmError hmHTTPRequestParseHeaderField(hmHTTPRequest* request, hmString* l
     /* cppcheck-suppress redundantAssignment */
     is_value_owned_by_function = HM_FALSE;
 HM_ON_FINALIZE
-    if (is_key_owned_by_function) {
-        err = hmMergeErrors(err, hmStringDispose(&key));
+    if (is_name_owned_by_function) {
+        err = hmMergeErrors(err, hmStringDispose(&name));
     }
     if (is_value_owned_by_function) {
         err = hmMergeErrors(err, hmStringDispose(&value));
