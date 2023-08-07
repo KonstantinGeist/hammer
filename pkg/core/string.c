@@ -21,7 +21,6 @@
 #define HM_EMPTY_STRING_LENGTH_IN_BYTES HM_NINT_MAX
 
 static hmError hmAddOffsetToUTF8Chars(const hm_utf8char* utf8_chars, hm_nint offset, const hm_utf8char** out_result);
-#define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 
 hmError hmCreateStringFromCString(hmAllocator* allocator, const char* content, hmString* in_string)
 {

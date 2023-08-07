@@ -16,6 +16,7 @@
 
 #include <core/common.h>
 #include <core/allocator.h>
+#include <core/utf8.h>
 
 typedef struct {
     char*        content;         /* The actual string content. If the `allocator` is specified, the content is owned by the string
@@ -80,6 +81,8 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
 /* Returns the internal char array of the string for quicker read-only access to the underlying data.
    See also: hmStringGetCString(..), hmStringGetCharsForUpdate(..) */
 #define hmStringGetChars(string) ((string)->content)
+/* Returns the string's chars as UTF8 bytes -- useful if we're required to use `hm_utf8char` (see). */
+#define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 /* Returns the internal char array in `out_buffer` for in-place updates. If the string is a read-only view, returns HM_ERROR_INVALID_STATE.
    Supports trimming the original char buffer with '\0' in the middle: string length will be recalculated in that case.
    WARNING: don't update string content for strings used as keys to hashmaps etc.

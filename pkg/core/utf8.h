@@ -19,7 +19,7 @@
 /* UTF8-related math expects chars to be unsigned, while our string's content is just `char*` for C interoperability,
    which is not guaranteed to be unsigned. So we define an explicitly unsigned UTF8 char type.
    See hmNextUTF8Rune(..) */
-typedef unsigned char hm_utf8char;
+typedef hm_uint8 hm_utf8char;
 
 /* Allows to iterate over runes in a UTF8 string (UTF8 is a variable-sized encoding so you can't just increment the index
    when iterating):

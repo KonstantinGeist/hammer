@@ -222,7 +222,7 @@ static hmError hmHTTPRequestCreateHeaderName(hmHTTPRequest* request, hmString* l
     if (colon_index == 0) {
         return HM_ERROR_INVALID_DATA;
     }
-    const hm_uint8* chars = (hm_uint8*)hmStringGetChars(line);
+    const hm_utf8char* chars = hmStringGetUTF8Chars(line);
     for (hm_nint i = 0; i < colon_index; i++) {
         if (!valid_http_header_name_char_table[chars[i]]) {
             return HM_ERROR_INVALID_DATA;

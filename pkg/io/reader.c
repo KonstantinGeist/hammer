@@ -181,9 +181,9 @@ hmError hmCreateLimitedReader(
     return HM_OK;
 }
 
-/* ******************* */
-/*    LimitedReader.   */
-/* ******************* */
+/* ********************* */
+/*    CompositeReader.   */
+/* ********************* */
 
 typedef struct {
     hmReader reader;       /* The wrapped reader. */
@@ -200,6 +200,10 @@ typedef struct {
 
 static hmError hmCompositeReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
 {
+    if (!size) {
+        *out_bytes_read = 0;
+        return HM_OK; /* do nothing because we were told to read 0 bytes */
+    }
     hmCompositeReaderData* data = (hmCompositeReaderData*)reader->data;
     while (HM_TRUE) {
         if (data->current_source_reader_index >= data->source_reader_count) { /* we have read from all the source readers completely */
