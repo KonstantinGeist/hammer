@@ -203,11 +203,6 @@ static hmError hmFailingReader_read(hmReader* reader, char* buffer, hm_nint size
     return HM_ERROR_PLATFORM_DEPENDENT;
 }
 
-static hmError hmFailingReader_seek(hmReader* reader, hm_nint offset)
-{
-    return HM_ERROR_PLATFORM_DEPENDENT;
-}
-
 static hmError hmFailingReader_close(hmReader* reader)
 {
     return HM_ERROR_PLATFORM_DEPENDENT;
@@ -216,7 +211,6 @@ static hmError hmFailingReader_close(hmReader* reader)
 static hmError hmCreateFailingReader(hmReader* in_reader)
 {
     in_reader->read = &hmFailingReader_read;
-    in_reader->seek = &hmFailingReader_seek;
     in_reader->close = &hmFailingReader_close;
     in_reader->data = HM_NULL;
     return HM_OK;

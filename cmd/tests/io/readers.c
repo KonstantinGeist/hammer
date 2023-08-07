@@ -52,36 +52,6 @@ HM_TEST_ON_FINALIZE
     dispose_memory_reader_and_allocator(&reader, &allocator);
 }
 
-static void test_memory_can_create_seek_read_close()
-{
-    char read_buffer[SMALL_READ_BUFFER_SIZE] = {0};
-    hm_nint bytes_read;
-    hmAllocator allocator;
-    hmReader reader;
-    create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderSeek(&reader, 3);
-    HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(hmMemoryReaderGetPosition(&reader) == 3);
-    err = hmReaderRead(&reader, read_buffer, SMALL_READ_BUFFER_SIZE, &bytes_read);
-    HM_TEST_ASSERT_OK_OR_OOM(err);
-    HM_TEST_ASSERT(bytes_read == SMALL_READ_BUFFER_SIZE);
-    HM_TEST_ASSERT(hmMemoryReaderGetPosition(&reader) == 3 + SMALL_READ_BUFFER_SIZE);
-    HM_TEST_ASSERT(hmCompareMemory(read_buffer, "lo, W", SMALL_READ_BUFFER_SIZE) == 0);
-HM_TEST_ON_FINALIZE
-    dispose_memory_reader_and_allocator(&reader, &allocator);
-}
-
-static void test_memory_reader_cant_seek_past_buffer()
-{
-    hmAllocator allocator;
-    hmReader reader;
-    create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderSeek(&reader, 15);
-    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
-    HM_TEST_ASSERT(hmMemoryReaderGetPosition(&reader) == 0);
-    dispose_memory_reader_and_allocator(&reader, &allocator);
-}
-
 static void test_memory_reader_truncates_buffer_if_read_past_buffer()
 {
     char read_buffer[SMALL_READ_BUFFER_SIZE] = {0};
@@ -89,7 +59,7 @@ static void test_memory_reader_truncates_buffer_if_read_past_buffer()
     hmAllocator allocator;
     hmReader reader;
     create_memory_reader_and_allocator(&reader, &allocator);
-    hmError err = hmReaderSeek(&reader, 8);
+    hmError err = hmMemoryReaderSetPosition(&reader, 8);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     err = hmReaderRead(&reader, read_buffer, SMALL_READ_BUFFER_SIZE, &bytes_read);
     HM_TEST_ASSERT_OK_OR_OOM(err);
@@ -241,8 +211,6 @@ HM_TEST_ON_FINALIZE
 
 HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_can_create_read_close)
-    HM_TEST_RUN(test_memory_can_create_seek_read_close)
-    HM_TEST_RUN(test_memory_reader_cant_seek_past_buffer)
     HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer)
     HM_TEST_RUN(test_memory_reader_ignores_zero_size_requests)
     HM_TEST_RUN(test_memory_reader_does_not_allow_to_read_past_buffer)

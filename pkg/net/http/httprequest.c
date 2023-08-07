@@ -361,7 +361,9 @@ static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReade
     ));
     is_memory_reader_initialized = HM_TRUE;
     hmReader source_readers[2] = {memory_reader, request->reader};
-    hm_bool close_source_readers[2] = {HM_TRUE, HM_FALSE}; /* `request->reader` is closed separately in hmHTTPRequestDispose(..) */
+    /* `memory_reader` is owned by the composite reader from now on.
+       `request->reader` is closed separately in hmHTTPRequestDispose(..), depending on `close_reader` from the constructor. */
+    hm_bool close_source_readers[2] = {HM_TRUE, HM_FALSE};
     HM_TRY_OR_FINALIZE(err, hmCreateCompositeReader(
         request->allocator,
         source_readers,

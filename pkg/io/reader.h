@@ -22,7 +22,6 @@
 /* Generic structure for any reader. Readers can be used to read runtime metadata from disk, memory, etc. */
 typedef struct hmReader_ {
     hmError (*read)(struct hmReader_* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read); /* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. */
-    hmError (*seek)(struct hmReader_* reader, hm_nint offset); /* Moves the file pointer to a specific offset denoted by `offset`. */
     hmError (*close)(struct hmReader_* reader);
     void*     data;                                            /* Reader-specific data. */
 } hmReader;
@@ -30,8 +29,6 @@ typedef struct hmReader_ {
 /* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. If `out_bytes_read` is 0, it means there's no
    more data in the reader. */
 hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read);
-/* Moves the file pointer to a specific offset denoted by `offset`. */
-hmError hmReaderSeek(hmReader* reader, hm_nint offset);
 /* Closes the reader, freeing all additional resources. */
 hmError hmReaderClose(hmReader *reader);
 
@@ -41,10 +38,13 @@ hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint me
 /* Gets the current position of the memory reader. Useful for tests.
    The behavior is undefined if `reader` is not a memory reader. */
 hm_nint hmMemoryReaderGetPosition(hmReader* reader);
+/* Sets the current position of the memory reader. Useful for tests.
+   The behavior is undefined if `reader` is not a memory reader. */
+hmError hmMemoryReaderSetPosition(hmReader* reader, hm_nint offset);
 /* Creates a limited reader which wraps another reader `source_reader` and returns HM_ERROR_LIMIT_EXCEEDED if more than
    `limit_in_bytes` bytes is read from `source_reader`. Useful when limiting the amount of data to be read, for example
    in the web context. If `close_source_reader` is set to true, the limited reader closes the buffer it wraps when it's
-   closed itself. Returns HM_ERROR_NOT_IMPLEMENTED for hmReaderSeek(..) */
+   closed itself. */
 hmError hmCreateLimitedReader(
    hmAllocator* allocator,
    hmReader     source_reader,
@@ -58,8 +58,7 @@ hmError hmCreateLimitedReader(
    - etc.
    `source_readers` is a list of readers to wrap, with `source_reader_count` specifying their count.
    `close_source_readers` specifies, for each reader in `source_readers` at the corresponding indices, whether the source
-   readers should be closed when the composite reader closes. 
-   Returns HM_ERROR_NOT_IMPLEMENTED for hmReaderSeek(..) */
+   readers should be closed when the composite reader closes. */
 hmError hmCreateCompositeReader(
    hmAllocator*    allocator,
    const hmReader* source_readers,

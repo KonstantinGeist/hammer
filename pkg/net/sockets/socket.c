@@ -24,11 +24,6 @@ static hmError hmSocketReader_read(hmReader* reader, char* buffer, hm_nint size,
     return hmSocketRead(data->socket, buffer, size, out_bytes_read);
 }
 
-static hmError hmSocketReader_seek(hmReader* reader, hm_nint offset)
-{
-    return HM_ERROR_NOT_IMPLEMENTED;
-}
-
 static hmError hmSocketReader_close(hmReader* reader)
 {
     hmSocketReaderData* data = (hmSocketReaderData*)reader->data;
@@ -46,7 +41,6 @@ hmError hmSocketCreateReader(hmSocket* socket, hmAllocator* reader_allocator_opt
     data->allocator = allocator;
     data->socket = socket;
     in_reader->read = &hmSocketReader_read;
-    in_reader->seek = &hmSocketReader_seek;
     in_reader->close = &hmSocketReader_close;
     in_reader->data = data;
     return HM_OK;

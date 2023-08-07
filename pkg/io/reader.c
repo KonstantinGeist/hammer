@@ -21,11 +21,6 @@ hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_
     return reader->read(reader, buffer, size, out_bytes_read);
 }
 
-hmError hmReaderSeek(hmReader* reader, hm_nint size)
-{
-    return reader->seek(reader, size);
-}
-
 hmError hmReaderClose(hmReader* reader)
 {
     return reader->close(reader);
@@ -63,16 +58,6 @@ static hmError hmMemoryReader_read(hmReader* reader, char* buffer, hm_nint size,
     return HM_OK;
 }
 
-static hmError hmMemoryReader_seek(hmReader* reader, hm_nint offset)
-{
-    hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
-    if (offset >= data->size) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
-    data->offset = offset;
-    return HM_OK;
-}
-
 static hmError hmMemoryReader_close(hmReader* reader)
 {
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
@@ -91,7 +76,6 @@ hmError hmCreateMemoryReader(hmAllocator* allocator, const char* mem, hm_nint me
     data->offset = 0;
     data->size = mem_size;
     in_reader->read = &hmMemoryReader_read;
-    in_reader->seek = &hmMemoryReader_seek;
     in_reader->close = &hmMemoryReader_close;
     in_reader->data = data;
     return HM_OK;
@@ -101,6 +85,16 @@ hm_nint hmMemoryReaderGetPosition(hmReader* reader)
 {
     hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
     return data->offset;
+}
+
+hmError hmMemoryReaderSetPosition(hmReader* reader, hm_nint offset)
+{
+    hmMemoryReaderData* data = (hmMemoryReaderData*)reader->data;
+    if (offset >= data->size) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
+    data->offset = offset;
+    return HM_OK;
 }
 
 /* ******************* */
@@ -141,11 +135,6 @@ static hmError hmLimitedReader_read(hmReader* reader, char* buffer, hm_nint size
     return HM_OK;
 }
 
-static hmError hmLimitedReader_seek(hmReader* reader, hm_nint offset)
-{
-    return HM_ERROR_NOT_IMPLEMENTED;
-}
-
 static hmError hmLimitedReader_close(hmReader* reader)
 {
     hmLimitedReaderData* data = (hmLimitedReaderData*)reader->data;
@@ -175,7 +164,6 @@ hmError hmCreateLimitedReader(
     data->limit_in_bytes = limit_in_bytes;
     data->total_bytes_read = 0;
     in_reader->read = &hmLimitedReader_read;
-    in_reader->seek = &hmLimitedReader_seek;
     in_reader->close = &hmLimitedReader_close;
     in_reader->data = data;
     return HM_OK;
@@ -221,11 +209,6 @@ static hmError hmCompositeReader_read(hmReader* reader, char* buffer, hm_nint si
     return HM_OK;
 }
 
-static hmError hmCompositeReader_seek(hmReader* reader, hm_nint offset)
-{
-    return HM_ERROR_NOT_IMPLEMENTED;
-}
-
 static hmError hmCompositeReader_close(hmReader* reader)
 {
     hmCompositeReaderData* data = (hmCompositeReaderData*)reader->data;
@@ -266,7 +249,6 @@ hmError hmCreateCompositeReader(
     data->source_reader_count = source_reader_count;
     data->current_source_reader_index = 0;
     in_reader->read = &hmCompositeReader_read;
-    in_reader->seek = &hmCompositeReader_seek;
     in_reader->close = &hmCompositeReader_close;
     in_reader->data = data;
     return HM_OK;
