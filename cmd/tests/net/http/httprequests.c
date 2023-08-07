@@ -14,6 +14,7 @@
 #include "../../common.h"
 
 #include <net/http/httprequest.h>
+#include <core/utils.h>
 
 #include <string.h> /* for strlen(..) */
 
@@ -383,8 +384,16 @@ static void test_http_request_supports_head_method()
 
 static void test_http_request_can_read_body_func(hmHTTPRequest* request)
 {
+    const char* expected_body = "Hello, World!";
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/send_message"));
+    hmReader* body_reader = hmHTTPRequestGetBodyReader(request);
+    char buffer[HM_READER_DEFAULT_BUFFER_SIZE];
+    hm_nint bytes_read = 0;
+    hmError err = hmReaderRead(body_reader, buffer, sizeof(buffer), &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read == strlen(expected_body));
+    HM_TEST_ASSERT(hmCompareMemory(buffer, expected_body, bytes_read) == 0);
 }
 
 static void test_http_request_can_read_body()

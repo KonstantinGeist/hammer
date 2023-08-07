@@ -29,8 +29,10 @@ typedef struct {
                                            what's left in hmLineReader's buffer to keep reading where it left off.
                                            See hmLineReaderGetBuffered(..) */
     hmReader     reader;                /* Stores the reader in order to:
-                                           1) read the body via hmHTTPRequestGetBodyReader(..)
-                                           2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
+                                           1) create the body reader based on it via hmHTTPRequestCreateBodyReader(..)
+                                           2) dispose of it in hmHTTPRequestDispose(..), if enabled via `close_reader` */
+    hmReader     body_reader;           /* Returned by hmHTTPRequestGetBodyReader(..) Assumed to be created if `remaining_buffer`
+                                           is non-zero (we avoid introducing a new flag here). */
     hmHashMap    headers;               /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
     hmString     url;                   /* URL of the request. */
     hmHTTPMethod method;                /* The HTTP method: GET, POST, PUT etc. */

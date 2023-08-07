@@ -115,6 +115,7 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
     err = hmMergeErrors(err, hmStringDispose(&request->url));
     err = hmMergeErrors(err, hmHashMapDispose(&request->headers));
     if (request->remaining_buffer) {
+        err = hmMergeErrors(err, hmReaderClose(&request->body_reader)); /* body_reader is considered initialized if `remaining_buffer` is non-zero */
         hmFree(request->allocator, request->remaining_buffer);
     }
     return err;
@@ -124,7 +125,7 @@ hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
 {
     /* We use the same reader from hmCreateHTTPRequestFromReader(..), except now its position must be at the beginning
        of the body when the first call to hmHTTPRequestGetBodyReader(..) is made. */
-    return &request->reader;
+    return &request->body_reader;
 }
 
 hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** header_ref)
@@ -333,10 +334,10 @@ static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request
     }
 }
 
-static hmError hmHTTPRequestInitializeRemainingBuffer(hmHTTPRequest* request, hmLineReader* line_reader)
+static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReader* line_reader)
 {
-    /* Copies what's left in hmLineReader's fixed-size buffer into hmHTTPRequest's own buffer so that reading 
-       of raw body could continue where hmLineReader where left off. */
+    /* Copies what's left in hmLineReader's fixed-size buffer into hmHTTPRequest's own buffer so that reading  of raw
+       body could continue where hmLineReader where left off. */
     char* remaining_buffer = HM_NULL;
     hm_nint remaining_buffer_size = 0;
     HM_TRY(hmLineReaderGetBuffered(line_reader, &remaining_buffer, &remaining_buffer_size));
@@ -349,7 +350,35 @@ static hmError hmHTTPRequestInitializeRemainingBuffer(hmHTTPRequest* request, hm
     }
     hmCopyMemory(request->remaining_buffer, remaining_buffer, remaining_buffer_size);
     request->remaining_buffer_size = remaining_buffer_size;
-    return HM_OK;
+    hmError err = HM_OK;
+    hmReader memory_reader;
+    hm_bool is_memory_reader_initialized = HM_FALSE;
+    HM_TRY_OR_FINALIZE(err, hmCreateMemoryReader(
+        request->allocator,
+        request->remaining_buffer,
+        request->remaining_buffer_size,
+        &memory_reader
+    ));
+    is_memory_reader_initialized = HM_TRUE;
+    hmReader source_readers[2] = {memory_reader, request->reader};
+    hm_bool close_source_readers[2] = {HM_TRUE, HM_FALSE}; /* `request->reader` is closed separately in hmHTTPRequestDispose(..) */
+    HM_TRY_OR_FINALIZE(err, hmCreateCompositeReader(
+        request->allocator,
+        source_readers,
+        close_source_readers,
+        2,
+        &request->body_reader
+    ));
+HM_ON_FINALIZE
+    if (err != HM_OK) {
+        if (is_memory_reader_initialized) {
+            err = hmMergeErrors(err, hmReaderClose(&memory_reader));
+        }
+        hmFree(request->allocator, request->remaining_buffer);
+        request->remaining_buffer = HM_NULL;
+        request->remaining_buffer_size = 0;
+    }
+    return err;
 }
 
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request)
@@ -382,7 +411,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
         if (hmStringIsEmpty(&string)) { /* an empty string is a signal that the header part is over */
             HM_TRY_OR_FINALIZE(err, hmStringDispose(&string));
-            HM_TRY_OR_FINALIZE(err, hmHTTPRequestInitializeRemainingBuffer(request, &line_reader));
+            HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateBodyReader(request, &line_reader));
             break;
         }
         err = hmHTTPRequestParseRequestLineOrHeaderField(request, &string, header_count);
