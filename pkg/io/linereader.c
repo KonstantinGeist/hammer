@@ -85,6 +85,17 @@ hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line)
     return HM_OK;
 }
 
+/* NOTE: similar to hmLineReaderAppendRemainingInBufferToNextLine(..) */
+hmError hmLineReaderGetBuffered(hmLineReader* line_reader, char** out_buffer, hm_nint* out_size)
+{
+    hm_nint buffer_with_index_offset = 0, remaining_size = 0;
+    HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
+    HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
+    *out_buffer = hmCastNintToPointer(buffer_with_index_offset, char*);
+    *out_size = remaining_size;
+    return HM_OK;
+}
+
 hmError hmReadAllLines(
     hmAllocator* allocator,
     hmReader     reader,

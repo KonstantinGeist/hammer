@@ -25,14 +25,18 @@
 
 typedef struct {
     hmAllocator* allocator;
-    hmReader     reader;           /* Stores the reader in order to:
-                                      1) read the body via hmHTTPRequestGetBodyReader(..)
-                                      2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
-    hmHashMap    headers;          /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
-    hmString     url;              /* URL of the request. */
-    hmHTTPMethod method;           /* The HTTP method: GET, POST, PUT etc. */
-    hm_nint      max_headers_size; /* The maximum size of all HTTP headers. */
-    hm_bool      close_reader;     /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
+    char*        remaining_buffer;      /* When we switch from line reading to reading raw content, we need to remember
+                                           what's left in hmLineReader's buffer to keep reading where it left off.
+                                           See hmLineReaderGetBuffered(..) */
+    hmReader     reader;                /* Stores the reader in order to:
+                                           1) read the body via hmHTTPRequestGetBodyReader(..)
+                                           2) dispose of it in hmHTTPRequestDispose(..), if enabled via close_reader */
+    hmHashMap    headers;               /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
+    hmString     url;                   /* URL of the request. */
+    hmHTTPMethod method;                /* The HTTP method: GET, POST, PUT etc. */
+    hm_nint      max_headers_size;      /* The maximum size of all HTTP headers. */
+    hm_nint      remaining_buffer_size; /* Describes the size of `remaining_buffer`. */
+    hm_bool      close_reader;          /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.

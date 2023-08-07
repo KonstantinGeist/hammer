@@ -56,6 +56,14 @@ hmError hmLineReaderDispose(hmLineReader* line_reader);
    All reading errors from the underlying source reader are simply propagated.
    NOTE If the stream ends with a trailing newline (for example, "Hello World\n"), no empty line is returned. */
 hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line);
+/* The line reader can "overshoot", i.e. while reading the next line from the source reader, it can read more bytes
+   than necessary for the next line, because it reads in fixed size chunks. This function returns what's left in the buffer by
+   placing the pointer to the internal buffer in `out_buffer` with `out_size`. The returned buffer is valid as long as
+   the line reader is valid: copy it to a different buffer if you want it to survive a call to hmLineReaderDispose(..)
+   The function is useful when the source reader is shared between multiple clients: for example, one client (i.e. hmLineReader)
+   wants to read several lines up to some point, and another client wants to start reading where hmLineReader left off.
+   Subsequent calls to hmLineReaderReadLine(..) can change the contents of the buffer. */
+hmError hmLineReaderGetBuffered(hmLineReader* line_reader, char** out_buffer, hm_nint* out_size);
 
 /* A helper function which creates a temporary line reader from the given `reader`, reads all lines, accumulates them
    in an array, and then disposes of the temporary line reader.

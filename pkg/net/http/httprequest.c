@@ -14,6 +14,7 @@
 #include <net/http/httprequest.h>
 #include <core/math.h>
 #include <core/string.h>
+#include <core/utils.h>
 #include <collections/array.h>
 #include <io/linereader.h>
 
@@ -90,10 +91,12 @@ hmError hmCreateHTTPRequestFromReader(
         return err;
     }
     in_request->allocator = allocator;
+    in_request->remaining_buffer = HM_NULL;
     in_request->reader = reader;
     in_request->close_reader = close_reader;
     in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_headers_size = max_headers_size;
+    in_request->remaining_buffer_size = 0;
     err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
     /* Must be called the last because depends on the fields above. */
     err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
@@ -110,7 +113,11 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
         err = hmMergeErrors(err, hmReaderClose(&request->reader));
     }
     err = hmMergeErrors(err, hmStringDispose(&request->url));
-    return hmMergeErrors(err, hmHashMapDispose(&request->headers));
+    err = hmMergeErrors(err, hmHashMapDispose(&request->headers));
+    if (request->remaining_buffer) {
+        hmFree(request->allocator, request->remaining_buffer);
+    }
+    return err;
 }
 
 hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
@@ -326,6 +333,25 @@ static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request
     }
 }
 
+static hmError hmHTTPRequestInitializeRemainingBuffer(hmHTTPRequest* request, hmLineReader* line_reader)
+{
+    /* Copies what's left in hmLineReader's fixed-size buffer into hmHTTPRequest's own buffer so that reading 
+       of raw body could continue where hmLineReader where left off. */
+    char* remaining_buffer = HM_NULL;
+    hm_nint remaining_buffer_size = 0;
+    HM_TRY(hmLineReaderGetBuffered(line_reader, &remaining_buffer, &remaining_buffer_size));
+    if (!remaining_buffer_size) {
+        return HM_OK;
+    }
+    request->remaining_buffer = hmAlloc(request->allocator, remaining_buffer_size);
+    if (!request->remaining_buffer) {
+        return HM_ERROR_OUT_OF_MEMORY;
+    }
+    hmCopyMemory(request->remaining_buffer, remaining_buffer, remaining_buffer_size);
+    request->remaining_buffer_size = remaining_buffer_size;
+    return HM_OK;
+}
+
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request)
 {
     hmReader limited_reader;
@@ -354,9 +380,14 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     hm_nint header_count = 0;
     hmString string;
     while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
+        if (hmStringIsEmpty(&string)) { /* an empty string is a signal that the header part is over */
+            HM_TRY_OR_FINALIZE(err, hmStringDispose(&string));
+            HM_TRY_OR_FINALIZE(err, hmHTTPRequestInitializeRemainingBuffer(request, &line_reader));
+            break;
+        }
         err = hmHTTPRequestParseRequestLineOrHeaderField(request, &string, header_count);
-        HM_TRY_OR_FINALIZE(err, hmMergeErrors(err, hmStringDispose(&string))); /* in the HTTP request, derived strings (if any) are retained, not the original one */
-        HM_TRY_OR_FINALIZE(err, hmMergeErrors(err, hmAddNint(header_count, 1, &header_count)));
+        HM_TRY_OR_FINALIZE(err, hmStringDispose(&string)); /* in the HTTP request, derived strings (if any) are retained, not the original one */
+        HM_TRY_OR_FINALIZE(err, hmAddNint(header_count, 1, &header_count));
     }
     /* According to the specification of hmLineReaderReadLine(..), error code HM_ERROR_INVALID_STATE tells that there
        are no more lines in the line reader, so we convert it to HM_OK, because it's not actually an error as far as

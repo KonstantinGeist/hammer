@@ -381,6 +381,21 @@ static void test_http_request_supports_head_method()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_head_method_func);
 }
 
+static void test_http_request_can_read_body_func(hmHTTPRequest* request)
+{
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/send_message"));
+}
+
+static void test_http_request_can_read_body()
+{
+    const char* headers = 
+        "POST /send_message HTTP/1.1\r\n"
+        "Auth: 12345Q\r\n"
+        "\r\n"
+        "Hello, World!";
+    test_http_request_with_headers_and_func(headers, &test_http_request_can_read_body_func);
+}
 
 HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN(test_http_request_can_be_created_from_reader)
@@ -397,4 +412,5 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_put_method)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_delete_method)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_head_method)
+    HM_TEST_RUN(test_http_request_can_read_body)
 HM_TEST_SUITE_END()

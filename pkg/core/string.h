@@ -69,6 +69,9 @@ hm_bool hmStringEquals(hmString* string1, hmString* string2);
 hm_uint32 hmStringHash(hmString* string, hm_uint32 salt);
 /* Returns the length of the string in bytes. The length may be computed lazily and is cached inside the string. */
 hm_nint hmStringGetLengthInBytes(hmString* string);
+/* Returns HM_TRUE if the string is "empty", i.e. contains zero characters. Same as `hmStringGetLengthInBytes(string) == 0`,
+   just more readable. */
+#define hmStringIsEmpty(string) (hmStringGetLengthInBytes(string) == 0)
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. Use this function to pass the buffer to foreign code which supports C ABI.
