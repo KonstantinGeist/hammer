@@ -97,6 +97,7 @@ hmError hmCreateHTTPRequestFromReader(
     in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_headers_size = max_headers_size;
     in_request->remaining_buffer_size = 0;
+    in_request->is_body_reader_created = HM_FALSE;
     err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
     /* Must be called the last because depends on the fields above. */
     err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
@@ -114,8 +115,10 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
     }
     err = hmMergeErrors(err, hmStringDispose(&request->url));
     err = hmMergeErrors(err, hmHashMapDispose(&request->headers));
+    if (request->is_body_reader_created) {
+        err = hmMergeErrors(err, hmReaderClose(&request->body_reader));
+    }
     if (request->remaining_buffer) {
-        err = hmMergeErrors(err, hmReaderClose(&request->body_reader)); /* body_reader is considered initialized if `remaining_buffer` is non-zero */
         hmFree(request->allocator, request->remaining_buffer);
     }
     return err;
@@ -386,6 +389,7 @@ static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReade
         request,
         &request->body_reader
     ));
+    request->is_body_reader_created = HM_TRUE;
 HM_ON_FINALIZE
     if (err != HM_OK) {
         if (is_memory_reader_initialized) {

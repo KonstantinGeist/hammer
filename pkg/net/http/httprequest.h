@@ -25,20 +25,20 @@
 
 typedef struct {
     hmAllocator* allocator;
-    char*        remaining_buffer;      /* When we switch from line reading to reading raw content, we need to remember
+    char*        remaining_buffer;       /* When we switch from line reading to reading raw content, we need to remember
                                            what's left in hmLineReader's buffer to keep reading where it left off.
                                            See hmLineReaderGetBuffered(..) */
-    hmReader     reader;                /* Stores the reader in order to:
+    hmReader     reader;                 /* Stores the reader in order to:
                                            1) create the body reader based on it via hmHTTPRequestCreateBodyReader(..)
                                            2) dispose of it in hmHTTPRequestDispose(..), if enabled via `close_reader` */
-    hmReader     body_reader;           /* Returned by hmHTTPRequestGetBodyReader(..) Assumed to be created if `remaining_buffer`
-                                           is non-zero (we avoid introducing a new flag here). */
-    hmHashMap    headers;               /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
-    hmString     url;                   /* URL of the request. */
-    hmHTTPMethod method;                /* The HTTP method: GET, POST, PUT etc. */
-    hm_nint      max_headers_size;      /* The maximum size of all HTTP headers. */
-    hm_nint      remaining_buffer_size; /* Describes the size of `remaining_buffer`. */
-    hm_bool      close_reader;          /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
+    hmReader     body_reader;            /* Returned by hmHTTPRequestGetBodyReader(..) */
+    hmHashMap    headers;                /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
+    hmString     url;                    /* URL of the request. */
+    hmHTTPMethod method;                 /* The HTTP method: GET, POST, PUT etc. */
+    hm_nint      max_headers_size;       /* The maximum size of all HTTP headers. */
+    hm_nint      remaining_buffer_size;  /* Describes the size of `remaining_buffer`. */
+    hm_bool      close_reader;           /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
+    hm_bool      is_body_reader_created; /* Tells if `body_reader` is actually initialized. */
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.
