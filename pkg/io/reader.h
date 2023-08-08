@@ -26,6 +26,9 @@ typedef struct hmReader_ {
     void*     data;                                            /* Reader-specific data. */
 } hmReader;
 
+/* Used in hmCreateCompositeReader(..) (see). */
+typedef hmError (*hmOnNextReaderFunc)(hm_nint previous_reader_index, void* context_opt);
+
 /* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. If `out_bytes_read` is 0, it means there's no
    more data in the reader. */
 hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read);
@@ -56,15 +59,20 @@ hmError hmCreateLimitedReader(
    - reads from the first reader until there's no more data in it;
    - then reads from the second reader until there's no more data in it;
    - etc.
-   `source_readers` is a list of readers to wrap, with `source_reader_count` specifying their count.
-   `close_source_readers` specifies, for each reader in `source_readers` at the corresponding indices, whether the source
-   readers should be closed when the composite reader closes. */
+  `source_readers` is a list of readers to wrap, with `source_reader_count` specifying their count.
+  `close_source_readers` specifies, for each reader in `source_readers` at the corresponding indices, whether the source
+   readers should be closed when the composite reader closes.
+  `on_next_reader_opt` is called (if provided) each time the composite reader starts reading from a new reader. Useful
+   when readers have certain data associated with them which should be disposed as soon as possible.
+  `context_opt` is context data passed to `on_next_reader_opt` as is. */
 hmError hmCreateCompositeReader(
-   hmAllocator*    allocator,
-   const hmReader* source_readers,
-   const hm_bool*  close_source_readers,
-   hm_nint         source_reader_count,
-   hmReader*       in_reader
+   hmAllocator*       allocator,
+   const hmReader*    source_readers,
+   const hm_bool*     close_source_readers,
+   hm_nint            source_reader_count,
+   hmOnNextReaderFunc on_next_reader_opt,
+   void*              context_opt,
+   hmReader*          in_reader
 );
 
 #endif /* HM_READER_H */

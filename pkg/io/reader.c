@@ -180,6 +180,8 @@ typedef struct {
 
 typedef struct {
     hmAllocator*             allocator;                   /* The allocator which governs this structure's lifetime. */
+    hmOnNextReaderFunc       on_next_reader_opt;          /* See hmCreateCompositeReader(..) */
+    void*                    context_opt;                 /* See hmCreateCompositeReader(..) */
     hm_nint                  source_reader_count;         /* Specifies the number of source readers in `closeable_source_readers`. */
     hm_nint                  current_source_reader_index; /* Readers are activated in sequence for reading, and here we remember the current one. */
     hmCloseableSourceReader  closeable_source_readers[1]; /* Enumerates the wrapped readers and whether they should be auto-closed.
@@ -204,7 +206,11 @@ static hmError hmCompositeReader_read(hmReader* reader, char* buffer, hm_nint si
             return HM_OK;
         }
         /* The current source reader has been depleted => go to the next one. */
+        hm_nint previous_reader_index = data->current_source_reader_index;
         HM_TRY(hmAddNint(data->current_source_reader_index, 1, &data->current_source_reader_index));
+        if (data->on_next_reader_opt) {
+            HM_TRY(data->on_next_reader_opt(previous_reader_index, data->context_opt));
+        }
     }
     return HM_OK;
 }
@@ -223,11 +229,13 @@ static hmError hmCompositeReader_close(hmReader* reader)
 }
 
 hmError hmCreateCompositeReader(
-   hmAllocator*    allocator,
-   const hmReader* source_readers,
-   const hm_bool*  close_source_readers,
-   hm_nint         source_reader_count,
-   hmReader*       in_reader
+   hmAllocator*       allocator,
+   const hmReader*    source_readers,
+   const hm_bool*     close_source_readers,
+   hm_nint            source_reader_count,
+   hmOnNextReaderFunc on_next_reader_opt,
+   void*              context_opt,
+   hmReader*          in_reader
 )
 {
     if (!source_reader_count) {
@@ -246,6 +254,8 @@ hmError hmCreateCompositeReader(
         data->closeable_source_readers[i].close_reader = close_source_readers[i];
     }
     data->allocator = allocator;
+    data->on_next_reader_opt = on_next_reader_opt;
+    data->context_opt = context_opt;
     data->source_reader_count = source_reader_count;
     data->current_source_reader_index = 0;
     in_reader->read = &hmCompositeReader_read;

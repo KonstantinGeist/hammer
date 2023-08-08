@@ -334,6 +334,19 @@ static hmError hmHTTPRequestParseRequestLineOrHeaderField(hmHTTPRequest* request
     }
 }
 
+static hmError hmHTTPRequestOnNextReader(hm_nint previous_reader_index, void* context_opt)
+{
+    hmHTTPRequest* request = (hmHTTPRequest*)context_opt;
+    /* Immediately disposes of the remaining buffer once the first reader (memory reader) is fully read from,
+       to avoid having unused memory hanging around. */
+    if (previous_reader_index == 0) {
+        hmFree(request->allocator, request->remaining_buffer);
+        request->remaining_buffer = HM_NULL;
+        request->remaining_buffer_size = 0;
+    }
+    return HM_OK;
+}
+
 static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReader* line_reader)
 {
     /* Copies what's left in hmLineReader's fixed-size buffer into hmHTTPRequest's own buffer so that reading  of raw
@@ -369,6 +382,8 @@ static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReade
         source_readers,
         close_source_readers,
         2,
+        &hmHTTPRequestOnNextReader,
+        request,
         &request->body_reader
     ));
 HM_ON_FINALIZE

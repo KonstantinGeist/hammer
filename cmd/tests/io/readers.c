@@ -170,6 +170,17 @@ static void test_limited_reader_limits_reads()
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+typedef struct {
+    hm_nint count;
+} test_on_next_reader_context;
+
+static hmError test_on_next_reader_func(hm_nint previous_reader_index, void* context_opt)
+{
+    test_on_next_reader_context* context = (test_on_next_reader_context*)context_opt;
+    context->count++;
+    return HM_OK;
+}
+
 static void test_composite_reader_reads_from_all_source_readers()
 {
     hmAllocator allocator;
@@ -185,7 +196,17 @@ static void test_composite_reader_reads_from_all_source_readers()
     hmReader source_readers[2] = {source_reader1, source_reader2};
     hm_bool close_source_readers[2] = {HM_TRUE, HM_TRUE};
     hmReader composite_reader;
-    err = hmCreateCompositeReader(&allocator, source_readers, close_source_readers, 2, &composite_reader);
+    test_on_next_reader_context on_next_reader_context;
+    on_next_reader_context.count = 0;
+    err = hmCreateCompositeReader(
+        &allocator,
+        source_readers,
+        close_source_readers,
+        2,
+        &test_on_next_reader_func,
+        &on_next_reader_context,
+        &composite_reader
+    );
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_composite_reader_initialized = HM_TRUE;
     char buffer[32] = {0};
@@ -196,6 +217,8 @@ static void test_composite_reader_reads_from_all_source_readers()
         total_bytes_read += bytes_read;
     } while (bytes_read > 0);
     HM_TEST_ASSERT(hmCompareMemory(buffer, "12345678", 8) == 0);
+    printf("BANANA: %d\n", (int)on_next_reader_context.count);
+    HM_TEST_ASSERT(on_next_reader_context.count == 2);
 HM_TEST_ON_FINALIZE
     if (is_composite_reader_initialized) {
         err = hmReaderClose(&composite_reader);
