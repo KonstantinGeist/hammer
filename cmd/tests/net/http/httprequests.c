@@ -20,7 +20,13 @@
 
 #define HASH_SALT 666
 
-static void test_http_request_with_headers_and_func(const char* headers, void(*func)(hmHTTPRequest* request))
+static void test_http_request_with_parameters(
+    const char* headers,
+    hm_nint     max_headers_size,
+    hm_nint     read_buffer_size,
+    void      (*func)(hmHTTPRequest* request, void* user_data),
+    void*       user_data
+)
 {
     hmAllocator allocator;
     HM_TEST_INIT_ALLOC(&allocator);
@@ -31,23 +37,35 @@ static void test_http_request_with_headers_and_func(const char* headers, void(*f
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     hmHTTPRequest request;
     hm_bool is_request_initialized = HM_FALSE;
-    err = hmCreateHTTPRequestFromReader(
+    err = hmCreateHTTPRequestFromReaderAndReadBufferSize(
         &allocator,
         memory_reader,
-        HM_TRUE,
-        HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
+        HM_TRUE, /* close_reader = HM_TRUE */
+        max_headers_size,
+        read_buffer_size,
         HASH_SALT,
         &request
     );
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_request_initialized = HM_TRUE;
-    func(&request);
+    func(&request, user_data);
 HM_TEST_ON_FINALIZE
     if (is_request_initialized) {
         err = hmHTTPRequestDispose(&request);
         HM_TEST_ASSERT_OK(err);
     }
     HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_http_request_with_headers_and_func(const char* headers, void(*func)(hmHTTPRequest* request, void* user_data))
+{
+    test_http_request_with_parameters(
+        headers,
+        HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
+        HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE,
+        func,
+        HM_NULL /* user_data = HM_NULL */
+    );
 }
 
 static void test_http_request_with_error(const char* headers, hmError expected_error)
@@ -64,7 +82,7 @@ static void test_http_request_with_error(const char* headers, hmError expected_e
     err = hmCreateHTTPRequestFromReader(
         &allocator,
         memory_reader,
-        HM_TRUE,
+        HM_TRUE, /* close_reader = HM_TRUE */
         HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
         HASH_SALT,
         &request
@@ -81,7 +99,7 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
-static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPRequest* request)
+static void test_http_request_can_be_created_from_valid_headers_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -121,7 +139,7 @@ static void test_http_request_can_be_created_from_reader()
     test_http_request_with_headers_and_func(headers, &test_http_request_can_be_created_from_valid_headers_func);
 }
 
-static void test_http_request_supports_multiple_values_under_single_name_func(hmHTTPRequest* request)
+static void test_http_request_supports_multiple_values_under_single_name_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -168,7 +186,7 @@ static void test_http_request_rejects_malformed_requests()
     test_http_request_with_error("GET /index HTTP/1.1\r\nValue:", HM_ERROR_INVALID_DATA);
 }
 
-static void test_http_request_supports_post_requests_func(hmHTTPRequest* request)
+static void test_http_request_supports_post_requests_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/news"));
@@ -179,7 +197,7 @@ static void test_http_request_supports_post_requests()
     test_http_request_with_headers_and_func("POST /news HTTP/1.1", &test_http_request_supports_post_requests_func);
 }
 
-static void test_http_request_supports_put_requests_func(hmHTTPRequest* request)
+static void test_http_request_supports_put_requests_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_PUT);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/message/all"));
@@ -190,7 +208,7 @@ static void test_http_request_supports_put_requests()
     test_http_request_with_headers_and_func("PUT /message/all HTTP/1.1", &test_http_request_supports_put_requests_func);
 }
 
-static void test_http_request_supports_lf_newlines_inside_fields_func(hmHTTPRequest* request)
+static void test_http_request_supports_lf_newlines_inside_fields_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -228,7 +246,7 @@ static void test_http_request_respects_max_headers_size()
     err = hmCreateHTTPRequestFromReader(
         &allocator,
         memory_reader,
-        HM_TRUE,
+        HM_TRUE, /* close_reader = HM_TRUE */
         strlen(headers) / 2,
         HASH_SALT,
         &request
@@ -245,7 +263,7 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
-static void test_http_request_supports_optional_whitespace_around_header_fields_func(hmHTTPRequest* request)
+static void test_http_request_supports_optional_whitespace_around_header_fields_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -266,7 +284,7 @@ static void test_http_request_supports_optional_whitespace_around_header_fields(
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_optional_whitespace_around_header_fields_func);
 }
 
-static void test_http_request_supports_header_name_canonicalization_func(hmHTTPRequest* request)
+static void test_http_request_supports_header_name_canonicalization_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_GET);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -326,7 +344,7 @@ static void test_http_request_respects_header_name_restrictions()
     test_http_request_with_error("GET /index HTTP/1.1\r\nName1:Value1\r\n Name2:Value2", HM_ERROR_INVALID_DATA); /* line folding */
 }
 
-static void test_http_request_supports_post_method_func(hmHTTPRequest* request)
+static void test_http_request_supports_post_method_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -340,7 +358,7 @@ static void test_http_request_supports_post_method()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_post_method_func);
 }
 
-static void test_http_request_supports_put_method_func(hmHTTPRequest* request)
+static void test_http_request_supports_put_method_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_PUT);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -354,7 +372,7 @@ static void test_http_request_supports_put_method()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_put_method_func);
 }
 
-static void test_http_request_supports_delete_method_func(hmHTTPRequest* request)
+static void test_http_request_supports_delete_method_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_DELETE);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -368,7 +386,7 @@ static void test_http_request_supports_delete_method()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_delete_method_func);
 }
 
-static void test_http_request_supports_head_method_func(hmHTTPRequest* request)
+static void test_http_request_supports_head_method_func(hmHTTPRequest* request, void* user_data)
 {
     HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_HEAD);
     HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/index"));
@@ -382,28 +400,97 @@ static void test_http_request_supports_head_method()
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_head_method_func);
 }
 
-static void test_http_request_can_read_body_func(hmHTTPRequest* request)
+static void test_http_request_rejects_invalid_arguments()
 {
-    const char* expected_body = "Hello, World!";
-    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
-    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/send_message"));
-    hmReader* body_reader = hmHTTPRequestGetBodyReader(request);
-    char buffer[HM_READER_DEFAULT_BUFFER_SIZE];
-    hm_nint bytes_read = 0;
-    hmError err = hmReaderRead(body_reader, buffer, sizeof(buffer), &bytes_read);
-    HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(bytes_read == strlen(expected_body));
-    HM_TEST_ASSERT(hmCompareMemory(buffer, expected_body, bytes_read) == 0);
-}
-
-static void test_http_request_can_read_body()
-{
+    hmAllocator allocator;
+    HM_TEST_INIT_ALLOC(&allocator);
+    hmReader memory_reader;
     const char* headers = 
         "POST /send_message HTTP/1.1\r\n"
         "Auth: 12345Q\r\n"
         "\r\n"
         "Hello, World!";
-    test_http_request_with_headers_and_func(headers, &test_http_request_can_read_body_func);
+    hmError err = hmCreateMemoryReader(&allocator, headers, strlen(headers), &memory_reader);
+    HM_TEST_ASSERT_OK(err);
+    hmHTTPRequest request;
+    err = hmCreateHTTPRequestFromReaderAndReadBufferSize(
+        &allocator,
+        memory_reader,
+        HM_FALSE, /* close_reader = HM_FALSE */
+        4,
+        HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE + 1,
+        HASH_SALT,
+        &request
+    );
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
+    err = hmCreateHTTPRequestFromReaderAndReadBufferSize(
+        &allocator,
+        memory_reader,
+        HM_FALSE, /* close_reader = HM_FALSE */
+        0,
+        4,
+        HASH_SALT,
+        &request
+    );
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
+    err = hmCreateHTTPRequestFromReaderAndReadBufferSize(
+        &allocator,
+        memory_reader,
+        HM_FALSE, /* close_reader = HM_FALSE */
+        4,
+        0,
+        HASH_SALT,
+        &request
+    );
+    HM_TEST_ASSERT(err == HM_ERROR_INVALID_ARGUMENT);
+    err = hmReaderClose(&memory_reader);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_DEINIT_ALLOC(&allocator);
+}
+
+static void test_http_request_can_read_body_func(hmHTTPRequest* request, void* user_data)
+{
+    hm_nint buffer_size = *((hm_nint*)user_data);
+    const char* expected_body = "Hello, World!";
+    HM_TEST_ASSERT(hmHTTPRequestGetMethod(request) == HM_HTTP_METHOD_POST);
+    HM_TEST_ASSERT(hmStringEqualsToCString(hmHTTPRequestGetURL(request), "/send_message"));
+    hmReader* body_reader_ref = hmHTTPRequestGetBodyReaderRef(request);
+    char buffer[HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE] = {0};
+    hm_nint bytes_read = 0, total_bytes_read = 0;
+    hmError err = HM_OK;
+    while ((err = hmReaderRead(body_reader_ref, buffer + total_bytes_read, buffer_size, &bytes_read)) == HM_OK && bytes_read > 0) {
+        total_bytes_read += bytes_read;
+        HM_TEST_ASSERT(total_bytes_read < HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE);
+    }
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(total_bytes_read == strlen(expected_body));
+    HM_TEST_ASSERT(hmCompareMemory(buffer, expected_body, total_bytes_read) == 0);
+    hmString name;
+    err = hmCreateStringViewFromCString("Auth", &name);
+    HM_TEST_ASSERT_OK(err);
+    hmString* value_ref;
+    err = hmHTTPRequestGetHeaderRef(request, &name, 0, &value_ref);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "12345Q"));
+}
+
+static void test_http_request_can_read_body()
+{
+    /* Tests reading with different read buffer sizes to catch edge cases. */
+    for (hm_nint i = 2; i < HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE; i++) {
+        const char* headers = 
+            "POST /send_message HTTP/1.1\r\n"
+            "Auth: 12345Q\r\n"
+            "\r\n"
+            "Hello, World!";
+        test_http_request_with_parameters(
+            headers,
+            HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE,
+            i,
+            &test_http_request_can_read_body_func,
+            &i
+        );
+    }
 }
 
 HM_TEST_SUITE_BEGIN(http_requests)
@@ -421,5 +508,6 @@ HM_TEST_SUITE_BEGIN(http_requests)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_put_method)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_delete_method)
     HM_TEST_RUN_WITHOUT_OOM(test_http_request_supports_head_method)
+    HM_TEST_RUN_WITHOUT_OOM(test_http_request_rejects_invalid_arguments)
     HM_TEST_RUN(test_http_request_can_read_body)
 HM_TEST_SUITE_END()

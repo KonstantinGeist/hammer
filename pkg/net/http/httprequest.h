@@ -22,6 +22,7 @@
 
 /* See hmCreateHTTPRequestFromReader(..). */
 #define HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE (8*1024) /* recommended minimum as per RFC9112 ("8000 octets") */
+#define HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE     (8*1024) /* See hmCreateHTTPRequestFromReader(..) */
 
 typedef struct {
     hmAllocator* allocator;
@@ -31,11 +32,12 @@ typedef struct {
     hmReader     reader;                 /* Stores the reader in order to:
                                            1) create the body reader based on it via hmHTTPRequestCreateBodyReader(..)
                                            2) dispose of it in hmHTTPRequestDispose(..), if enabled via `close_reader` */
-    hmReader     body_reader;            /* Returned by hmHTTPRequestGetBodyReader(..) */
+    hmReader     body_reader;            /* Returned by hmHTTPRequestGetBodyReaderRef(..) */
     hmHashMap    headers;                /* hmHashMap<hmString, hmArray<hmString>>. Stores the list of parsed HTTP headers. */
     hmString     url;                    /* URL of the request. */
     hmHTTPMethod method;                 /* The HTTP method: GET, POST, PUT etc. */
     hm_nint      max_headers_size;       /* The maximum size of all HTTP headers. */
+    hm_nint      read_buffer_size;       /* The internal buffer size used when reading. */
     hm_nint      remaining_buffer_size;  /* Describes the size of `remaining_buffer`. */
     hm_bool      close_reader;           /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
     hm_bool      is_body_reader_created; /* Tells if `body_reader` is actually initialized. */
@@ -45,7 +47,7 @@ typedef struct {
    If `close_reader` is true, the reader is closed inside hmHTTPRequestDispose(..) automatically, or if this function fails
    (basically, this HTTP request object owns the reader).
   `max_headers_size` specifies the maximum size of all HTTP headers in the request (both name + value). Returns HM_ERROR_LIMIT_EXCEEDED
-   if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE.
+   if it's exceeded. It's recommended to use HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE. Must be greater than 0.
   `hash_salt` is used to prevent DoS attacks against the `headers` dictionary.
    NOTE: HTTP requests in Hammer currently follow the HTTP standard (RFC9112) in the following ways:
    1) optional whitespaces around header values are supported;
@@ -64,15 +66,27 @@ hmError hmCreateHTTPRequestFromReader(
     hm_uint32      hash_salt,
     hmHTTPRequest* in_request
 );
+/* Same as hmCreateHTTPRequestFromReader(..), except also specifies the internal read buffer size `read_buffer_size`,
+   which is useful for tests. Must be in the range [1. HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE]. */
+hmError hmCreateHTTPRequestFromReaderAndReadBufferSize(
+    hmAllocator*   allocator,
+    hmReader       reader,
+    hm_bool        close_reader,
+    hm_nint        max_headers_size,
+    hm_nint        read_buffer_size,
+    hm_uint32      hash_salt,
+    hmHTTPRequest* in_request
+);
 hmError hmHTTPRequestDispose(hmHTTPRequest* request);
-/* Returns a reader which allows to read the body of the request. */
-hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request);
+/* Returns a reader which allows to read the body of the request. The reader object is guaranteed to be valid as long as
+   as the HTTP request object is valid. */
+hmReader* hmHTTPRequestGetBodyReaderRef(hmHTTPRequest* request);
 /* Returns a header by its name and index (there can be several values per name) in `header_ref`.
    The value is owned by the HTTP request object and should not be disposed. The value is valid as long as the HTTP request
    object is valid.
    Returns HM_ERROR_NOT_FOUND if no value is found for the given name/index pair.
    Usually, for most headers, zero can be passed for `index`. */
-hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** header_ref);
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** out_header_ref);
 #define hmHTTPRequestGetMethod(request) ((request)->method)
 #define hmHTTPRequestGetURL(request) (&(request)->url)
 

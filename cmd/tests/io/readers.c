@@ -217,7 +217,6 @@ static void test_composite_reader_reads_from_all_source_readers()
         total_bytes_read += bytes_read;
     } while (bytes_read > 0);
     HM_TEST_ASSERT(hmCompareMemory(buffer, "12345678", 8) == 0);
-    printf("BANANA: %d\n", (int)on_next_reader_context.count);
     HM_TEST_ASSERT(on_next_reader_context.count == 2);
 HM_TEST_ON_FINALIZE
     if (is_composite_reader_initialized) {
