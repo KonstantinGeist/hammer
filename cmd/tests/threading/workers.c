@@ -14,6 +14,7 @@
 #include "../common.h"
 #include <core/environment.h>
 #include <threading/worker.h>
+#include <threading/workerpool.h>
 #include <threading/thread.h>
 
 /* These tests rely on some timing, so sporadically they can fail on busy machines. */
@@ -22,6 +23,7 @@
 #define DEFAULT_WORKER_QUEUE_SIZE 16
 #define WORKER_WAIT_TIMEOUT 4000
 #define THROUGHPUT_WORK_ITEM_COUNT 1000000
+#define WORKER_POOL_WORKER_COUNT 50
 
 static hm_atomic_nint processed_count = 0;
 
@@ -370,6 +372,50 @@ static void test_worker_throughput()
     printf("        Average latency: %.2f ms for enqueue rate = %.2f items/sec (total: %d items)\n", corrected_average_latency, enqueue_rate, THROUGHPUT_WORK_ITEM_COUNT);
 }
 
+static hmError test_worker_pool_worker_func(void* work_item)
+{
+    hm_nint** nint_item = (hm_nint**)work_item;
+    **nint_item *= 2;
+    return HM_OK;
+}
+
+static void test_worker_pool_dispatches_to_workers_evenly()
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmWorkerPool worker_pool;
+    err = hmCreateWorkerPool(
+        &allocator,
+        WORKER_POOL_WORKER_COUNT,
+        &test_worker_pool_worker_func,
+        sizeof(hm_nint*),
+        HM_NULL,
+        HM_TRUE, /* is_queue_bounded = HM_TRUE */
+        2,       /* queue_capacity = 2; allows a simple check that new work items don't all go to the same worker */
+        &worker_pool
+    );
+    HM_TEST_ASSERT_OK(err);
+    hm_nint work_items[WORKER_POOL_WORKER_COUNT] = {0};
+    for (hm_nint i = 0; i < WORKER_POOL_WORKER_COUNT; i++) {
+        work_items[i] = i;
+        hm_nint* worker_item_ref = &work_items[i];
+        err = hmWorkerPoolEnqueueItem(&worker_pool, &worker_item_ref);
+        HM_TEST_ASSERT_OK(err);
+    }
+    err = hmWorkerPoolStop(&worker_pool, HM_TRUE);
+    HM_TEST_ASSERT_OK(err);
+    err = hmWorkerPoolWait(&worker_pool, WORKER_WAIT_TIMEOUT);
+    HM_TEST_ASSERT_OK(err);
+    for (hm_nint i = 0; i < WORKER_POOL_WORKER_COUNT; i++) {
+        HM_TEST_ASSERT(work_items[i] == i * 2);
+    }
+    err = hmWorkerPoolDispose(&worker_pool);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(workers)
     HM_TEST_RUN_WITHOUT_OOM(test_can_start_stop_wait_worker_and_get_name)
     HM_TEST_RUN_WITHOUT_OOM(test_can_process_work_items_fast_with_dispose_func)
@@ -378,4 +424,5 @@ HM_TEST_SUITE_BEGIN(workers)
     HM_TEST_RUN_WITHOUT_OOM(test_worker_returns_error_if_item_size_is_too_big)
     HM_TEST_RUN_WITHOUT_OOM(test_worker_can_enqueue_by_value)
     HM_TEST_RUN_WITHOUT_OOM(test_worker_throughput)
+    HM_TEST_RUN_WITHOUT_OOM(test_worker_pool_dispatches_to_workers_evenly)
 HM_TEST_SUITE_END()
