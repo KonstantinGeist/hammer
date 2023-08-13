@@ -55,10 +55,10 @@ static void test_string_pool_can_be_filled_with_many_strings()
         hmString string_view;
         err = hmCreateStringViewFromCString(test_strings[i], &string_view);
         HM_TEST_ASSERT_OK_OR_OOM(err);
-        hmString* interned_string = HM_NULL;
-        err = hmStringPoolGet(&pool, &string_view, &interned_string);
+        hmString* interned_string_ref = HM_NULL;
+        err = hmStringPoolGetRef(&pool, &string_view, &interned_string_ref);
         HM_TEST_ASSERT_OK_OR_OOM(err);
-        HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string));
+        HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string_ref));
     }
     HM_TEST_ASSERT(hmStringPoolGetCount(&pool) == ITERATION_COUNT);
 HM_TEST_ON_FINALIZE
@@ -79,11 +79,11 @@ static void test_string_pool_returns_same_string()
     hmString string_view;
     err = hmCreateStringViewFromCString(test_strings[0], &string_view);
     HM_TEST_ASSERT_OK_OR_OOM(err);
-    hmString* interned_string = HM_NULL;
+    hmString* interned_string_ref = HM_NULL;
     for (hm_nint i = 0; i < ITERATION_COUNT; i++) {
-        err = hmStringPoolGet(&pool, &string_view, &interned_string);
+        err = hmStringPoolGetRef(&pool, &string_view, &interned_string_ref);
         HM_TEST_ASSERT_OK_OR_OOM(err);
-        HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string));
+        HM_TEST_ASSERT(hmStringEquals(&string_view, interned_string_ref));
     }
     HM_TEST_ASSERT(hmStringPoolGetCount(&pool) == 1);
 HM_TEST_ON_FINALIZE

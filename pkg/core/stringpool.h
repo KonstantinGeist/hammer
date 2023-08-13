@@ -39,7 +39,7 @@ hmError hmStringPoolDispose(hmStringPool* pool);
    stored in the pool (never try to dispose it manually because it's owned by the pool!) Otherwise, the input string is
    duplicated, saved inside the pool, and returned.
    If the pool is destroyed, all its strings are invalidated and cannot be used anymore. */
-hmError hmStringPoolGet(hmStringPool* pool, hmString* in_string_view, hmString** out_string);
+hmError hmStringPoolGetRef(hmStringPool* pool, hmString* in_string_view, hmString** out_string_ref);
 /* Returns the number of strings currently in the pool. Useful for debugging and in tests. */
 hm_nint hmStringPoolGetCount(hmStringPool* pool);
 
