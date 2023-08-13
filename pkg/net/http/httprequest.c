@@ -75,6 +75,30 @@ hmError hmCreateHTTPRequestFromReader(
     hmHTTPRequest* in_request
 )
 {
+    return hmCreateHTTPRequestFromReaderAndReadBufferSize(
+        allocator,
+        reader,
+        close_reader,
+        max_headers_size,
+        HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE,
+        hash_salt,
+        in_request
+    );
+}
+
+hmError hmCreateHTTPRequestFromReaderAndReadBufferSize(
+    hmAllocator*   allocator,
+    hmReader       reader,
+    hm_bool        close_reader,
+    hm_nint        max_headers_size,
+    hm_nint        read_buffer_size,
+    hm_uint32      hash_salt,
+    hmHTTPRequest* in_request
+)
+{
+    if (!max_headers_size || !read_buffer_size || read_buffer_size > HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmError err = hmCreateHashMapWithStringKeys(
         allocator,
         &hmArrayDisposeFunc, /* value_dispose_func */
@@ -96,6 +120,7 @@ hmError hmCreateHTTPRequestFromReader(
     in_request->close_reader = close_reader;
     in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_headers_size = max_headers_size;
+    in_request->read_buffer_size = read_buffer_size;
     in_request->remaining_buffer_size = 0;
     in_request->is_body_reader_created = HM_FALSE;
     err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
@@ -124,14 +149,15 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
     return err;
 }
 
-hmReader* hmHTTPRequestGetBodyReader(hmHTTPRequest* request)
+hmReader* hmHTTPRequestGetBodyReaderRef(hmHTTPRequest* request)
 {
-    /* We use the same reader from hmCreateHTTPRequestFromReader(..), except now its position must be at the beginning
-       of the body when the first call to hmHTTPRequestGetBodyReader(..) is made. */
-    return &request->body_reader;
+    /* If the body reader was actually created (in hmHTTPRequestCreateBodyReader(..)), return it.
+       Otherwise, return the original reader because it was decided in the function mentioned above that a separate body reader
+       is unnecessary. */
+    return request->is_body_reader_created ? &request->body_reader : &request->reader;
 }
 
-hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** header_ref)
+hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** out_header_ref)
 {
     void* values_ref = HM_NULL;
     HM_TRY(hmHashMapGetRef(&request->headers, name, &values_ref));
@@ -139,7 +165,7 @@ hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nin
         return HM_ERROR_NOT_FOUND;
     }
     hmString* values = hmArrayGetRaw((hmArray*)values_ref, hmString);
-    *header_ref = &values[index];
+    *out_header_ref = &values[index];
     return HM_OK;
 }
 
@@ -353,11 +379,15 @@ static hmError hmHTTPRequestOnNextReader(hm_nint previous_reader_index, void* co
 static hmError hmHTTPRequestCreateBodyReader(hmHTTPRequest* request, hmLineReader* line_reader)
 {
     /* Copies what's left in hmLineReader's fixed-size buffer into hmHTTPRequest's own buffer so that reading  of raw
-       body could continue where hmLineReader where left off. */
+       body could continue where hmLineReader left off. */
     char* remaining_buffer = HM_NULL;
     hm_nint remaining_buffer_size = 0;
     HM_TRY(hmLineReaderGetBuffered(line_reader, &remaining_buffer, &remaining_buffer_size));
     if (!remaining_buffer_size) {
+        /* If no remaining buffer is left around, do not create a separate body reader: just use the original reader
+           for reading the body. See hmHTTPRequestGetBodyReaderRef(..)
+           This serves two purposes: 1) we avoid unnecessary allocations and indirections 2) a memory reader of size 0
+           would stop any loop which expects `bytes_read == 0` to be a stop condition. */
         return HM_OK;
     }
     request->remaining_buffer = hmAlloc(request->allocator, remaining_buffer_size);
@@ -412,8 +442,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
         request->max_headers_size,
         &limited_reader
     ));
-    /* Reusing the default max header size limit as the internal buffer size for reading. */
-    char buffer[HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE];
+    char buffer[HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE];
     hmLineReader line_reader;
     hm_bool is_line_reader_initialized = HM_FALSE;
     hmError err = HM_OK;
@@ -422,7 +451,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
         limited_reader,
         HM_FALSE, /* close_source_reader = HM_TRUE, same as above */
         buffer,
-        sizeof(buffer),
+        request->read_buffer_size,
         HM_TRUE,  /* has_crlf_newlines = HM_TRUE, as per the HTTP protocol */
         &line_reader
     ));

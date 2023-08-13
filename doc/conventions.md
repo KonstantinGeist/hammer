@@ -30,6 +30,7 @@ There are several conventions to follow:
   Sometimes logic can guarantee a value will never practically overflow -- in that case, a comment must be written to
   explain why no safe math function is used. Introduce such exceptions only when performance is top priority, and when
   the unlikeliness of overflows is immediately visible in the surrounding code (due to bound checks).
+  Safe math operations are not required in tests.
 * Priorities: safety and stability > simplicity > performance.
 * Use the buffer allocator (see hmCreateBufferAllocator(..)) for temporary objects whenever possible.
   Allocate on stack whenever possible.
@@ -52,6 +53,11 @@ There are several conventions to follow:
 * Always initialize scalar variables immediately after declaration: for example, never write "void* p;", write "void* p = HM_NULL",
   even if it's to be immediatelly initialized by a function. We don't want to accidentally read uninitialized data.
   Structs are an exception.
+* Add "Ref" suffix to getter methods if a reference is returned where one usually expects a value. For example:
+  - an object is returned via arguments, but the object is still embedded inside the parent:
+      hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** out_header_ref);
+  - a pointer to an interface value is returned instead of the value itself (as expected):
+      hmReader* hmHTTPRequestGetBodyReaderRef(hmHTTPRequest* request);
 
 Ideas:
 * Since it's a request-based runtime (request=>response, with the on-demand runtime instances created/destroyed on each response),
