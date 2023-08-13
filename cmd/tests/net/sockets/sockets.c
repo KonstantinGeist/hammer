@@ -53,10 +53,14 @@ static hmError server_socket_thread_func(void* user_data)
     hmAllocator allocator;
     hmError err = hmCreateSystemAllocator(&allocator);
     HM_TEST_ASSERT_OK(err);
+    hm_nint worker_count = hmGetProcessorCount();
+    if (worker_count < 4) { /* to have some degree of concurrency if the current CPU doesn't have a lot of CPU cores */
+        worker_count = 4;
+    }
     hmWorkerPool worker_pool;
     err = hmCreateWorkerPool(
         &allocator,
-        hmGetProcessorCount(),
+        worker_count,
         &server_socket_worker_func,
         sizeof(hmSocket),
         &hmSocketDisposeFunc,
