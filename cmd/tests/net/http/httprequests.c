@@ -297,7 +297,7 @@ static void test_http_request_supports_header_name_canonicalization_func(hmHTTPR
     HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value1"));
     err = hmHTTPRequestGetHeaderRef(request, &name, 1, &value_ref);
     HM_TEST_ASSERT_OK(err);
-    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Value2"));
+    HM_TEST_ASSERT(hmStringEqualsToCString(value_ref, "Кириллица"));
 }
 
 static void test_http_request_supports_header_name_canonicaliaztion()
@@ -305,7 +305,7 @@ static void test_http_request_supports_header_name_canonicaliaztion()
     const char* headers = 
         "GET /index HTTP/1.1\r\n"
         "X-my-request: Value1\r\n"
-        "x-My-rEqueSt: Value2\r\n";
+        "x-My-rEqueSt: Кириллица\r\n";
     test_http_request_with_headers_and_func(headers, &test_http_request_supports_header_name_canonicalization_func);
 }
 
