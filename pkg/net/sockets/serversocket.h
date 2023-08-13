@@ -25,10 +25,12 @@ typedef struct {
 
 /* A server socket is a special socket which is able to accept new connections on the given `port` and establish communication by
    creating client sockets on every connection (via hmServerSocketAccept(..)). When created, a server socket is
-   already automatically in the listening state, ready to accept new connections. */
+   already automatically in the listening state, ready to accept new connections.
+   `socket_read_timeout_ms` specifies the read timeout in milliseconds for created sockets (see hmCreateSocket(..) for details). */
 hmError hmCreateServerSocket(
     hmAllocator*    allocator,
     hm_nint         port,
+    hm_millis       socket_read_timeout_ms,
     hmServerSocket* in_socket
 );
 /* Blocks the current thread until a new connection is available. If it's available, returns a new socket object

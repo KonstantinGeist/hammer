@@ -36,7 +36,7 @@ hmError hmUnixErrorToHammer(int unix_err)
 
 struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms)
 {
-    struct timespec ts;
+    struct timespec ts = {0};
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000 * 1000;
     return ts;
@@ -47,9 +47,17 @@ hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts)
     return (hm_millis)((ts->tv_sec * 1000) + (ts->tv_nsec / (1000 * 1000)));
 }
 
+struct timeval hmConvertMillisecondsToTimeVal(hm_millis ms)
+{
+    struct timeval tv = {0};
+    tv.tv_sec = ms / 1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    return tv;
+}
+
 struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic)
 {
-    struct timespec ts;
+    struct timespec ts = {0};
     clock_gettime(is_monotonic ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ts);
     return ts;
 }

@@ -30,6 +30,8 @@ hmError hmUnixErrorToHammer(int unix_err);
    hmWaitableEventWait(..) have clearly defined limits. */
 struct timespec hmConvertMillisecondsToTimeSpec(hm_millis ms);
 hm_millis hmConvertTimeSpecToMilliseconds(struct timespec* ts);
+/* Same as hmConvertMillisecondsToTimeSpec(..), except converts to timeval instead of timespec. */
+struct timeval hmConvertMillisecondsToTimeVal(hm_millis ms);
 /* Returns the current time as a timespec struct. If is_monotonic is HM_TRUE, returns monotonic time;
    otherwise, returns real time. */
 struct timespec hmGetCurrentTimeSpec(hm_bool is_monotonic);

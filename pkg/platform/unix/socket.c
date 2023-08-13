@@ -48,9 +48,13 @@ hmError hmCreateSocket(
     hmAllocator* allocator,
     hmString*    host,
     hm_nint      port,
+    hm_millis    read_timeout_ms,
     hmSocket*    in_socket
 )
 {
+    if (read_timeout_ms > HM_SOCKET_MAX_READ_TIMEOUT) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmError err = HM_OK;
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)hmAlloc(allocator, sizeof(hmSocketPlatformData));
     if (!platform_data) {
@@ -75,6 +79,13 @@ hmError hmCreateSocket(
     if ((platform_data->socket_file_desc = socket(addrinfo->ai_family, SOCK_STREAM, 0)) == -1) {
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
+    }
+    if (read_timeout_ms) {
+        struct timeval timeval = hmConvertMillisecondsToTimeVal(read_timeout_ms);
+        if (setsockopt(platform_data->socket_file_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
+            err = hmUnixErrorToHammer(errno);
+            HM_FINALIZE;
+        }
     }
     is_socket_initialized = HM_TRUE;
     if (connect(platform_data->socket_file_desc, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) == -1) {

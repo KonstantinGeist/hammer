@@ -23,7 +23,7 @@
 #include <string.h> /* for strlen(..) and strcmp(..) */
 
 #define REQUEST_COUNT 10000
-#define WAIT_TIMEOUT 1000
+#define THREADING_WAIT_TIMEOUT 1000
 #define PORT 8080
 #define QUEUE_SIZE 16
 
@@ -70,7 +70,12 @@ static hmError server_socket_thread_func(void* user_data)
     );
     HM_TEST_ASSERT_OK(err);
     hmServerSocket server_socket;
-    err = hmCreateServerSocket(&allocator, PORT, &server_socket);
+    err = hmCreateServerSocket(
+        &allocator,
+        PORT,
+        HM_SOCKET_MAX_READ_TIMEOUT,
+        &server_socket
+    );
     HM_TEST_ASSERT_OK(err);
     err = hmWaitableEventSignal(waitable_event);
     HM_TEST_ASSERT_OK(err);
@@ -83,7 +88,7 @@ static hmError server_socket_thread_func(void* user_data)
     } while (hmThreadGetState(thread) != HM_THREAD_STATE_ABORT_REQUESTED);
     err = hmWorkerPoolStop(&worker_pool, HM_TRUE);
     HM_TEST_ASSERT_OK(err);
-    err = hmWorkerPoolWait(&worker_pool, WAIT_TIMEOUT);
+    err = hmWorkerPoolWait(&worker_pool, THREADING_WAIT_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
     err = hmWorkerPoolDispose(&worker_pool);
     HM_TEST_ASSERT_OK(err);
@@ -130,6 +135,7 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
             &allocator,
             &host,
             PORT,
+            HM_SOCKET_MAX_READ_TIMEOUT,
             &socket
         );
         HM_TEST_ASSERT_OK(err);
@@ -149,7 +155,7 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
         HM_TEST_ASSERT_OK(err);
     }
     hm_millis end = hmGetTickCount();
-    err = hmThreadJoin(&thread, WAIT_TIMEOUT);
+    err = hmThreadJoin(&thread, THREADING_WAIT_TIMEOUT);
     HM_TEST_ASSERT_OK(err);
     err = hmThreadDispose(&thread);
     HM_TEST_ASSERT_OK(err);
@@ -180,6 +186,7 @@ static void test_socket_reports_error_if_connecting_to_nonexisting_host()
         &allocator,
         &host,
         PORT,
+        HM_SOCKET_MAX_READ_TIMEOUT,
         &socket
     );
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND || err == HM_ERROR_OUT_OF_MEMORY);

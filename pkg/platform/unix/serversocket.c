@@ -28,6 +28,7 @@
 
 typedef struct {
     hmAllocator*       allocator;
+    hm_millis          socket_read_timeout_ms;
     int                socket_file_desc;
     struct sockaddr_in address;
 } hmServerSocketPlatformData;
@@ -37,9 +38,13 @@ static hm_nint hmGetMaxConnectionBacklog();
 hmError hmCreateServerSocket(
     hmAllocator*    allocator,
     hm_nint         port,
+    hm_millis       socket_read_timeout_ms,
     hmServerSocket* in_socket
 )
 {
+    if (socket_read_timeout_ms > HM_SOCKET_MAX_READ_TIMEOUT) {
+        return HM_ERROR_INVALID_ARGUMENT;
+    }
     hmError err = HM_OK;
     hmServerSocketPlatformData* platform_data = (hmServerSocketPlatformData*)hmAlloc(allocator, sizeof(hmServerSocketPlatformData));
     if (!platform_data) {
@@ -62,6 +67,7 @@ hmError hmCreateServerSocket(
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
     platform_data->address = address;
+    platform_data->socket_read_timeout_ms = socket_read_timeout_ms;
     if (bind(platform_data->socket_file_desc, (struct sockaddr*)&address, sizeof(address)) == -1) {
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
@@ -93,6 +99,14 @@ hmError hmServerSocketAccept(hmServerSocket* socket, hmAllocator* socket_allocat
     socklen_t address_length = sizeof(platform_data->address);
     if ((socket_file_desc = accept(platform_data->socket_file_desc, (struct sockaddr*)&platform_data->address, (socklen_t*)&address_length)) == -1) {
         return hmUnixErrorToHammer(errno);
+    }
+    if (platform_data->socket_read_timeout_ms) {
+        struct timeval timeval = hmConvertMillisecondsToTimeVal(platform_data->socket_read_timeout_ms);
+        if (setsockopt(platform_data->socket_file_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
+            hmError err = hmUnixErrorToHammer(errno);
+            int unix_err = close(socket_file_desc);
+            return hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
+        }
     }
     return hmCreateSocketFromDescriptor(
         socket_allocator_opt ? socket_allocator_opt : socket->allocator,
