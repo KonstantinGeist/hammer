@@ -20,7 +20,7 @@
 #include <arpa/inet.h>   /* for inet_pton(..) & Co. */
 #include <netinet/in.h>  /* for sockaddr_in & Co. */
 #include <bits/socket.h> /* for SOMAXCONN */
-#include <sys/socket.h>  /* for socket(..) & Co. */
+#include <sys/socket.h>  /* for socket(..), SO_RCVTIMEO etc. & Co. */
 #include <errno.h>       /* for errno */
 #include <fcntl.h>       /* for open(..), O_RDONLY */
 #include <stdlib.h>      /* for atoi(..) */
@@ -28,7 +28,7 @@
 
 typedef struct {
     hmAllocator*       allocator;
-    hm_millis          socket_read_timeout_ms;
+    hm_millis          timeout_ms;
     int                socket_file_desc;
     struct sockaddr_in address;
 } hmServerSocketPlatformData;
@@ -38,11 +38,11 @@ static hm_nint hmGetMaxConnectionBacklog();
 hmError hmCreateServerSocket(
     hmAllocator*    allocator,
     hm_nint         port,
-    hm_millis       socket_read_timeout_ms,
+    hm_millis       timeout_ms,
     hmServerSocket* in_socket
 )
 {
-    if (socket_read_timeout_ms > HM_SOCKET_MAX_READ_TIMEOUT) {
+    if (timeout_ms > HM_SOCKET_MAX_TIMEOUT) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmError err = HM_OK;
@@ -61,13 +61,21 @@ hmError hmCreateServerSocket(
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
+    if (timeout_ms) {
+        struct timeval timeval = hmConvertMillisecondsToTimeVal(timeout_ms);
+        /* SO_RCVTIMEO affects accept(..) on Linux. */
+        if (setsockopt(platform_data->socket_file_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
+            err = hmUnixErrorToHammer(errno);
+            HM_FINALIZE;
+        }
+    }
     struct sockaddr_in address;
     hmZeroMemory(&address, sizeof(address));
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
     platform_data->address = address;
-    platform_data->socket_read_timeout_ms = socket_read_timeout_ms;
+    platform_data->timeout_ms = timeout_ms;
     if (bind(platform_data->socket_file_desc, (struct sockaddr*)&address, sizeof(address)) == -1) {
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
@@ -100,17 +108,10 @@ hmError hmServerSocketAccept(hmServerSocket* socket, hmAllocator* socket_allocat
     if ((socket_file_desc = accept(platform_data->socket_file_desc, (struct sockaddr*)&platform_data->address, (socklen_t*)&address_length)) == -1) {
         return hmUnixErrorToHammer(errno);
     }
-    if (platform_data->socket_read_timeout_ms) {
-        struct timeval timeval = hmConvertMillisecondsToTimeVal(platform_data->socket_read_timeout_ms);
-        if (setsockopt(platform_data->socket_file_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
-            hmError err = hmUnixErrorToHammer(errno);
-            int unix_err = close(socket_file_desc);
-            return hmMergeErrors(err, unix_err == -1 ? hmUnixErrorToHammer(errno) : HM_OK);
-        }
-    }
     return hmCreateSocketFromDescriptor(
         socket_allocator_opt ? socket_allocator_opt : socket->allocator,
         socket_file_desc,
+        platform_data->timeout_ms,
         out_socket
     );
 }

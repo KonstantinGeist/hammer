@@ -73,7 +73,7 @@ static hmError server_socket_thread_func(void* user_data)
     err = hmCreateServerSocket(
         &allocator,
         PORT,
-        HM_SOCKET_MAX_READ_TIMEOUT,
+        HM_SOCKET_MAX_TIMEOUT,
         &server_socket
     );
     HM_TEST_ASSERT_OK(err);
@@ -135,7 +135,7 @@ static hm_millis socket_throughput_calculate_times(hm_bool client_socket_write_o
             &allocator,
             &host,
             PORT,
-            HM_SOCKET_MAX_READ_TIMEOUT,
+            HM_SOCKET_MAX_TIMEOUT,
             &socket
         );
         HM_TEST_ASSERT_OK(err);
@@ -186,7 +186,7 @@ static void test_socket_reports_error_if_connecting_to_nonexisting_host()
         &allocator,
         &host,
         PORT,
-        HM_SOCKET_MAX_READ_TIMEOUT,
+        HM_SOCKET_MAX_TIMEOUT,
         &socket
     );
     HM_TEST_ASSERT(err == HM_ERROR_NOT_FOUND || err == HM_ERROR_OUT_OF_MEMORY);

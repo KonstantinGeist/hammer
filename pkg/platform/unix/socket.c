@@ -17,7 +17,7 @@
 
 #include <arpa/inet.h>  /* for inet_pton(..) & Co. */
 #include <netinet/in.h> /* for sockaddr_in & Co. */
-#include <sys/socket.h> /* for socket(..) & Co. */
+#include <sys/socket.h> /* for socket(..), SO_RCVTIMEO, SO_SNDTIMEO & Co. */
 #include <errno.h>      /* for errno */
 #include <netdb.h>      /* for getaddrinfo(..) & Co. */
 #include <stdio.h>      /* for sprintf(..) */
@@ -28,12 +28,16 @@ typedef struct {
     int          socket_file_desc;
 } hmSocketPlatformData;
 
+static hmError hmSetSocketTimeout(int file_socket_desk, hm_millis timeout_ms);
+
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
     int          socket_file_desc,
+    hm_millis    timeout_ms,
     hmSocket*    in_socket
 )
 {
+    HM_TRY(hmSetSocketTimeout(socket_file_desc, timeout_ms));
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)hmAlloc(allocator, sizeof(hmSocketPlatformData));
     if (!platform_data) {
         return HM_ERROR_OUT_OF_MEMORY;
@@ -48,11 +52,11 @@ hmError hmCreateSocket(
     hmAllocator* allocator,
     hmString*    host,
     hm_nint      port,
-    hm_millis    read_timeout_ms,
+    hm_millis    timeout_ms,
     hmSocket*    in_socket
 )
 {
-    if (read_timeout_ms > HM_SOCKET_MAX_READ_TIMEOUT) {
+    if (timeout_ms > HM_SOCKET_MAX_TIMEOUT) {
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmError err = HM_OK;
@@ -80,14 +84,8 @@ hmError hmCreateSocket(
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
     }
-    if (read_timeout_ms) {
-        struct timeval timeval = hmConvertMillisecondsToTimeVal(read_timeout_ms);
-        if (setsockopt(platform_data->socket_file_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
-            err = hmUnixErrorToHammer(errno);
-            HM_FINALIZE;
-        }
-    }
     is_socket_initialized = HM_TRUE;
+    HM_TRY_OR_FINALIZE(err, hmSetSocketTimeout(platform_data->socket_file_desc, timeout_ms));
     if (connect(platform_data->socket_file_desc, addrinfo->ai_addr, (int)addrinfo->ai_addrlen) == -1) {
         err = hmUnixErrorToHammer(errno);
         HM_FINALIZE;
@@ -146,4 +144,19 @@ hmError hmSocketDispose(hmSocket* socket)
 hmError hmSocketDisposeFunc(void* obj)
 {
     return hmSocketDispose((hmSocket*)obj);
+}
+
+static hmError hmSetSocketTimeout(int file_socket_desc, hm_millis timeout_ms)
+{
+    if (!timeout_ms) {
+        return HM_OK;
+    }
+    struct timeval timeval = hmConvertMillisecondsToTimeVal(timeout_ms);
+    if (setsockopt(file_socket_desc, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
+        return hmUnixErrorToHammer(errno);
+    }
+    if (setsockopt(file_socket_desc, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeval, sizeof(timeval)) == -1) {
+        return hmUnixErrorToHammer(errno);
+    }
+    return HM_OK;
 }

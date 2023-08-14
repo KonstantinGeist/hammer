@@ -19,6 +19,7 @@
 hmError hmCreateSocketFromDescriptor(
     hmAllocator* allocator,
     int          socket_file_desc,
+    hm_millis    timeout_ms,
     hmSocket*    in_socket
 );
 
