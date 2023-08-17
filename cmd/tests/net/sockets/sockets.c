@@ -24,6 +24,7 @@
 
 #define REQUEST_COUNT 10000
 #define THREADING_WAIT_TIMEOUT 1000
+#define SOCKET_TIMEOUT 1000
 #define PORT 8080
 #define QUEUE_SIZE 16
 
@@ -193,7 +194,51 @@ static void test_socket_reports_error_if_connecting_to_nonexisting_host()
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static hmError server_sockets_support_accept_timeout_server_thread_func(void* user_data)
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmServerSocket server_socket;
+    err = hmCreateServerSocket(&allocator, PORT, SOCKET_TIMEOUT, &server_socket);
+    HM_TEST_ASSERT_OK(err);
+    hmSocket socket;
+    err = hmServerSocketAccept(&server_socket, HM_NULL, &socket);
+    HM_TEST_ASSERT(err == HM_ERROR_TIMEOUT);
+    err = hmServerSocketDispose(&server_socket);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    return HM_OK;
+}
+
+static void test_server_sockets_support_accept_timeout()
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmThread thread;
+    err = hmCreateThread(
+        &allocator,
+        HM_NULL,
+        &server_sockets_support_accept_timeout_server_thread_func,
+        HM_NULL,
+        &thread
+    );
+    HM_TEST_ASSERT_OK(err);
+    hm_millis start = hmGetTickCount();
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
+    HM_TEST_ASSERT_OK(err);
+    hm_millis time = hmGetTickCount() - start;
+    HM_TEST_ASSERT(time > SOCKET_TIMEOUT - 100 && time < SOCKET_TIMEOUT + 100); /* with some leeway */
+    err = hmThreadDispose(&thread);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(sockets)
+    HM_TEST_RUN_WITHOUT_OOM(test_server_sockets_support_accept_timeout)
     HM_TEST_RUN(test_socket_reports_error_if_connecting_to_nonexisting_host)
     HM_TEST_RUN_WITHOUT_OOM(test_can_send_and_read_from_sockets)
 HM_TEST_SUITE_END()

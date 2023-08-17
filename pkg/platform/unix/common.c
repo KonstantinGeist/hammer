@@ -23,6 +23,7 @@ hmError hmUnixErrorToHammer(int unix_err)
         case HM_UNIX_OK:
             return HM_OK;
         case ETIMEDOUT:
+        case EAGAIN:
             return HM_ERROR_TIMEOUT;
         case ENETUNREACH:
             return HM_ERROR_NOT_FOUND;

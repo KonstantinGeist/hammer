@@ -139,7 +139,7 @@ static void test_waitable_event_remains_signaled_when_without_waiters()
         &thread
     );
     HM_TEST_ASSERT_OK(err);
-    /* Immediately signals it while the thread is not waiting (see hmSleep(...) in signaled_without_waiters_thread_func(..)). */
+    /* Immediately signals it while the thread is not waiting (see hmSleep(..) in signaled_without_waiters_thread_func(..)). */
     err = hmWaitableEventSignal(&context.waitable_event);
     HM_TEST_ASSERT_OK(err);
     err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);

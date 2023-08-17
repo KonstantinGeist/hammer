@@ -20,8 +20,8 @@
 
 #define HM_SLEEP_MIN_MS 1
 #define HM_SLEEP_MAX_MS (60*60*1000) /* 1 hour must be more than enough */
-#define HM_THREAD_JOIN_MIN_TIMEOUT_MS HM_SLEEP_MIN_MS
-#define HM_THREAD_JOIN_MAX_TIMEOUT_MS HM_SLEEP_MAX_MS
+#define HM_THREAD_JOIN_MIN_TIMEOUT_MS HM_SLEEP_MIN_MS /* See hmThreadJoin(..) */
+#define HM_THREAD_JOIN_MAX_TIMEOUT_MS HM_SLEEP_MAX_MS /* See hmThreadJoin(..) */
 
 typedef hm_atomic_nint hmThreadState;
 #define HM_THREAD_STATE_UNSTARTED       ((hmThreadState)0)
