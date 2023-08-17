@@ -17,8 +17,8 @@
 #include <core/common.h>
 #include <core/allocator.h>
 
-#define HM_WAITABLE_EVENT_MIN_TIMEOUT_MS 1
-#define HM_WAITABLE_EVENT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough */
+#define HM_WAITABLE_EVENT_MIN_TIMEOUT_MS 1            /* see hmWaitableEventWait(..) */
+#define HM_WAITABLE_EVENT_MAX_TIMEOUT_MS (60*60*1000) /* 1 hour must be more than enough; see hmWaitableEventWait(..) */
 
 typedef struct {
     hmAllocator* allocator;
