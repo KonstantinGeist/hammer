@@ -241,7 +241,7 @@ static void test_server_sockets_support_accept_timeout()
     HM_TEST_ASSERT_OK(err);
 }
 
-static hmError test_server_sockets_support_read_timeout_server_thread_func(void* user_data)
+static hmError server_sockets_support_read_timeout_server_thread_func(void* user_data)
 {
     serverSocketContext* context = (serverSocketContext*)user_data;
     hmAllocator allocator;
@@ -286,7 +286,7 @@ static void test_server_sockets_support_read_timeout()
     err = hmCreateThread(
         &allocator,
         HM_NULL,
-        &test_server_sockets_support_read_timeout_server_thread_func,
+        &server_sockets_support_read_timeout_server_thread_func,
         &context,
         &thread
     );
@@ -317,7 +317,84 @@ static void test_server_sockets_support_read_timeout()
     HM_TEST_ASSERT_OK(err);
 }
 
+static hmError client_socket_reacts_to_disconnect_on_send_server_thread_func(void* user_data)
+{
+    serverSocketContext* context = (serverSocketContext*)user_data;
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmServerSocket server_socket;
+    err = hmCreateServerSocket(&allocator, PORT, SOCKET_TIMEOUT, &server_socket);
+    HM_TEST_ASSERT_OK(err);
+    err = hmWaitableEventSignal(context->waitable_event);
+    HM_TEST_ASSERT_OK(err);
+    hmSocket socket;
+    err = hmServerSocketAccept(&server_socket, HM_NULL, &socket);
+    HM_TEST_ASSERT_OK(err);
+    char buffer[128] = {0};
+    hm_nint bytes_read = 0;
+    err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read = PAYLOAD_SIZE);
+    err = hmSocketDispose(&socket);
+    HM_TEST_ASSERT_OK(err);
+    err = hmServerSocketDispose(&server_socket);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    return HM_OK;
+}
+
+static void test_client_socket_reacts_to_disconnect_on_send()
+{
+    hmAllocator allocator;
+    hmError err = hmCreateSystemAllocator(&allocator);
+    HM_TEST_ASSERT_OK(err);
+    hmWaitableEvent waitable_event;
+    err = hmCreateWaitableEvent(&allocator, &waitable_event);
+    HM_TEST_ASSERT_OK(err);
+    serverSocketContext context;
+    context.waitable_event = &waitable_event;
+    context.thread = HM_NULL;
+    hmThread thread;
+    err = hmCreateThread(
+        &allocator,
+        HM_NULL,
+        &client_socket_reacts_to_disconnect_on_send_server_thread_func,
+        &context,
+        &thread
+    );
+    HM_TEST_ASSERT_OK(err);
+    err = hmWaitableEventWait(&waitable_event, HM_WAITABLE_EVENT_MAX_TIMEOUT_MS);
+    HM_TEST_ASSERT_OK(err);
+    hmString host;
+    err = hmCreateStringViewFromCString(LOCALHOST, &host);
+    HM_TEST_ASSERT_OK(err);
+    hmSocket socket;
+    err = hmCreateSocket(&allocator, &host, PORT, HM_SOCKET_MAX_TIMEOUT, &socket);
+    HM_TEST_ASSERT_OK(err);
+    hm_nint bytes_sent = 0;
+    err = hmSocketSend(&socket, PAYLOAD, PAYLOAD_SIZE, &bytes_sent);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_sent == PAYLOAD_SIZE);
+    err = hmSleep(SOCKET_TIMEOUT); /* waits a little to make sure the connection is closed by the server */
+    char buff[1024*1024] = {0};
+    while ((err = hmSocketSend(&socket, buff, sizeof(buff), &bytes_sent)) == HM_OK);
+    HM_TEST_ASSERT(err == HM_ERROR_DISCONNECTED);
+    err = hmSocketDispose(&socket);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadJoin(&thread, HM_THREAD_JOIN_MAX_TIMEOUT_MS);
+    HM_TEST_ASSERT_OK(err);
+    err = hmThreadDispose(&thread);
+    HM_TEST_ASSERT_OK(err);
+    err = hmWaitableEventDispose(&waitable_event);
+    HM_TEST_ASSERT_OK(err);
+    err = hmAllocatorDispose(&allocator);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(sockets)
+    HM_TEST_RUN_WITHOUT_OOM(test_client_socket_reacts_to_disconnect_on_send)
     HM_TEST_RUN_WITHOUT_OOM(test_server_sockets_support_read_timeout)
     HM_TEST_RUN_WITHOUT_OOM(test_server_sockets_support_accept_timeout)
     HM_TEST_RUN(test_socket_reports_error_if_connecting_to_nonexisting_host)

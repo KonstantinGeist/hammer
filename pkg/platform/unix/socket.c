@@ -112,7 +112,8 @@ hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint
         return HM_ERROR_INVALID_ARGUMENT;
     }
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
-    ssize_t bytes_send = send(platform_data->socket_file_desc, buffer, size, 0);
+    /* MSG_NOSIGNAL avoids SIGPIPE-related crashes when the connection is abruptly closed. */
+    ssize_t bytes_send = send(platform_data->socket_file_desc, buffer, size, MSG_NOSIGNAL);
     if (out_bytes_sent_opt && bytes_send >= 0) {
         *out_bytes_sent_opt = (hm_nint)bytes_send;
     }

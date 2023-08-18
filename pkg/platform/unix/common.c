@@ -30,6 +30,9 @@ hmError hmUnixErrorToHammer(int unix_err)
         case ECONNREFUSED:
         case EADDRINUSE:
             return HM_ERROR_ACCESS_DENIED;
+        case ECONNRESET:
+        case EPIPE:
+            return HM_ERROR_DISCONNECTED;
         default:
             return HM_ERROR_PLATFORM_DEPENDENT;
     }

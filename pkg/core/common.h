@@ -71,6 +71,7 @@ typedef hm_uint8 hmError;
 #define HM_ERROR_OVERFLOW           ((hmError)11) /* Overflow happened. */
 #define HM_ERROR_UNDERFLOW          ((hmError)12) /* Underflow happened. */
 #define HM_ERROR_ACCESS_DENIED      ((hmError)13) /* Access denied for the given resource. */
+#define HM_ERROR_DISCONNECTED       ((hmError)14) /* Connection reset/disconnected. */
 
 /* Allows to merge several errors into one. Usually useful when a new error occurs while processing another error. */
 hmError hmMergeErrors(hmError older, hmError newer);
