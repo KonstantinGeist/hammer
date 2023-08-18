@@ -15,6 +15,7 @@
 #include <net/sockets/socket.h>
 #include <net/sockets/serversocket.h>
 #include <core/environment.h>
+#include <core/utils.h>
 #include <threading/thread.h>
 #include <threading/waitableevent.h>
 #include <threading/workerpool.h>
@@ -260,6 +261,7 @@ static hmError server_sockets_support_read_timeout_server_thread_func(void* user
     err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(bytes_read == PAYLOAD_SIZE);
+    HM_TEST_ASSERT(hmCompareMemory(buffer, PAYLOAD, PAYLOAD_SIZE) == 0);
     err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
     HM_TEST_ASSERT(err == HM_ERROR_TIMEOUT);
     err = hmSocketDispose(&socket);
@@ -336,6 +338,7 @@ static hmError client_socket_reacts_to_disconnect_on_send_server_thread_func(voi
     err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(bytes_read == PAYLOAD_SIZE);
+    HM_TEST_ASSERT(hmCompareMemory(buffer, PAYLOAD, PAYLOAD_SIZE) == 0);
     err = hmSocketDispose(&socket);
     HM_TEST_ASSERT_OK(err);
     err = hmServerSocketDispose(&server_socket);
@@ -413,6 +416,7 @@ static hmError server_socket_reacts_to_disconnect_on_read_server_thread_func(voi
     err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
     HM_TEST_ASSERT_OK(err);
     HM_TEST_ASSERT(bytes_read == PAYLOAD_SIZE);
+    HM_TEST_ASSERT(hmCompareMemory(buffer, PAYLOAD, PAYLOAD_SIZE) == 0);
     err = hmSleep(SOCKET_TIMEOUT * 2); /* to make sure the client socket is closed */
     HM_TEST_ASSERT_OK(err);
     err = hmSocketRead(&socket, buffer, sizeof(buffer), &bytes_read);
