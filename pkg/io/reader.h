@@ -19,7 +19,7 @@
 
 #define HM_READER_DEFAULT_BUFFER_SIZE (4*1024) /* 4KB */
 
-/* Generic structure for any reader. Readers can be used to read runtime metadata from disk, memory, etc. */
+/* Generic structure for any reader. Readers can be used to read from different sources: memory, sockets, files on disk, etc. */
 typedef struct hmReader_ {
     hmError (*read)(struct hmReader_* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read); /* Reads `size` number of bytes to `buffer`, returns `out_bytes_read`. */
     hmError (*close)(struct hmReader_* reader);
@@ -33,7 +33,7 @@ typedef hmError (*hmOnNextReaderFunc)(hm_nint previous_reader_index, void* conte
    more data in the reader. */
 hmError hmReaderRead(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read);
 /* Closes the reader, freeing all additional resources. */
-hmError hmReaderClose(hmReader *reader);
+hmError hmReaderClose(hmReader* reader);
 
 /* Creates a reader which reads from a given fixed memory block and initialized data pointed to by in_reader.
    Useful when data is constructed in-memory; for example, in tests. */

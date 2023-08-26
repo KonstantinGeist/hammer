@@ -1,4 +1,5 @@
 test_io_sources = files(
     'linereaders.c',
-    'readers.c'
+    'readers.c',
+    'writers.c'
 )

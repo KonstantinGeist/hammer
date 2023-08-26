@@ -28,6 +28,7 @@ static void run_tests(hmTestSelector* test_selector)
     {
         HM_TEST_RUN_SUITE(allocators);
         HM_TEST_RUN_SUITE(readers);
+        HM_TEST_RUN_SUITE(writers);
         HM_TEST_RUN_SUITE(line_readers);
         HM_TEST_RUN_SUITE(arrays);
         HM_TEST_RUN_SUITE(strings);
