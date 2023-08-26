@@ -157,15 +157,15 @@ static void test_line_reader_ignores_trailing_new_line()
     hm_bool is_string1_initialized = HM_FALSE,
             is_string2_initialized = HM_FALSE,
             is_string3_initialized = HM_FALSE;
-    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    hmError err = hmLineReaderReadLine(&line_reader, &allocator, &string1);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string1_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello, World!"));
-    err = hmLineReaderReadLine(&line_reader, &string2);
+    err = hmLineReaderReadLine(&line_reader, &allocator, &string2);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string2_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string2, ""));
-    err = hmLineReaderReadLine(&line_reader, &string3);
+    err = hmLineReaderReadLine(&line_reader, &allocator, &string3);
     HM_TEST_ASSERT_ERROR_OR_OOM(err, HM_ERROR_INVALID_STATE);
     if (err == HM_OK) {
         is_string3_initialized = HM_TRUE;
@@ -193,7 +193,7 @@ static void test_line_reader_expects_empty_reader()
     char buffer[LINE_READER_BUFFER_SIZE] = {0};
     create_line_reader_and_allocator(&line_reader, &allocator, "", buffer, sizeof(buffer), HM_FALSE);
     hmString string;
-    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    hmError err = hmLineReaderReadLine(&line_reader, HM_NULL, &string);
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
     dispose_line_reader_and_allocator(&line_reader, &allocator);
 }
@@ -248,11 +248,11 @@ static void test_line_reader_with_crlf_newlines_doesnt_treat_lf_as_newlines()
     hmString string1, string2;
     hm_bool is_string1_initialized = HM_FALSE,
             is_string2_initialized = HM_FALSE;
-    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    hmError err = hmLineReaderReadLine(&line_reader, HM_NULL, &string1);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string1_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello,\nWorld!"));
-    err = hmLineReaderReadLine(&line_reader, &string2);
+    err = hmLineReaderReadLine(&line_reader, HM_NULL, &string2);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string2_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "Goodbye,\nWorld!"));
@@ -279,15 +279,15 @@ static void test_line_reader_with_lf_newlines_doesnt_treat_crlf_as_newlines()
     hm_bool is_string1_initialized = HM_FALSE,
             is_string2_initialized = HM_FALSE,
             is_string3_initialized = HM_FALSE;
-    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    hmError err = hmLineReaderReadLine(&line_reader, &allocator, &string1);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string1_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "Hello,"));
-    err = hmLineReaderReadLine(&line_reader, &string2);
+    err = hmLineReaderReadLine(&line_reader, &allocator, &string2);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string2_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "World!\r"));
-    err = hmLineReaderReadLine(&line_reader, &string3);
+    err = hmLineReaderReadLine(&line_reader, &allocator, &string3);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string3_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string3, "Goodbye"));
@@ -316,11 +316,11 @@ static void test_line_readers_crlf_newline_can_straddle_two_buffer_reads()
     hmString string1, string2;
     hm_bool is_string1_initialized = HM_FALSE,
             is_string2_initialized = HM_FALSE;
-    hmError err = hmLineReaderReadLine(&line_reader, &string1);
+    hmError err = hmLineReaderReadLine(&line_reader, HM_NULL, &string1);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string1_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string1, "123"));
-    err = hmLineReaderReadLine(&line_reader, &string2);
+    err = hmLineReaderReadLine(&line_reader, HM_NULL, &string2);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     is_string2_initialized = HM_TRUE;
     HM_TEST_ASSERT(hmStringEqualsToCString(&string2, "456"));
@@ -343,7 +343,7 @@ static void test_line_reader_can_get_buffered()
     char buffer[LINE_READER_BUFFER_SIZE];
     create_line_reader_and_allocator(&line_reader, &allocator, "1234\n56789", buffer, sizeof(buffer), HM_FALSE);
     hmString string;
-    hmError err = hmLineReaderReadLine(&line_reader, &string);
+    hmError err = hmLineReaderReadLine(&line_reader, &allocator, &string);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringEqualsToCString(&string, "1234"));
     err = hmStringDispose(&string);

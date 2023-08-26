@@ -76,18 +76,21 @@ hm_nint hmStringGetLengthInBytes(hmString* string);
 /* Returns the raw contents of the string as a null-terminated C string. The contents should stay immutable
    because certain values, such as the string's length, can be cached inside the string and assume
    the contents are never mutated. Use this function to pass the buffer to foreign code which supports C ABI.
-   See also: hmStringGetChars(..), hmStringGetCharsForUpdate(..) */
+   See also: hmStringGetChars(..), hmStringBeginUpdateChars(..) */
 #define hmStringGetCString(string) ((const char*)(string)->content)
 /* Returns the internal char array of the string for quicker read-only access to the underlying data.
-   See also: hmStringGetCString(..), hmStringGetCharsForUpdate(..) */
+   See also: hmStringGetCString(..), hmStringBeginUpdateChars(..) */
 #define hmStringGetChars(string) ((string)->content)
 /* Returns the string's chars as UTF8 bytes -- useful if we're required to use `hm_utf8char` (see). */
 #define hmStringGetUTF8Chars(string) ((const hm_utf8char*)(string)->content)
 /* Returns the internal char array in `out_buffer` for in-place updates. If the string is a read-only view, returns HM_ERROR_INVALID_STATE.
    Supports trimming the original char buffer with '\0' in the middle: string length will be recalculated in that case.
+   Call hmStringEndUpdateChars(..) after you're done.
    WARNING: don't update string content for strings used as keys to hashmaps etc.
    See also: hmStringGetCString(..), hmStringGetChars(..) */
-hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars);
+hmError hmStringBeginUpdateChars(hmString* string, char** out_chars);
+/* Finalizes chars update after calling hmStringBeginUpdateChars(..) and updating the chars. */
+hmError hmStringEndUpdateChars(hmString* string);
 /* The comparison function of strings. Useful in hmArraySort(..) */
 hmComparisonResult hmStringCompare(hmString* string1, hmString* string2);
 /* Returns the index (offset into the byte array) of the given rune in `out_index_opt`.

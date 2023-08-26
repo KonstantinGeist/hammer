@@ -383,9 +383,11 @@ static void test_string_length_is_recalculated_on_update()
     HM_TEST_TRACK_OOM(&allocator, HM_TRUE);
     HM_TEST_ASSERT(hmStringGetLengthInBytes(&source) == 13);
     char* chars = HM_NULL;
-    err = hmStringGetCharsForUpdate(&source, &chars);
+    err = hmStringBeginUpdateChars(&source, &chars);
     HM_TEST_ASSERT_OK_OR_OOM(err);
     chars[5] = 0;
+    err = hmStringEndUpdateChars(&source);
+    HM_TEST_ASSERT_OK_OR_OOM(err);
     HM_TEST_ASSERT(hmStringGetLengthInBytes(&source) == 5);
 HM_TEST_ON_FINALIZE
     err = hmStringDispose(&source);
@@ -399,7 +401,7 @@ static void test_cannot_update_string_view()
     hmError err = hmCreateStringViewFromCString("Hello, World!", &string);
     HM_TEST_ASSERT_OK(err);
     char* chars = HM_NULL;
-    err = hmStringGetCharsForUpdate(&string, &chars);
+    err = hmStringBeginUpdateChars(&string, &chars);
     HM_TEST_ASSERT(err == HM_ERROR_INVALID_STATE);
 }
 

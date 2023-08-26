@@ -221,7 +221,7 @@ static hmError hmHTTPRequestParseRequestLine(hmHTTPRequest* request, hmString* l
 static hmError hmCanonicalizeHTTPHeaderNameInPlace(hmString* name)
 {
     char* chars = HM_NULL;
-    HM_TRY(hmStringGetCharsForUpdate(name, &chars));
+    HM_TRY(hmStringBeginUpdateChars(name, &chars));
     hm_nint length_in_bytes = hmStringGetLengthInBytes(name);
     hm_bool should_capitalize = HM_TRUE;
     for (hm_nint i = 0; i < length_in_bytes; i++) {
@@ -242,7 +242,7 @@ static hmError hmCanonicalizeHTTPHeaderNameInPlace(hmString* name)
             should_capitalize = HM_TRUE;
         }
     }
-    return HM_OK;
+    return hmStringEndUpdateChars(name);
 }
 
 /* Additionally validates that the header name is standard-conformant. */
@@ -438,7 +438,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     HM_TRY(hmCreateLimitedReader(
         request->allocator,
         request->reader,
-        HM_FALSE, /* close_source_reader = HM_TRUE, because the reader will continue to be used after parsing the headers */
+        HM_FALSE, /* close_source_reader = HM_FALSE, because the reader will continue to be used after parsing the headers */
         request->max_headers_size,
         &limited_reader
     ));
@@ -449,7 +449,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     HM_TRY_OR_FINALIZE(err, hmCreateLineReader(
         request->allocator,
         limited_reader,
-        HM_FALSE, /* close_source_reader = HM_TRUE, same as above */
+        HM_FALSE, /* close_source_reader = HM_FALSE, same as above */
         buffer,
         request->read_buffer_size,
         HM_TRUE,  /* has_crlf_newlines = HM_TRUE, as per the HTTP protocol */
@@ -458,7 +458,7 @@ static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* reque
     is_line_reader_initialized = HM_TRUE;
     hm_nint header_count = 0;
     hmString string;
-    while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
+    while ((err = hmLineReaderReadLine(&line_reader, HM_NULL, &string)) == HM_OK) {
         if (hmStringIsEmpty(&string)) { /* an empty string is a signal that the header part is over */
             HM_TRY_OR_FINALIZE(err, hmStringDispose(&string));
             HM_TRY_OR_FINALIZE(err, hmHTTPRequestCreateBodyReader(request, &line_reader));

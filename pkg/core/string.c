@@ -167,13 +167,19 @@ hm_nint hmStringGetLengthInBytes(hmString* string)
     return string->length_in_bytes;
 }
 
-hmError hmStringGetCharsForUpdate(hmString* string, char** out_chars)
+hmError hmStringBeginUpdateChars(hmString* string, char** out_chars)
 {
     if (!string->allocator_opt) { /* no allocator? it's a view! */
         return HM_ERROR_INVALID_STATE;
     }
     string->length_in_bytes = HM_EMPTY_STRING_LENGTH_IN_BYTES; /* to recalculate the length (see the docs) */
     *out_chars = string->content;
+    return HM_OK;
+}
+
+hmError hmStringEndUpdateChars(hmString* string)
+{
+    /* Currently a no-op. */
     return HM_OK;
 }
 

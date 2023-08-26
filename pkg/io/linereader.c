@@ -16,8 +16,18 @@
 
 static hm_bool hmLineReaderShouldReadFromSourceReader(hmLineReader* line_reader);
 static void hmLineReaderScheduleMoreReadingFromSourceReader(hmLineReader* line_reader);
-static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed);
-static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed);
+static hmError hmLineReaderReadFromSourceReader(
+    hmLineReader* line_reader,
+    hmAllocator*  allocator_opt,
+    hmString*     in_line,
+    hm_bool*      out_is_line_formed
+);
+static hmError hmLineReaderScanBufferForNextLine(
+    hmLineReader* line_reader,
+    hmAllocator*  allocator_opt,
+    hmString*     in_line,
+    hm_bool*      out_is_line_formed
+);
 static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_reader);
 
 hmError hmCreateLineReader(
@@ -55,7 +65,7 @@ hmError hmLineReaderDispose(hmLineReader* line_reader)
     return err;
 }
 
-hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line)
+hmError hmLineReaderReadLine(hmLineReader* line_reader, hmAllocator* allocator_opt, hmString* in_line)
 {
     /* The loop is quite simple:
        - reads from the source reader into the buffer if necessary (may form the next line if it can't read from the
@@ -70,12 +80,12 @@ hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line)
     while (HM_TRUE) {
         hm_bool is_line_formed = HM_FALSE;
         if (hmLineReaderShouldReadFromSourceReader(line_reader)) {
-            HM_TRY(hmLineReaderReadFromSourceReader(line_reader, in_line, &is_line_formed));
+            HM_TRY(hmLineReaderReadFromSourceReader(line_reader, allocator_opt, in_line, &is_line_formed));
             if (is_line_formed) {
                 break;
             }
         }
-        HM_TRY(hmLineReaderScanBufferForNextLine(line_reader, in_line, &is_line_formed));
+        HM_TRY(hmLineReaderScanBufferForNextLine(line_reader, allocator_opt, in_line, &is_line_formed));
         if (is_line_formed) {
             break;
         }
@@ -126,7 +136,7 @@ hmError hmReadAllLines(
     ));
     is_array_initialized = HM_TRUE;
     hmString string;
-    while ((err = hmLineReaderReadLine(&line_reader, &string)) == HM_OK) {
+    while ((err = hmLineReaderReadLine(&line_reader, allocator, &string)) == HM_OK) {
         err = hmArrayAdd(in_array, &string);
         if (err != HM_OK) {
             err = hmMergeErrors(err, hmStringDispose(&string));
@@ -164,7 +174,7 @@ static hmError hmLineReaderAppendToNextLineBuilder(hmLineReader* line_reader, ch
     return hmStringBuilderAppendCStringWithLength(&line_reader->next_line_builder, chars, length_in_bytes);
 }
 
-static hmError hmLineReaderCreateLineFromNextLineBuilder(hmLineReader* line_reader, hmString* in_line)
+static hmError hmLineReaderCreateLineFromNextLineBuilder(hmLineReader* line_reader, hmAllocator* allocator_opt, hmString* in_line)
 {
     hm_nint line_length_in_bytes = hmStringBuilderGetLengthInBytes(&line_reader->next_line_builder);
     /* Support for CRLF newlines: removes "\r" before "\n" (this function accepts lines which are always split by "\n"
@@ -176,7 +186,7 @@ static hmError hmLineReaderCreateLineFromNextLineBuilder(hmLineReader* line_read
     {
         line_length_in_bytes--;
     }
-    return hmStringBuilderToStringWithStartIndexAndLengthInBytes(&line_reader->next_line_builder, HM_NULL, 0, line_length_in_bytes, in_line);
+    return hmStringBuilderToStringWithStartIndexAndLengthInBytes(&line_reader->next_line_builder, allocator_opt, 0, line_length_in_bytes, in_line);
 }
 
 static hmError hmLineReaderResetNextLineBuilder(hmLineReader* line_reader)
@@ -196,7 +206,7 @@ static hmError hmLineReaderAppendRemainingInBufferToNextLine(hmLineReader* line_
 }
 
 /* See hmLineReaderReadLine(..) for the overview of the algorithm. */
-static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
+static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmAllocator* allocator_opt, hmString* in_line, hm_bool* out_is_line_formed)
 {
     *out_is_line_formed = HM_FALSE;
     hm_nint bytes_read = 0;
@@ -216,7 +226,7 @@ static hmError hmLineReaderReadFromSourceReader(hmLineReader* line_reader, hmStr
         HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
         HM_TRY(hmSubNint(line_reader->bytes_read, line_reader->buffer_index, &remaining_size));
         HM_TRY(hmLineReaderAppendToNextLineBuilder(line_reader, hmCastNintToPointer(buffer_with_index_offset, char*), remaining_size));
-        hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, in_line);
+        hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, allocator_opt, in_line);
         hm_bool is_string_initialized = err == HM_OK;
         err = hmMergeErrors(err, hmLineReaderResetNextLineBuilder(line_reader));
         if (err != HM_OK) {
@@ -256,7 +266,12 @@ static hm_bool hmLineReaderIsNewline(hmLineReader* line_reader, hm_nint index)
 }
 
 /* See hmLineReaderReadLine(..) for the overview of the algorithm. */
-static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmString* in_line, hm_bool* out_is_line_formed)
+static hmError hmLineReaderScanBufferForNextLine(
+    hmLineReader* line_reader,
+    hmAllocator*  allocator_opt,
+    hmString*     in_line,
+    hm_bool*      out_is_line_formed
+)
 {
     *out_is_line_formed = HM_FALSE;
     for (hm_nint i = line_reader->buffer_index; i < line_reader->bytes_read; i++) {
@@ -265,7 +280,7 @@ static hmError hmLineReaderScanBufferForNextLine(hmLineReader* line_reader, hmSt
             HM_TRY(hmAddNint(hmCastPointerToNint(line_reader->buffer), line_reader->buffer_index, &buffer_with_index_offset));
             HM_TRY(hmSubNint(i, line_reader->buffer_index, &remaining_size));
             HM_TRY(hmLineReaderAppendToNextLineBuilder(line_reader, hmCastNintToPointer(buffer_with_index_offset, char*), remaining_size));
-            hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, in_line);
+            hmError err = hmLineReaderCreateLineFromNextLineBuilder(line_reader, allocator_opt, in_line);
             hm_bool is_string_initialized = err == HM_OK;
             err = hmMergeErrors(err, hmLineReaderResetNextLineBuilder(line_reader));
             if (err == HM_OK) {

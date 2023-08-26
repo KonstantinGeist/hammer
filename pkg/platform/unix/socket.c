@@ -76,7 +76,7 @@ hmError hmCreateSocket(
     sprintf(port_str, "%d", (int)port);
     int r = getaddrinfo(hmStringGetCString(host), port_str, &hints, &addrinfo);
     if (r) {
-        err = r == EAI_NONAME ? HM_ERROR_NOT_FOUND : HM_ERROR_PLATFORM_DEPENDENT; /* getaddrinfo(..) has its own error codes */
+        err = (r == EAI_NONAME || r == EAI_AGAIN) ? HM_ERROR_NOT_FOUND : HM_ERROR_PLATFORM_DEPENDENT; /* getaddrinfo(..) has its own error codes */
         HM_FINALIZE;
     }
     is_addrinfo_initialized = HM_TRUE;
@@ -108,27 +108,21 @@ HM_ON_FINALIZE
 
 hmError hmSocketSend(hmSocket* socket, const char* buffer, hm_nint size, hm_nint *out_bytes_sent_opt)
 {
-    if (!buffer) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     /* MSG_NOSIGNAL avoids SIGPIPE-related crashes when the connection is abruptly closed. */
     ssize_t bytes_send = send(platform_data->socket_file_desc, buffer, size, MSG_NOSIGNAL);
-    if (out_bytes_sent_opt && bytes_send >= 0) {
-        *out_bytes_sent_opt = (hm_nint)bytes_send;
+    if (out_bytes_sent_opt) {
+        *out_bytes_sent_opt = bytes_send >= 0 ? (hm_nint)bytes_send : 0;
     }
     return bytes_send == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }
 
 hmError hmSocketRead(hmSocket* socket, char* buffer, hm_nint size, hm_nint* out_bytes_read_opt)
 {
-    if (!buffer) {
-        return HM_ERROR_INVALID_ARGUMENT;
-    }
     hmSocketPlatformData* platform_data = (hmSocketPlatformData*)socket->platform_data;
     ssize_t bytes_read = read(platform_data->socket_file_desc, buffer, size);
-    if (out_bytes_read_opt && bytes_read >= 0) {
-        *out_bytes_read_opt = (hm_nint)bytes_read;
+    if (out_bytes_read_opt) {
+        *out_bytes_read_opt = bytes_read >= 0 ? (hm_nint)bytes_read : 0;
     }
     return bytes_read == -1 ? hmUnixErrorToHammer(errno) : HM_OK;
 }

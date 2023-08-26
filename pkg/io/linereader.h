@@ -35,6 +35,7 @@ typedef struct {
 /* A line reader takes a `source_reader` and progressively reads lines separated by newlines from it via hmLineReaderReadLine(..) (see).
    If `close_source_reader` is true, `source_reader` is automatically closed when the line reader is disposed.
   `buffer` and `buffer_size` specify the internal scratch buffer which will be used. Useful for tests and to control memory usage.
+  `buffer` is not copied into the line reader and should retained by the caller for as long as the line reader is alive.
    If `has_crlf_newlines` is set to HM_TRUE, treats newlines as CRLF ("\r\n") instead of LF ("\n"). For example, the HTTP protocol
    supports only CRLF newlines. */
 hmError hmCreateLineReader(
@@ -51,11 +52,13 @@ hmError hmCreateLineReader(
 hmError hmLineReaderDispose(hmLineReader* line_reader);
 /* Reads a new line from the source reader specified in the line reader's constructor as `source_reader`.
    Reading is buffered, with the scratch memory and the buffer size specified as `buffer` and `buffer_size` in the
-   constructor. Lines should be separated by "\n".
+   constructor. Lines should be separated by "\n" or "\r\n", depending on the `has_crlf_newlines` setting (see).
    When there are no more lines in the source reader, returns HM_ERROR_INVALID_STATE (by analogy with queues etc.)
+   `allocator_opt` specifies the allocator with which to allocate the line. If nothing is specified, then the line reader's
+   allocator is reused.
    All reading errors from the underlying source reader are simply propagated.
    NOTE If the stream ends with a trailing newline (for example, "Hello World\n"), no empty line is returned. */
-hmError hmLineReaderReadLine(hmLineReader* line_reader, hmString* in_line);
+hmError hmLineReaderReadLine(hmLineReader* line_reader, hmAllocator* allocator_opt, hmString* in_line);
 /* The line reader can "overshoot", i.e. while reading the next line from the source reader, it can read more bytes
    than necessary for the next line, because it reads in fixed size chunks. This function returns what's left in the buffer by
    placing the pointer to the internal buffer in `out_buffer` with `out_size`. The returned buffer is valid as long as
