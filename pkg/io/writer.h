@@ -31,6 +31,8 @@ typedef struct hmWriter_ {
 hmError hmWriterWrite(hmWriter* writer, const char* buffer, hm_nint size, hm_nint* out_bytes_written);
 /* Closes the writer, freeing all additional resources. */
 hmError hmWriterClose(hmWriter *writer);
+/* A helper function which writes everything from the `buffer` until the writer acknowledges all bytes have been written. */
+hmError hmWriterWriteAll(hmWriter* writer, const char* buffer, hm_nint size);
 
 /* Creates a string writer which writes to a string. Call hmStringWriterGetString(..) to retrieve the string. */
 hmError hmCreateStringWriter(hmAllocator* allocator, hmWriter* in_writer);

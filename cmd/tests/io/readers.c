@@ -231,6 +231,21 @@ HM_TEST_ON_FINALIZE
     HM_TEST_DEINIT_ALLOC(&allocator);
 }
 
+static void test_empty_reader()
+{
+    hmReader reader;
+    hmError err = hmCreateEmptyReader(&reader);
+    HM_TEST_ASSERT_OK(err);
+    char buffer[32] = {0};
+    hm_nint bytes_read;
+    err = hmReaderRead(&reader, buffer, sizeof(buffer), &bytes_read);
+    HM_TEST_ASSERT_OK(err);
+    HM_TEST_ASSERT(bytes_read == 0);
+    HM_TEST_ASSERT(buffer[0] == 0);
+    err = hmReaderClose(&reader);
+    HM_TEST_ASSERT_OK(err);
+}
+
 HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN(test_memory_reader_can_create_read_close)
     HM_TEST_RUN(test_memory_reader_truncates_buffer_if_read_past_buffer)
@@ -239,4 +254,5 @@ HM_TEST_SUITE_BEGIN(readers)
     HM_TEST_RUN_WITHOUT_OOM(test_can_create_memory_reader_from_empty_string)
     HM_TEST_RUN(test_limited_reader_limits_reads)
     HM_TEST_RUN(test_composite_reader_reads_from_all_source_readers)
+    HM_TEST_RUN_WITHOUT_OOM(test_empty_reader)
 HM_TEST_SUITE_END()

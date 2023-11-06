@@ -18,6 +18,7 @@
 #include <core/string.h>
 #include <collections/hashmap.h>
 #include <io/reader.h>
+#include <io/writer.h>
 #include <net/http/common.h>
 
 /* See hmCreateHTTPRequestFromReader(..). */
@@ -41,6 +42,7 @@ typedef struct {
     hm_nint      remaining_buffer_size;  /* Describes the size of `remaining_buffer`. */
     hm_bool      close_reader;           /* Copied from the same argument in hmCreateHTTPRequestFromReader(..) (see). */
     hm_bool      is_body_reader_created; /* Tells if `body_reader` is actually initialized. */
+    hm_bool      close_body_reader;      /* Copied from the same argument in hmCreateHTTPRequestFromHeadersAndBodyReader(..) (see). */
 } hmHTTPRequest;
 
 /* Creates an HTTP request by reading from the given `reader`.
@@ -77,6 +79,23 @@ hmError hmCreateHTTPRequestFromReaderAndReadBufferSize(
     hm_uint32      hash_salt,
     hmHTTPRequest* in_request
 );
+/* Creates a HTTP request from the given method, URL, HTTP headers and the body reader.
+  `method` is the method of the request: GET, POST, etc.
+  `url` is the URL of the request. The value is copied into the request object as is and becomes owned by it.
+  `headers` is the HTTP headers of the request. The value is copied into the request object as is and becomes owned by it.
+   The keys and the values of the hashmap must be strings. If it's not strings, the behavior is undefined.
+  `body_reader` is the body of the request.
+  `close_body_reader` specifies whether the body reader should be automatically closed when the request object itself
+   is disposed. */
+hmError hmCreateHTTPRequestFromHeadersAndBodyReader(
+    hmAllocator*   allocator,
+    hmHTTPMethod   method,
+    hmString       url,
+    hmHashMap      headers,
+    hmReader       body_reader,
+    hm_bool        close_body_reader,
+    hmHTTPRequest* in_request
+);
 hmError hmHTTPRequestDispose(hmHTTPRequest* request);
 /* Returns a reader which allows to read the body of the request. The reader object is guaranteed to be valid as long as
    as the HTTP request object is valid. */
@@ -89,5 +108,10 @@ hmReader* hmHTTPRequestGetBodyReaderRef(hmHTTPRequest* request);
 hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nint index, hmString** out_header_ref);
 #define hmHTTPRequestGetMethod(request) ((request)->method)
 #define hmHTTPRequestGetURL(request) (&(request)->url)
+/* Writes the contents of the request to the provided `writer` in HTTP's wire format.
+  `buffer` and `buffer_size` specify the intermediate buffer to be used when reading from the HTTP request object and
+   writing to the `writer`. This allows to control memory usage and the number of I/O calls.
+   NOTE: the body reader is read to the end. */
+hmError hmHTTPRequestWrite(hmHTTPRequest* request, char* buffer, hm_nint buffer_size, hmWriter* writer);
 
 #endif /* HM_HTTP_REQUEST_H */

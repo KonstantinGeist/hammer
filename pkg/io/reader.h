@@ -74,5 +74,8 @@ hmError hmCreateCompositeReader(
    void*              context_opt,
    hmReader*          in_reader
 );
+/* A reader which always reports that there are no more bytes left. Useful when a reader variable must be initialized
+   to a default value, for example. */
+hmError hmCreateEmptyReader(hmReader* in_reader);
 
 #endif /* HM_READER_H */

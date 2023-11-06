@@ -49,6 +49,7 @@
 #define HM_HTTP_VERSION_LITERAL_SIZE 9
 
 static hmError hmHTTPRequestParseRequestLineAndHeaderFields(hmHTTPRequest* request);
+static hmError hmWriteHTTPMethod(hmHTTPMethod method, hmWriter* writer);
 #define hmIsHTTPWhitespace(ch) ((ch) == ' ' || (ch) == '\t')
 
 static hm_nint valid_http_header_name_char_table[256] = {
@@ -117,12 +118,13 @@ hmError hmCreateHTTPRequestFromReaderAndReadBufferSize(
     in_request->allocator = allocator;
     in_request->remaining_buffer = HM_NULL;
     in_request->reader = reader;
-    in_request->close_reader = close_reader;
     in_request->method = HM_HTTP_METHOD_GET;
     in_request->max_headers_size = max_headers_size;
     in_request->read_buffer_size = read_buffer_size;
     in_request->remaining_buffer_size = 0;
+    in_request->close_reader = close_reader;
     in_request->is_body_reader_created = HM_FALSE;
+    in_request->close_body_reader = HM_TRUE;
     err = hmCreateEmptyStringView(&in_request->url); /* doesn't need to be disposed on error */
     /* Must be called the last because depends on the fields above. */
     err = hmMergeErrors(err, hmHTTPRequestParseRequestLineAndHeaderFields(in_request));
@@ -130,6 +132,32 @@ hmError hmCreateHTTPRequestFromReaderAndReadBufferSize(
         err = hmMergeErrors(err, hmHTTPRequestDispose(in_request));
     }
     return err;
+}
+
+hmError hmCreateHTTPRequestFromHeadersAndBodyReader(
+    hmAllocator*   allocator,
+    hmHTTPMethod   method,
+    hmString       url,
+    hmHashMap      headers,
+    hmReader       body_reader,
+    hm_bool        close_body_reader,
+    hmHTTPRequest* in_request
+)
+{
+    HM_TRY(hmCreateEmptyReader(&in_request->reader));
+    in_request->allocator = allocator;
+    in_request->remaining_buffer = HM_NULL;
+    in_request->body_reader = body_reader;
+    in_request->headers = headers;
+    in_request->url = url;
+    in_request->method = method;
+    in_request->max_headers_size = HM_HTTP_REQUEST_DEFAULT_MAX_HEADERS_SIZE;
+    in_request->read_buffer_size = HM_HTTP_REQUEST_MAX_READ_BUFFER_SIZE;
+    in_request->remaining_buffer_size = 0;
+    in_request->close_reader = HM_FALSE;
+    in_request->is_body_reader_created = HM_TRUE;
+    in_request->close_body_reader = close_body_reader;
+    return HM_OK;
 }
 
 hmError hmHTTPRequestDispose(hmHTTPRequest* request)
@@ -140,7 +168,7 @@ hmError hmHTTPRequestDispose(hmHTTPRequest* request)
     }
     err = hmMergeErrors(err, hmStringDispose(&request->url));
     err = hmMergeErrors(err, hmHashMapDispose(&request->headers));
-    if (request->is_body_reader_created) {
+    if (request->is_body_reader_created && request->close_body_reader) {
         err = hmMergeErrors(err, hmReaderClose(&request->body_reader));
     }
     if (request->remaining_buffer) {
@@ -167,6 +195,49 @@ hmError hmHTTPRequestGetHeaderRef(hmHTTPRequest* request, hmString* name, hm_nin
     hmString* values = hmArrayGetRaw((hmArray*)values_ref, hmString);
     *out_header_ref = &values[index];
     return HM_OK;
+}
+
+hmError hmHTTPRequestWrite(hmHTTPRequest* request, char* buffer, hm_nint buffer_size, hmWriter* writer)
+{
+    HM_TRY(hmWriteHTTPMethod(request->method, writer));
+    HM_TRY(hmWriterWriteAll(writer, hmStringGetCString(&request->url), hmStringGetLengthInBytes(&request->url)));
+    HM_TRY(hmWriterWriteAll(writer, HM_HTTP_VERSION_LITERAL, HM_HTTP_VERSION_LITERAL_SIZE));
+    // TODO write headers
+    // TODO write body
+    // TODO the end
+}
+
+static hmError hmWriteHTTPMethod(hmHTTPMethod method, hmWriter* writer)
+{
+    const char* literal = HM_NULL;
+    hm_nint literal_size = 0;
+    switch (method)
+    {
+        case HM_HTTP_METHOD_GET:
+            literal = HM_GET_METHOD_LITERAL;
+            literal_size = HM_GET_METHOD_LITERAL_SIZE;
+            break;
+        case HM_HTTP_METHOD_POST:
+            literal = HM_POST_METHOD_LITERAL;
+            literal_size = HM_POST_METHOD_LITERAL_SIZE;
+            break;
+        case HM_HTTP_METHOD_PUT:
+            literal = HM_PUT_METHOD_LITERAL;
+            literal_size = HM_PUT_METHOD_LITERAL_SIZE;
+            break;
+        case HM_HTTP_METHOD_DELETE:
+            literal = HM_DELETE_METHOD_LITERAL;
+            literal_size = HM_DELETE_METHOD_LITERAL_SIZE;
+            break;
+        case HM_HTTP_METHOD_HEAD:
+            literal = HM_HEAD_METHOD_LITERAL;
+            literal_size = HM_HEAD_METHOD_LITERAL_SIZE;
+            break;
+    }
+    if (!literal) {
+        return HM_ERROR_NOT_IMPLEMENTED;
+    }
+    return hmWriterWriteAll(writer, literal, literal_size);
 }
 
 static hmError hmParseHTTPMethod(hmString* line, hmHTTPMethod* out_method, hm_nint* method_literal_size)

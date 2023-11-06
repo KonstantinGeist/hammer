@@ -263,3 +263,26 @@ hmError hmCreateCompositeReader(
     in_reader->data = data;
     return HM_OK;
 }
+
+/* ********************* */
+/*      EmptyReader.     */
+/* ********************* */
+
+static hmError hmEmptyReader_read(hmReader* reader, char* buffer, hm_nint size, hm_nint* out_bytes_read)
+{
+    *out_bytes_read = 0;
+    return HM_OK;
+}
+
+static hmError hmEmptyReader_close(hmReader* reader)
+{
+    return HM_OK;
+}
+
+hmError hmCreateEmptyReader(hmReader* in_reader)
+{
+    in_reader->read = &hmEmptyReader_read;
+    in_reader->close = &hmEmptyReader_close;
+    in_reader->data = HM_NULL;
+    return HM_OK;
+}

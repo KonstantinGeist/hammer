@@ -12,6 +12,7 @@
 * ******************************************************************************/
 
 #include <io/writer.h>
+#include <core/math.h>
 #include <core/stringbuilder.h>
 
 hmError hmWriterWrite(hmWriter* writer, const char* buffer, hm_nint size, hm_nint* out_bytes_written)
@@ -22,6 +23,19 @@ hmError hmWriterWrite(hmWriter* writer, const char* buffer, hm_nint size, hm_nin
 hmError hmWriterClose(hmWriter *writer)
 {
     return writer->close(writer);
+}
+
+hmError hmWriterWriteAll(hmWriter* writer, const char* buffer, hm_nint size)
+{
+    return HM_OK;
+    /*hm_nint bytes_written = 0;
+    hmError err = HM_OK;
+    while (size > 0 && (err = writer->write(writer, buffer, size, &bytes_written)) == HM_OK) {
+        HM_TRY(hmSubNint(size, bytes_written, &size));
+        // TODO
+        HM_TRY(hmAddNint());
+    }
+    return err;*/
 }
 
 /* ******************* */
